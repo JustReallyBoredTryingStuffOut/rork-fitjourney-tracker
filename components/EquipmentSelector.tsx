@@ -7,9 +7,9 @@ import {
   Cable, 
   User, 
   Box, 
-  Weight, 
+  Barbell, 
   ArrowUp, 
-  Bed, 
+  Armchair, 
   Circle, 
   Anchor, 
   Infinity, 
@@ -17,7 +17,8 @@ import {
   Footprints, 
   ArrowDown, 
   MoveHorizontal,
-  Disc
+  Disc,
+  Gauge
 } from 'lucide-react-native';
 
 type EquipmentSelectorProps = {
@@ -45,11 +46,25 @@ export default function EquipmentSelector({
     
     switch (equipment) {
       case 'Barbell':
-        return <Weight size={iconSize} color={iconColor} />;
+        return <Barbell size={iconSize} color={iconColor} />;
       case 'Dumbbell':
         return <Dumbbell size={iconSize} color={iconColor} />;
       case 'Kettlebell':
-        return <Disc size={iconSize} color={iconColor} />;
+        return (
+          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+            <Disc size={iconSize} color={iconColor} />
+            <View style={{ 
+              position: 'absolute', 
+              top: 0, 
+              width: iconSize/3, 
+              height: iconSize/2, 
+              borderWidth: 2, 
+              borderColor: iconColor, 
+              borderRadius: 3,
+              borderBottomWidth: 0
+            }} />
+          </View>
+        );
       case 'Cable Machine':
         return <Cable size={iconSize} color={iconColor} />;
       case 'Machine':
@@ -59,7 +74,7 @@ export default function EquipmentSelector({
       case 'Pull-up Bar':
         return <ArrowUp size={iconSize} color={iconColor} />;
       case 'Bench':
-        return <Bed size={iconSize} color={iconColor} />;
+        return <Armchair size={iconSize} color={iconColor} />;
       case 'Stability Ball':
         return <Circle size={iconSize} color={iconColor} />;
       case 'Medicine Ball':
@@ -67,7 +82,7 @@ export default function EquipmentSelector({
       case 'TRX':
         return <Anchor size={iconSize} color={iconColor} />;
       case 'Ab Wheel':
-        return <Circle size={iconSize} color={iconColor} strokeWidth={1.5} />;
+        return <Gauge size={iconSize} color={iconColor} />;
       case 'Resistance Band':
         return <Infinity size={iconSize} color={iconColor} />;
       case 'Rope Attachment':
