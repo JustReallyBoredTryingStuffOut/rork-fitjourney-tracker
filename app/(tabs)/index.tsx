@@ -56,7 +56,6 @@ import LevelProgress from "@/components/LevelProgress";
 import DailyQuests from "@/components/DailyQuests";
 import ChallengeCard from "@/components/ChallengeCard";
 import AchievementModal from "@/components/AchievementModal";
-import AiRecommendationsModal from "@/components/AiRecommendationsModal";
 import { APP_NAME } from "@/app/_layout";
 
 // Daily fitness tips
@@ -172,7 +171,6 @@ export default function HomeScreen() {
     workoutRecommendationsEnabled,
     aiRecommendationsExplained,
     toggleWorkoutRecommendations,
-    setAiRecommendationsExplained,
     getMoodBasedWorkouts,
     getRestDayActivities,
     scheduledWorkouts
@@ -228,7 +226,6 @@ export default function HomeScreen() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<"weekly" | "monthly">("weekly");
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [moodSelectorDelayed, setMoodSelectorDelayed] = useState(false);
-  const [showAiRecommendationsModal, setShowAiRecommendationsModal] = useState(false);
   
   // Get recommended workouts based on mood if available
   const recommendedWorkouts = userMood?.preference 
@@ -271,18 +268,6 @@ export default function HomeScreen() {
       checkAchievements();
     }
   }, [workoutLogs, gamificationEnabled]);
-  
-  // Check if we should show the AI recommendations modal
-  useEffect(() => {
-    if (!aiRecommendationsExplained && !workoutRecommendationsEnabled) {
-      // Delay showing the AI recommendations modal to avoid immediate popup
-      const timer = setTimeout(() => {
-        setShowAiRecommendationsModal(true);
-      }, 3000); // Show after 3 seconds
-      
-      return () => clearTimeout(timer);
-    }
-  }, [aiRecommendationsExplained, workoutRecommendationsEnabled]);
   
   // Get a new random tip
   const getNewTip = () => {
@@ -656,19 +641,6 @@ export default function HomeScreen() {
     setEditedGoalText("");
   };
   
-  // Handle AI recommendations modal actions
-  const handleEnableAiRecommendations = () => {
-    toggleWorkoutRecommendations(true);
-    setAiRecommendationsExplained(true);
-    setShowAiRecommendationsModal(false);
-  };
-  
-  const handleDisableAiRecommendations = () => {
-    toggleWorkoutRecommendations(false);
-    setAiRecommendationsExplained(true);
-    setShowAiRecommendationsModal(false);
-  };
-  
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -907,19 +879,7 @@ export default function HomeScreen() {
               <Text style={[styles.toggleLabel, { color: colors.textSecondary }]}>AI Recommendations</Text>
               <Switch
                 value={workoutRecommendationsEnabled}
-                onValueChange={(value) => {
-                  if (!value) {
-                    // If turning off, just do it
-                    toggleWorkoutRecommendations(false);
-                  } else {
-                    // If turning on, show explanation first if not already explained
-                    if (!aiRecommendationsExplained) {
-                      setShowAiRecommendationsModal(true);
-                    } else {
-                      toggleWorkoutRecommendations(true);
-                    }
-                  }
-                }}
+                onValueChange={(value) => toggleWorkoutRecommendations(value)}
                 trackColor={{ false: colors.border, true: colors.primary }}
                 thumbColor="#FFFFFF"
               />
@@ -957,7 +917,7 @@ export default function HomeScreen() {
           ) : (
             <TouchableOpacity 
               style={[styles.enableRecommendationsCard, { backgroundColor: colors.card }]}
-              onPress={() => setShowAiRecommendationsModal(true)}
+              onPress={() => toggleWorkoutRecommendations(true)}
             >
               <Zap size={24} color={colors.primary} />
               <Text style={[styles.enableRecommendationsText, { color: colors.textSecondary }]}>
@@ -1227,17 +1187,6 @@ export default function HomeScreen() {
         visible={showMoodSelector}
         onClose={() => setShowMoodSelector(false)}
         onSelectMood={handleMoodSelected}
-      />
-      
-      {/* AI Recommendations Modal */}
-      <AiRecommendationsModal
-        visible={showAiRecommendationsModal}
-        onClose={() => {
-          setAiRecommendationsExplained(true);
-          setShowAiRecommendationsModal(false);
-        }}
-        onEnable={handleEnableAiRecommendations}
-        onDisable={handleDisableAiRecommendations}
       />
       
       {/* Workout Analysis Modal */}
