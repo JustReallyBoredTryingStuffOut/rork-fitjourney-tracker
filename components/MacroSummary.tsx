@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000", // Changed from colors.text to black
+    color: "#FFFFFF", // Changed from black to white
   },
   infoButton: {
     marginLeft: 8,
@@ -266,20 +266,20 @@ const styles = StyleSheet.create({
   calorieConsumed: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#000000", // Changed from colors.text to black
+    color: "#FFFFFF", // Changed from black to white
   },
   calorieDivider: {
     fontSize: 20,
-    color: "#555555", // Changed from colors.textSecondary to medium gray
+    color: "#CCCCCC", // Changed from medium gray to light gray
     marginHorizontal: 4,
   },
   calorieGoal: {
     fontSize: 20,
-    color: "#555555", // Changed from colors.textSecondary to medium gray
+    color: "#CCCCCC", // Changed from medium gray to light gray
   },
   calorieRemaining: {
     fontSize: 14,
-    color: "#555555", // Changed from colors.textSecondary to medium gray
+    color: "#CCCCCC", // Changed from medium gray to light gray
     marginBottom: 12,
   },
   progressBarContainer: {
@@ -314,13 +314,13 @@ const styles = StyleSheet.create({
   },
   macroTitle: {
     fontSize: 14,
-    color: "#000000", // Changed from colors.textSecondary to black
-    fontWeight: "500", // Added fontWeight for better visibility
+    color: "#FFFFFF", // Changed from black to white
+    fontWeight: "500",
   },
   macroValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333333", // Changed from colors.text to darker gray
+    color: "#FFFFFF", // Changed from darker gray to white
   },
   achievementProgress: {
     flexDirection: "row",
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   motivationText: {
     fontSize: 14,
-    color: "#333333", // Changed from colors.text to darker gray
+    color: "#FFFFFF", // Changed from darker gray to white
     fontStyle: "italic",
     textAlign: "center",
   },
@@ -375,12 +375,12 @@ const styles = StyleSheet.create({
   noGoalsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000", // Changed from colors.text to black
+    color: "#FFFFFF", // Changed from black to white
     marginBottom: 8,
   },
   noGoalsDescription: {
     fontSize: 14,
-    color: "#555555", // Changed from colors.textSecondary to medium gray
+    color: "#CCCCCC", // Changed from medium gray to light gray
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 20,

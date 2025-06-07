@@ -596,7 +596,7 @@ export default function RootLayout() {
         </View>
       ),
     },
-    // New health disclaimer step
+    // Health disclaimer step
     {
       title: "Health & Safety Disclaimer",
       description: "Before you begin your fitness journey with us, please read this important information.",
