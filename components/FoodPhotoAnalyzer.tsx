@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Platform, Alert, Modal, Pressable } from "react-native";
 import { Camera, ArrowLeft, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import { colors } from "@/constants/colors";
 import { FoodPhoto } from "@/store/photoStore";
 import Button from "@/components/Button";
@@ -24,6 +25,7 @@ export default function FoodPhotoAnalyzer({ onPhotoTaken, onCancel }: FoodPhotoA
     carbs: number;
     fat: number;
   } | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   
   const requestPermissions = async () => {
     if (Platform.OS !== "web") {
@@ -94,29 +96,138 @@ export default function FoodPhotoAnalyzer({ onPhotoTaken, onCancel }: FoodPhotoA
     }
   };
   
+  const convertImageToBase64 = async (uri: string): Promise<string> => {
+    try {
+      if (Platform.OS === "web") {
+        // For web, fetch the image and convert to base64
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === "string") {
+              // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+              const base64 = reader.result.split(",")[1];
+              resolve(base64);
+            } else {
+              reject(new Error("Failed to convert image to base64"));
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        // For native platforms, use expo-file-system
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        return base64;
+      }
+    } catch (error) {
+      console.error("Error converting image to base64:", error);
+      throw error;
+    }
+  };
+  
   const handleAnalyzePhoto = async () => {
     if (!photo) return;
     
     setIsAnalyzing(true);
+    setAnalysisError(null);
     
     try {
-      // In a real implementation, we would send the photo to an API for analysis
-      // For this example, we'll simulate an API call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Convert the image to base64
+      const base64Image = await convertImageToBase64(photo);
       
-      // Mock analysis result
-      const result = {
-        name: "Healthy Salad",
-        calories: 320,
-        protein: 15,
-        carbs: 30,
-        fat: 12
-      };
+      // Create a prompt for the AI
+      const messages = [
+        {
+          role: "system",
+          content: "You are a nutrition expert that can identify foods from images and provide accurate nutritional information. Analyze the image and provide the food name, calories, protein (g), carbs (g), and fat (g) for a standard serving. Format your response as a JSON object with these fields: name, calories, protein, carbs, fat. Only respond with the JSON object, no additional text."
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "What food is this and what are its nutritional values?" },
+            { type: "image", image: base64Image }
+          ]
+        }
+      ];
       
-      setAnalysisResult(result);
+      // Send the request to the AI API
+      const response = await fetch("https://toolkit.rork.com/text/llm/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Parse the AI response
+      try {
+        // The AI might return a string that contains JSON or a direct JSON object
+        let nutritionData;
+        if (typeof data.completion === "string") {
+          // Try to extract JSON from the string if it's wrapped in text
+          const jsonMatch = data.completion.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            nutritionData = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error("Could not extract JSON from AI response");
+          }
+        } else {
+          nutritionData = data.completion;
+        }
+        
+        // Validate the nutrition data
+        if (!nutritionData.name || 
+            typeof nutritionData.calories !== "number" || 
+            typeof nutritionData.protein !== "number" || 
+            typeof nutritionData.carbs !== "number" || 
+            typeof nutritionData.fat !== "number") {
+          throw new Error("Invalid nutrition data format");
+        }
+        
+        setAnalysisResult({
+          name: nutritionData.name,
+          calories: nutritionData.calories,
+          protein: nutritionData.protein,
+          carbs: nutritionData.carbs,
+          fat: nutritionData.fat
+        });
+      } catch (parseError) {
+        console.error("Error parsing AI response:", parseError, data.completion);
+        
+        // Fallback to a default analysis if parsing fails
+        setAnalysisResult({
+          name: "Unknown Food",
+          calories: 300,
+          protein: 10,
+          carbs: 30,
+          fat: 15
+        });
+        
+        setAnalysisError("We couldn't accurately analyze this food. Please verify the nutrition information.");
+      }
     } catch (error) {
       console.error("Error analyzing photo:", error);
-      Alert.alert("Error", "Failed to analyze photo. Please try again.");
+      
+      // Fallback to a default analysis if the API call fails
+      setAnalysisResult({
+        name: "Unknown Food",
+        calories: 300,
+        protein: 10,
+        carbs: 30,
+        fat: 15
+      });
+      
+      setAnalysisError("We couldn't analyze this food. Please verify the nutrition information.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -194,6 +305,10 @@ export default function FoodPhotoAnalyzer({ onPhotoTaken, onCancel }: FoodPhotoA
             <View style={styles.resultContainer}>
               <Text style={styles.foodName}>{analysisResult.name}</Text>
               
+              {analysisError && (
+                <Text style={styles.errorText}>{analysisError}</Text>
+              )}
+              
               <View style={styles.nutritionContainer}>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionValue}>{analysisResult.calories}</Text>
@@ -227,6 +342,7 @@ export default function FoodPhotoAnalyzer({ onPhotoTaken, onCancel }: FoodPhotoA
                   onPress={() => {
                     setPhoto(null);
                     setAnalysisResult(null);
+                    setAnalysisError(null);
                   }} 
                   variant="outline"
                   style={styles.retakeButton}
@@ -373,8 +489,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: colors.text,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  errorText: {
+    fontSize: 14,
+    color: colors.error || "#ff3b30",
     marginBottom: 16,
     textAlign: "center",
+    paddingHorizontal: 10,
   },
   nutritionContainer: {
     flexDirection: "row",

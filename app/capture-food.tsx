@@ -25,6 +25,7 @@ export default function CaptureFoodScreen() {
       carbs: photo.carbs,
       fat: photo.fat,
       notes: `Photo: ${photo.name}`,
+      mealType: "snack", // Default meal type, can be changed later
     });
     
     // Navigate back
