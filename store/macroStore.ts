@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MacroGoals, MacroLog, UserProfile, MealRecommendation } from "@/types";
+import { MacroGoals, MacroLog, UserProfile, MealRecommendation, FoodCategory } from "@/types";
 import { mealRecommendations } from "@/mocks/meals";
+import { foodCategories, getFoodCategoriesByMealType } from "@/mocks/foodCategories";
 
 interface MacroState {
   macroLogs: MacroLog[];
@@ -30,6 +31,8 @@ interface MacroState {
     maxCalories?: number,
     minProtein?: number
   ) => MealRecommendation[];
+  
+  getFoodCategories: (mealType: string) => FoodCategory[];
   
   calculateIdealMacros: () => MacroGoals;
   getNextMealTime: () => {
@@ -133,6 +136,10 @@ export const useMacroStore = create<MacroState>()(
         }
         
         return filtered;
+      },
+      
+      getFoodCategories: (mealType) => {
+        return getFoodCategoriesByMealType(mealType);
       },
       
       calculateIdealMacros: () => {

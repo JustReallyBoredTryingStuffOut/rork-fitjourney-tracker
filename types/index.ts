@@ -225,3 +225,91 @@ export interface PersonalRecord {
   previousBest: number;
   improvement: number;
 }
+
+// New types for food categories
+export interface FoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingSize: string;
+  imageUrl?: string;
+}
+
+export interface FoodCategory {
+  id: string;
+  name: string;
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  items: FoodItem[];
+}
+
+export interface MacroLog {
+  id: string;
+  date: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  notes?: string;
+  mealType?: "breakfast" | "lunch" | "dinner" | "snack";
+  mealTime?: string;
+  foodItemId?: string;
+  foodName?: string;
+  servingSize?: string;
+  quantity?: number;
+}
+
+export interface MacroGoals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface UserProfile {
+  name: string;
+  weight: number; // kg
+  height: number; // cm
+  age: number;
+  gender: "male" | "female" | "other";
+  fitnessGoal: "lose" | "maintain" | "gain";
+  activityLevel: "sedentary" | "light" | "moderate" | "active" | "very_active";
+  fitnessLevel: "beginner" | "intermediate" | "advanced";
+  dateOfBirth: string | null;
+}
+
+export interface MealRecommendation {
+  id: string;
+  name: string;
+  description: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  ingredients: string[];
+  instructions: string[];
+  prepTime: number;
+  cookTime: number;
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  dietaryRestrictions: string[];
+  imageUrl?: string;
+}
+
+export interface FoodPhoto {
+  id: string;
+  uri: string;
+  date: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  notes?: string;
+  mealType?: "breakfast" | "lunch" | "dinner" | "snack";
+  analysis?: {
+    foodItems: string[];
+    confidence: number;
+  };
+}

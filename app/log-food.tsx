@@ -1,13 +1,15 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { Plus, Minus, Clock, Coffee, UtensilsCrossed, Soup, ArrowLeft } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useMacroStore } from "@/store/macroStore";
-import { MacroLog } from "@/types";
+import { MacroLog, FoodItem } from "@/types";
 import Button from "@/components/Button";
 import NoteInput from "@/components/NoteInput";
 import { Picker } from "@react-native-picker/picker";
+import FoodCategorySelector from "@/components/FoodCategorySelector";
+import { foodCategories, getFoodCategoriesByMealType } from "@/mocks/foodCategories";
 
 export default function LogFoodScreen() {
   const router = useRouter();
@@ -19,12 +21,36 @@ export default function LogFoodScreen() {
   const [fat, setFat] = useState("0");
   const [notes, setNotes] = useState("");
   const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">("breakfast");
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [quantity, setQuantity] = useState("1");
   
   // Get current time in HH:MM format
   const now = new Date();
   const hours = now.getHours().toString().padStart(2, "0");
   const minutes = now.getMinutes().toString().padStart(2, "0");
   const [mealTime, setMealTime] = useState(`${hours}:${minutes}`);
+  
+  // Update macros when food item is selected
+  useEffect(() => {
+    if (selectedFood) {
+      const qty = parseFloat(quantity) || 1;
+      setCalories(Math.round(selectedFood.calories * qty).toString());
+      setProtein(Math.round(selectedFood.protein * qty).toString());
+      setCarbs(Math.round(selectedFood.carbs * qty).toString());
+      setFat(Math.round(selectedFood.fat * qty).toString());
+    }
+  }, [selectedFood, quantity]);
+  
+  // Update macros when quantity changes
+  useEffect(() => {
+    if (selectedFood) {
+      const qty = parseFloat(quantity) || 1;
+      setCalories(Math.round(selectedFood.calories * qty).toString());
+      setProtein(Math.round(selectedFood.protein * qty).toString());
+      setCarbs(Math.round(selectedFood.carbs * qty).toString());
+      setFat(Math.round(selectedFood.fat * qty).toString());
+    }
+  }, [quantity]);
   
   const handleSave = () => {
     const newLog: MacroLog = {
@@ -37,6 +63,10 @@ export default function LogFoodScreen() {
       notes,
       mealType,
       mealTime,
+      foodItemId: selectedFood?.id,
+      foodName: selectedFood?.name,
+      servingSize: selectedFood?.servingSize,
+      quantity: parseFloat(quantity) || 1,
     };
     
     addMacroLog(newLog);
@@ -56,6 +86,12 @@ export default function LogFoodScreen() {
     const currentValue = parseInt(value) || 0;
     const newValue = Math.max(0, currentValue + amount);
     setter(newValue.toString());
+  };
+  
+  const adjustQuantity = (amount: number) => {
+    const currentValue = parseFloat(quantity) || 1;
+    const newValue = Math.max(0.25, currentValue + amount);
+    setQuantity(newValue.toString());
   };
   
   const getMealTypeIcon = () => {
@@ -92,6 +128,20 @@ export default function LogFoodScreen() {
     handleGoBack();
   };
   
+  const handleSelectFood = (food: FoodItem) => {
+    setSelectedFood(food);
+    setQuantity("1");
+  };
+  
+  const handleClearFood = () => {
+    setSelectedFood(null);
+    setCalories("0");
+    setProtein("0");
+    setCarbs("0");
+    setFat("0");
+    setQuantity("1");
+  };
+  
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Stack.Screen 
@@ -123,7 +173,10 @@ export default function LogFoodScreen() {
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={mealType}
-                onValueChange={(itemValue) => setMealType(itemValue)}
+                onValueChange={(itemValue) => {
+                  setMealType(itemValue);
+                  setSelectedFood(null);
+                }}
                 style={styles.picker}
               >
                 <Picker.Item label="Breakfast" value="breakfast" />
@@ -149,6 +202,69 @@ export default function LogFoodScreen() {
           </View>
         </View>
         
+        {/* Food Category Selector */}
+        <FoodCategorySelector
+          mealType={mealType}
+          categories={foodCategories}
+          onSelectFood={handleSelectFood}
+        />
+        
+        {/* Selected Food Display */}
+        {selectedFood && (
+          <View style={styles.selectedFoodContainer}>
+            <View style={styles.selectedFoodHeader}>
+              <Text style={styles.selectedFoodTitle}>Selected Food</Text>
+              <TouchableOpacity onPress={handleClearFood} style={styles.clearButton}>
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.selectedFoodCard}>
+              {selectedFood.imageUrl && (
+                <Image source={{ uri: selectedFood.imageUrl }} style={styles.foodImage} />
+              )}
+              
+              <View style={styles.foodDetails}>
+                <Text style={styles.foodName}>{selectedFood.name}</Text>
+                <Text style={styles.servingSize}>{selectedFood.servingSize}</Text>
+                
+                <View style={styles.quantityContainer}>
+                  <Text style={styles.quantityLabel}>Quantity:</Text>
+                  <View style={styles.quantityControls}>
+                    <TouchableOpacity 
+                      style={styles.quantityButton}
+                      onPress={() => adjustQuantity(-0.25)}
+                    >
+                      <Minus size={16} color={colors.text} />
+                    </TouchableOpacity>
+                    
+                    <TextInput
+                      style={styles.quantityInput}
+                      value={quantity}
+                      onChangeText={setQuantity}
+                      keyboardType="numeric"
+                    />
+                    
+                    <TouchableOpacity 
+                      style={styles.quantityButton}
+                      onPress={() => adjustQuantity(0.25)}
+                    >
+                      <Plus size={16} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+        
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Nutrition Information</Text>
+        <Text style={styles.sectionSubtitle}>
+          {selectedFood 
+            ? "Values are calculated based on your selection and quantity" 
+            : "Enter values manually or select a food item"}
+        </Text>
+        
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Calories</Text>
           <View style={styles.numberInput}>
@@ -164,13 +280,15 @@ export default function LogFoodScreen() {
               value={calories}
               onChangeText={setCalories}
               keyboardType="numeric"
+              editable={!selectedFood}
             />
             
             <TouchableOpacity 
               style={styles.button}
               onPress={() => adjustValue(setCalories, calories, 50)}
+              disabled={!!selectedFood}
             >
-              <Plus size={20} color={colors.text} />
+              <Plus size={20} color={selectedFood ? colors.textLight : colors.text} />
             </TouchableOpacity>
           </View>
         </View>
@@ -182,8 +300,9 @@ export default function LogFoodScreen() {
               <TouchableOpacity 
                 style={styles.button}
                 onPress={() => adjustValue(setProtein, protein, -1)}
+                disabled={!!selectedFood}
               >
-                <Minus size={20} color={colors.text} />
+                <Minus size={20} color={selectedFood ? colors.textLight : colors.text} />
               </TouchableOpacity>
               
               <TextInput
@@ -191,13 +310,15 @@ export default function LogFoodScreen() {
                 value={protein}
                 onChangeText={setProtein}
                 keyboardType="numeric"
+                editable={!selectedFood}
               />
               
               <TouchableOpacity 
                 style={styles.button}
                 onPress={() => adjustValue(setProtein, protein, 1)}
+                disabled={!!selectedFood}
               >
-                <Plus size={20} color={colors.text} />
+                <Plus size={20} color={selectedFood ? colors.textLight : colors.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -208,8 +329,9 @@ export default function LogFoodScreen() {
               <TouchableOpacity 
                 style={styles.button}
                 onPress={() => adjustValue(setCarbs, carbs, -1)}
+                disabled={!!selectedFood}
               >
-                <Minus size={20} color={colors.text} />
+                <Minus size={20} color={selectedFood ? colors.textLight : colors.text} />
               </TouchableOpacity>
               
               <TextInput
@@ -217,13 +339,15 @@ export default function LogFoodScreen() {
                 value={carbs}
                 onChangeText={setCarbs}
                 keyboardType="numeric"
+                editable={!selectedFood}
               />
               
               <TouchableOpacity 
                 style={styles.button}
                 onPress={() => adjustValue(setCarbs, carbs, 1)}
+                disabled={!!selectedFood}
               >
-                <Plus size={20} color={colors.text} />
+                <Plus size={20} color={selectedFood ? colors.textLight : colors.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -234,8 +358,9 @@ export default function LogFoodScreen() {
               <TouchableOpacity 
                 style={styles.button}
                 onPress={() => adjustValue(setFat, fat, -1)}
+                disabled={!!selectedFood}
               >
-                <Minus size={20} color={colors.text} />
+                <Minus size={20} color={selectedFood ? colors.textLight : colors.text} />
               </TouchableOpacity>
               
               <TextInput
@@ -243,13 +368,15 @@ export default function LogFoodScreen() {
                 value={fat}
                 onChangeText={setFat}
                 keyboardType="numeric"
+                editable={!selectedFood}
               />
               
               <TouchableOpacity 
                 style={styles.button}
                 onPress={() => adjustValue(setFat, fat, 1)}
+                disabled={!!selectedFood}
               >
-                <Plus size={20} color={colors.text} />
+                <Plus size={20} color={selectedFood ? colors.textLight : colors.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -466,5 +593,94 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+  },
+  selectedFoodContainer: {
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 12,
+  },
+  selectedFoodHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  selectedFoodTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  clearButtonText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: "500",
+  },
+  selectedFoodCard: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  foodImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  foodDetails: {
+    flex: 1,
+  },
+  foodName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 4,
+  },
+  servingSize: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  quantityLabel: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  quantityControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  quantityButton: {
+    padding: 8,
+    backgroundColor: colors.background,
+  },
+  quantityInput: {
+    width: 40,
+    paddingVertical: 4,
+    fontSize: 14,
+    color: colors.text,
+    textAlign: "center",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 16,
   },
 });

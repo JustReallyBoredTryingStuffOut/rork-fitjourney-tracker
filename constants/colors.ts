@@ -1,96 +1,56 @@
-import { ColorScheme } from "@/store/themeStore";
-
-// Color schemes
-const colorSchemes = {
-  blue: {
-    primary: "#4A90E2",
-    secondary: "#50C878",
-  },
-  green: {
-    primary: "#50C878",
-    secondary: "#4A90E2",
-  },
-  purple: {
-    primary: "#8A2BE2",
-    secondary: "#FF6B6B",
-  },
-  orange: {
-    primary: "#FF9500",
-    secondary: "#4A90E2",
-  },
-  pink: {
-    primary: "#FF6B6B",
-    secondary: "#50C878",
-  },
-};
-
-// Light theme colors
-const lightColors = {
-  background: "#F8F9FA",
-  card: "#FFFFFF",
-  text: "#333333",
-  textSecondary: "#666666",
-  textLight: "#999999",
-  border: "#E1E4E8",
-  success: "#4CD964",
-  error: "#FF3B30",
-  warning: "#FFCC00",
-  inactive: "#C7C7CC",
-  highlight: "#E8F0FE",
-  timerBackground: "#F0F7FF",
-  macroProtein: "#FF6B6B",
-  macroCarbs: "#48DBFB",
-  macroFat: "#FFA502"
-};
-
-// Dark theme colors
-const darkColors = {
-  background: "#121212",
-  card: "#1E1E1E",
-  text: "#FFFFFF",
-  textSecondary: "#AAAAAA",
-  textLight: "#777777",
-  border: "#333333",
-  success: "#4CD964",
-  error: "#FF453A",
-  warning: "#FFD60A",
-  inactive: "#444444",
-  highlight: "#1A2A40",
-  timerBackground: "#1A2A40",
-  macroProtein: "#FF6B6B",
-  macroCarbs: "#48DBFB",
-  macroFat: "#FFA502"
-};
-
-// Function to get colors based on theme and color scheme
-export const getColors = (theme: "light" | "dark", colorScheme: ColorScheme = "blue") => {
-  const baseColors = theme === "dark" ? darkColors : lightColors;
-  const schemeColors = colorSchemes[colorScheme];
-  
-  return {
-    ...baseColors,
-    primary: schemeColors.primary,
-    secondary: schemeColors.secondary,
-  };
-};
-
-// Default colors (for backward compatibility)
 export const colors = {
-  primary: "#4A90E2", // Pastel blue
-  secondary: "#50C878", // Pastel green
+  primary: "#4A90E2",
+  secondary: "#50C878",
   background: "#F8F9FA",
   card: "#FFFFFF",
-  text: "#333333",
-  textSecondary: "#666666",
-  textLight: "#999999",
-  border: "#E1E4E8",
-  success: "#4CD964",
-  error: "#FF3B30",
-  warning: "#FFCC00",
-  inactive: "#C7C7CC",
-  highlight: "#E8F0FE",
-  timerBackground: "#F0F7FF",
-  macroProtein: "#FF6B6B",
-  macroCarbs: "#48DBFB",
-  macroFat: "#FFA502"
+  text: "#212529",
+  textSecondary: "#6C757D",
+  textLight: "#ADB5BD",
+  border: "#DEE2E6",
+  error: "#DC3545",
+  success: "#28A745",
+  warning: "#FFC107",
+  info: "#17A2B8",
+  
+  // Macro colors
+  macroProtein: "#4A90E2", // Blue
+  macroCarbs: "#50C878",   // Green
+  macroFat: "#FFA500",     // Orange
+  
+  // Workout intensity colors
+  intensityLow: "#50C878",    // Green
+  intensityMedium: "#FFC107", // Yellow
+  intensityHigh: "#DC3545",   // Red
+  
+  // Dark mode colors (if needed)
+  darkBackground: "#212529",
+  darkCard: "#343A40",
+  darkText: "#F8F9FA",
+  darkTextSecondary: "#ADB5BD",
+  darkBorder: "#495057",
+  
+  // Gradients
+  gradientStart: "#4A90E2",
+  gradientEnd: "#50C878",
+};
+
+// Extend with theme-specific colors
+export const lightTheme = {
+  ...colors,
+  background: "#F8F9FA",
+  card: "#FFFFFF",
+  text: "#212529",
+  textSecondary: "#6C757D",
+  border: "#DEE2E6",
+};
+
+export const darkTheme = {
+  ...colors,
+  background: "#212529",
+  card: "#343A40",
+  text: "#F8F9FA",
+  textSecondary: "#ADB5BD",
+  border: "#495057",
+  primary: "#5C9CE6",
+  secondary: "#60D888",
 };

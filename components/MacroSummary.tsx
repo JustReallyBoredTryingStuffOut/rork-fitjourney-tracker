@@ -1,100 +1,94 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { useTheme } from "@/context/ThemeContext";
+import { colors } from "@/constants/colors";
+import { MacroGoals } from "@/types";
 
-type MacroSummaryProps = {
+interface MacroSummaryProps {
   current: {
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
   };
-  goals: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  };
-};
+  goals: MacroGoals;
+}
 
 export default function MacroSummary({ current, goals }: MacroSummaryProps) {
-  const { colors } = useTheme();
-  
-  // Ensure we have valid objects to prevent errors
-  const safeCurrent = current || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  const safeGoals = goals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-
-  // Calculate percentages safely
-  const calculatePercentage = (current: number, goal: number) => {
-    if (!goal || goal <= 0) return 0;
-    return Math.min(100, Math.round((current / goal) * 100));
+  // Calculate remaining macros
+  const remaining = {
+    calories: Math.max(0, goals.calories - current.calories),
+    protein: Math.max(0, goals.protein - current.protein),
+    carbs: Math.max(0, goals.carbs - current.carbs),
+    fat: Math.max(0, goals.fat - current.fat),
   };
 
-  const caloriesPercentage = calculatePercentage(safeCurrent.calories, safeGoals.calories);
-  const proteinPercentage = calculatePercentage(safeCurrent.protein, safeGoals.protein);
-  const carbsPercentage = calculatePercentage(safeCurrent.carbs, safeGoals.carbs);
-  const fatPercentage = calculatePercentage(safeCurrent.fat, safeGoals.fat);
+  // Calculate percentages
+  const percentages = {
+    calories: Math.min(100, (current.calories / goals.calories) * 100 || 0),
+    protein: Math.min(100, (current.protein / goals.protein) * 100 || 0),
+    carbs: Math.min(100, (current.carbs / goals.carbs) * 100 || 0),
+    fat: Math.min(100, (current.fat / goals.fat) * 100 || 0),
+  };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
-        <View style={styles.macroRow}>
-          <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: colors.text }]}>{safeCurrent.calories}</Text>
-            <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>Calories</Text>
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { width: `${caloriesPercentage}%`, backgroundColor: "#FF6B6B" }
-                ]} 
-              />
-            </View>
-            <Text style={[styles.percentageText, { color: colors.textSecondary }]}>{caloriesPercentage}%</Text>
+      <View style={styles.summaryCard}>
+        <View style={styles.calorieSection}>
+          <Text style={styles.calorieTitle}>Calories</Text>
+          <View style={styles.calorieNumbers}>
+            <Text style={styles.calorieConsumed}>{current.calories}</Text>
+            <Text style={styles.calorieDivider}>/</Text>
+            <Text style={styles.calorieGoal}>{goals.calories}</Text>
           </View>
-          
-          <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: colors.text }]}>{safeCurrent.protein}g</Text>
-            <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>Protein</Text>
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { width: `${proteinPercentage}%`, backgroundColor: "#4A90E2" }
-                ]} 
-              />
-            </View>
-            <Text style={[styles.percentageText, { color: colors.textSecondary }]}>{proteinPercentage}%</Text>
+          <Text style={styles.calorieRemaining}>
+            {remaining.calories} kcal remaining
+          </Text>
+
+          <View style={styles.progressBarContainer}>
+            <View
+              style={[
+                styles.progressBar,
+                { width: `${percentages.calories}%` },
+              ]}
+            />
           </View>
         </View>
-        
-        <View style={styles.macroRow}>
+
+        <View style={styles.macroSection}>
           <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: colors.text }]}>{safeCurrent.carbs}g</Text>
-            <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>Carbs</Text>
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { width: `${carbsPercentage}%`, backgroundColor: "#50C878" }
-                ]} 
+            <View style={styles.macroHeader}>
+              <View
+                style={[styles.macroIndicator, { backgroundColor: colors.macroProtein }]}
               />
+              <Text style={styles.macroTitle}>Protein</Text>
             </View>
-            <Text style={[styles.percentageText, { color: colors.textSecondary }]}>{carbsPercentage}%</Text>
+            <Text style={styles.macroValue}>
+              {current.protein}g / {goals.protein}g
+            </Text>
           </View>
-          
+
           <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: colors.text }]}>{safeCurrent.fat}g</Text>
-            <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>Fat</Text>
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { width: `${fatPercentage}%`, backgroundColor: "#FFA500" }
-                ]} 
+            <View style={styles.macroHeader}>
+              <View
+                style={[styles.macroIndicator, { backgroundColor: colors.macroCarbs }]}
               />
+              <Text style={styles.macroTitle}>Carbs</Text>
             </View>
-            <Text style={[styles.percentageText, { color: colors.textSecondary }]}>{fatPercentage}%</Text>
+            <Text style={styles.macroValue}>
+              {current.carbs}g / {goals.carbs}g
+            </Text>
+          </View>
+
+          <View style={styles.macroItem}>
+            <View style={styles.macroHeader}>
+              <View
+                style={[styles.macroIndicator, { backgroundColor: colors.macroFat }]}
+              />
+              <Text style={styles.macroTitle}>Fat</Text>
+            </View>
+            <Text style={styles.macroValue}>
+              {current.fat}g / {goals.fat}g
+            </Text>
           </View>
         </View>
       </View>
@@ -104,47 +98,91 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
   summaryCard: {
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    margin: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  macroRow: {
+  calorieSection: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  calorieTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 8,
+  },
+  calorieNumbers: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginBottom: 4,
+  },
+  calorieConsumed: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  calorieDivider: {
+    fontSize: 20,
+    color: colors.textSecondary,
+    marginHorizontal: 4,
+  },
+  calorieGoal: {
+    fontSize: 20,
+    color: colors.textSecondary,
+  },
+  calorieRemaining: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+  macroSection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
   },
   macroItem: {
     flex: 1,
+  },
+  macroHeader: {
+    flexDirection: "row",
     alignItems: "center",
-  },
-  macroValue: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  macroLabel: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 6,
-    width: "90%",
-    borderRadius: 3,
-    overflow: "hidden",
     marginBottom: 4,
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 3,
+  macroIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 6,
   },
-  percentageText: {
-    fontSize: 12,
+  macroTitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  macroValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
   },
 });
