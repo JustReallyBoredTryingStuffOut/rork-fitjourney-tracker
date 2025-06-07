@@ -32,7 +32,7 @@ export default function MuscleGroupSelector({
   const getBodyMapImage = () => {
     if (selectedBodyRegion === 'Upper Body') {
       return viewMode === 'front' 
-        ? 'https://chatgpt.com/s/m_68439419b5b8819183cb7e692d377031' // Anatomical muscle diagram front
+        ? 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular front view
         : 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular back view
     } else if (selectedBodyRegion === 'Lower Body') {
       return viewMode === 'front'
