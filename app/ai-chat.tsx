@@ -9,12 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  ScrollView
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { ArrowLeft, Send, Plus, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Send, Plus, Trash2, HelpCircle, Info } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useAiStore, AiChat, ChatMessage } from "@/store/aiStore";
+import { appKnowledge } from "@/constants/appKnowledge";
 
 export default function AiChatScreen() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function AiChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [showChats, setShowChats] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   
   const flatListRef = useRef<FlatList>(null);
   
@@ -54,13 +57,20 @@ export default function AiChatScreen() {
         {
           id: "system-1",
           role: "system",
-          content: "I'm your fitness assistant. I can help with workout advice, nutrition tips, and answer questions about your fitness journey.",
+          content: `I'm your fitness app assistant. I can help with:
+- Setting up daily, weekly, or monthly fitness goals
+- Understanding how to track workouts and nutrition
+- Explaining achievements and challenges
+- Navigating app features like progress tracking
+- Providing fitness and nutrition advice
+
+${appKnowledge.systemPrompt}`,
           timestamp: new Date().toISOString()
         },
         {
           id: "assistant-1",
           role: "assistant",
-          content: "Hi there! I'm your fitness assistant. How can I help you today?",
+          content: "Hi there! I'm your fitness assistant. I can help with workout advice, nutrition tips, and answer questions about how to use the app. What would you like to know?",
           timestamp: new Date().toISOString()
         }
       ]
@@ -69,29 +79,36 @@ export default function AiChatScreen() {
     addChatToStore(newChat);
     setCurrentChat(newChat);
     setShowChats(false);
+    setShowSuggestions(true);
   };
   
-  const handleSendMessage = async () => {
-    if (!message.trim() || !currentChat) return;
+  const handleSendMessage = async (text: string = message) => {
+    if (!text.trim() || !currentChat) return;
     
     const userMessage = {
       role: "user" as const,
-      content: message.trim()
+      content: text.trim()
     };
     
     // Add user message to chat
     addMessageToChat(currentChat.id, userMessage);
     setMessage("");
     setIsLoading(true);
+    setShowSuggestions(false);
     
     try {
       // Prepare messages for API
-      const apiMessages = currentChat.messages
-        .filter(msg => msg.role !== "system") // Filter out system messages
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }));
+      const apiMessages = [
+        // Always include the system message first
+        currentChat.messages.find(msg => msg.role === "system"),
+        // Then include the conversation history (excluding system messages)
+        ...currentChat.messages
+          .filter(msg => msg.role !== "system")
+          .map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+      ].filter(Boolean); // Remove any undefined values
       
       // Add the new user message
       apiMessages.push(userMessage);
@@ -164,6 +181,11 @@ export default function AiChatScreen() {
   const handleSelectChat = (chat: AiChat) => {
     setCurrentChat(chat);
     setShowChats(false);
+    setShowSuggestions(false);
+  };
+  
+  const handleSuggestionPress = (suggestion: string) => {
+    handleSendMessage(suggestion);
   };
   
   const renderChatItem = ({ item }: { item: ChatMessage }) => {
@@ -231,6 +253,27 @@ export default function AiChatScreen() {
     );
   };
   
+  const renderSuggestions = () => {
+    if (!showSuggestions) return null;
+    
+    return (
+      <View style={styles.suggestionsContainer}>
+        <Text style={styles.suggestionsTitle}>Ask me about:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScrollContent}>
+          {appKnowledge.suggestions.map((suggestion, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={styles.suggestionButton}
+              onPress={() => handleSuggestionPress(suggestion)}
+            >
+              <Text style={styles.suggestionText}>{suggestion}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+  
   return (
     <View style={styles.container}>
       <Stack.Screen 
@@ -246,14 +289,22 @@ export default function AiChatScreen() {
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <TouchableOpacity 
-              onPress={() => setShowChats(!showChats)}
-              style={styles.chatListButton}
-            >
-              <Text style={styles.chatListButtonText}>
-                {showChats ? "Hide Chats" : "Show Chats"}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.headerRightContainer}>
+              <TouchableOpacity
+                onPress={() => setShowSuggestions(!showSuggestions)}
+                style={styles.helpButton}
+              >
+                <HelpCircle size={22} color={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => setShowChats(!showChats)}
+                style={styles.chatListButton}
+              >
+                <Text style={styles.chatListButtonText}>
+                  {showChats ? "Hide Chats" : "Show Chats"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -280,16 +331,20 @@ export default function AiChatScreen() {
             />
           </View>
         ) : (
-          currentChat && (
-            <FlatList
-              ref={flatListRef}
-              data={currentChat.messages.filter(msg => msg.role !== "system")}
-              renderItem={renderChatItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.messageList}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            />
-          )
+          <View style={styles.chatContainer}>
+            {renderSuggestions()}
+            
+            {currentChat && (
+              <FlatList
+                ref={flatListRef}
+                data={currentChat.messages.filter(msg => msg.role !== "system")}
+                renderItem={renderChatItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.messageList}
+                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              />
+            )}
+          </View>
         )}
       </View>
       
@@ -303,7 +358,7 @@ export default function AiChatScreen() {
             style={styles.input}
             value={message}
             onChangeText={setMessage}
-            placeholder="Ask me anything about fitness..."
+            placeholder="Ask about app features, goals, workouts..."
             placeholderTextColor={colors.textSecondary}
             multiline
             maxLength={500}
@@ -314,7 +369,7 @@ export default function AiChatScreen() {
               styles.sendButton,
               (!message.trim() || isLoading) && styles.disabledSendButton
             ]}
-            onPress={handleSendMessage}
+            onPress={() => handleSendMessage()}
             disabled={!message.trim() || isLoading}
           >
             {isLoading ? (
@@ -337,6 +392,14 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
+  headerRightContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  helpButton: {
+    padding: 8,
+    marginRight: 8,
+  },
   chatListButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -349,6 +412,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   content: {
+    flex: 1,
+  },
+  chatContainer: {
     flex: 1,
   },
   messageList: {
@@ -477,5 +543,29 @@ const styles = StyleSheet.create({
   },
   deleteChatButton: {
     padding: 8,
+  },
+  suggestionsContainer: {
+    padding: 16,
+    paddingBottom: 8,
+  },
+  suggestionsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 12,
+  },
+  suggestionsScrollContent: {
+    paddingBottom: 8,
+  },
+  suggestionButton: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  suggestionText: {
+    color: colors.primary,
+    fontWeight: "500",
   },
 });

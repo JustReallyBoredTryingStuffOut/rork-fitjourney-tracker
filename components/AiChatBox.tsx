@@ -8,19 +8,29 @@ import {
   FlatList, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  ScrollView
 } from "react-native";
-import { Send } from "lucide-react-native";
+import { Send, HelpCircle } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { ChatMessage } from "@/store/aiStore";
+import { appKnowledge } from "@/constants/appKnowledge";
 
 interface AiChatBoxProps {
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  showSuggestions?: boolean;
+  onSuggestionToggle?: () => void;
 }
 
-export default function AiChatBox({ messages, onSendMessage, isLoading }: AiChatBoxProps) {
+export default function AiChatBox({ 
+  messages, 
+  onSendMessage, 
+  isLoading, 
+  showSuggestions = true,
+  onSuggestionToggle
+}: AiChatBoxProps) {
   const [inputText, setInputText] = useState("");
   const flatListRef = useRef<FlatList>(null);
   
@@ -38,6 +48,10 @@ export default function AiChatBox({ messages, onSendMessage, isLoading }: AiChat
     
     onSendMessage(inputText.trim());
     setInputText("");
+  };
+  
+  const handleSuggestionPress = (suggestion: string) => {
+    onSendMessage(suggestion);
   };
   
   const renderMessage = ({ item }: { item: ChatMessage }) => {
@@ -63,12 +77,35 @@ export default function AiChatBox({ messages, onSendMessage, isLoading }: AiChat
     );
   };
   
+  const renderSuggestions = () => {
+    if (!showSuggestions) return null;
+    
+    return (
+      <View style={styles.suggestionsContainer}>
+        <Text style={styles.suggestionsTitle}>Ask me about:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScrollContent}>
+          {appKnowledge.suggestions.map((suggestion, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={styles.suggestionButton}
+              onPress={() => handleSuggestionPress(suggestion)}
+            >
+              <Text style={styles.suggestionText}>{suggestion}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+  
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
+      {renderSuggestions()}
+      
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -79,11 +116,20 @@ export default function AiChatBox({ messages, onSendMessage, isLoading }: AiChat
       />
       
       <View style={styles.inputContainer}>
+        {onSuggestionToggle && (
+          <TouchableOpacity
+            style={styles.helpButton}
+            onPress={onSuggestionToggle}
+          >
+            <HelpCircle size={20} color={colors.primary} />
+          </TouchableOpacity>
+        )}
+        
         <TextInput
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Ask about fitness, nutrition, or workouts..."
+          placeholder="Ask about app features, goals, workouts..."
           placeholderTextColor={colors.textSecondary}
           multiline
           maxLength={500}
@@ -157,6 +203,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.card,
+    alignItems: "center",
+  },
+  helpButton: {
+    padding: 8,
+    marginRight: 4,
   },
   input: {
     flex: 1,
@@ -180,5 +231,29 @@ const styles = StyleSheet.create({
   disabledSendButton: {
     backgroundColor: colors.primaryLight,
     opacity: 0.7,
+  },
+  suggestionsContainer: {
+    padding: 16,
+    paddingBottom: 8,
+  },
+  suggestionsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 12,
+  },
+  suggestionsScrollContent: {
+    paddingBottom: 8,
+  },
+  suggestionButton: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  suggestionText: {
+    color: colors.primary,
+    fontWeight: "500",
   },
 });
