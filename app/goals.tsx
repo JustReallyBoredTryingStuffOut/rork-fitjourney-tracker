@@ -303,6 +303,7 @@ export default function GoalsScreen() {
             <TouchableOpacity 
               onPress={() => router.back()}
               style={styles.backButton}
+              accessibilityLabel="Go back"
             >
               <ArrowLeft size={24} color={colors.text} />
             </TouchableOpacity>
@@ -776,7 +777,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    marginRight: 16,
+    padding: 8,
+    marginLeft: 8,
+    borderRadius: 20,
   },
   tabsContainer: {
     flexDirection: "row",
