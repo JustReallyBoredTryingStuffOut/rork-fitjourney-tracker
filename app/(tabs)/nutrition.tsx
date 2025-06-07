@@ -48,7 +48,7 @@ export default function NutritionScreen() {
   };
 
   const handleViewNutritionInsights = () => {
-    router.push('/nutrition-history');
+    router.push('/nutrition-insights');
   };
   
   const handleGoBack = () => {
