@@ -114,7 +114,7 @@ export default function NutritionScreen() {
         <View style={[styles.macroCard, { backgroundColor: colors.card }]}>
           <View style={styles.macroHeader}>
             <View style={styles.macroTitleContainer}>
-              <Text style={[styles.macroTitle, { color: colors.text }]}>Macros</Text>
+              <Text style={[styles.macroTitle, { color: colors.white }]}>Macros</Text>
               <TouchableOpacity 
                 onPress={() => setInfoModalVisible(true)}
                 style={styles.infoButton}
@@ -173,7 +173,7 @@ export default function NutritionScreen() {
           
           {gamificationEnabled && (
             <View style={styles.achievementContainer}>
-              <Text style={[styles.achievementText, { color: colors.textSecondary }]}>
+              <Text style={[styles.achievementText, { color: colors.white }]}>
                 {getAchievementProgressMessage()}
               </Text>
             </View>
