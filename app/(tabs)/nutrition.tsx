@@ -7,7 +7,6 @@ import { useMacroStore } from '@/store/macroStore';
 import { useGamificationStore } from '@/store/gamificationStore';
 import MacroProgress from '@/components/MacroProgress';
 import MacroSummary from '@/components/MacroSummary';
-import MealRecommendations from '@/components/MealRecommendations';
 import MacroInfoModal from '@/components/MacroInfoModal';
 
 export default function NutritionScreen() {
@@ -46,10 +45,6 @@ export default function NutritionScreen() {
 
   const handleViewHistory = () => {
     router.push('/nutrition-history');
-  };
-
-  const handleViewMealRecommendations = () => {
-    router.push('/meal-recommendations');
   };
 
   const handleViewNutritionInsights = () => {
@@ -183,17 +178,6 @@ export default function NutritionScreen() {
               </Text>
             </View>
           )}
-        </View>
-        
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Meal Recommendations</Text>
-            <TouchableOpacity onPress={handleViewMealRecommendations}>
-              <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <MealRecommendations />
         </View>
         
         <View style={styles.section}>

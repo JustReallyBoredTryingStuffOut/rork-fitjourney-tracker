@@ -29,46 +29,52 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>How are my goals calculated?</Text>
               <Text style={styles.paragraph}>
-                Your nutrition goals are personalized estimates based on your profile information:
+                Your nutrition goals are simple estimates based on your profile information:
               </Text>
               <View style={styles.bulletList}>
                 <Text style={styles.bulletItem}>• Your weight and height</Text>
                 <Text style={styles.bulletItem}>• Your age and gender</Text>
-                <Text style={styles.bulletItem}>• Your activity level (how active you are daily)</Text>
-                <Text style={styles.bulletItem}>• Your fitness goals (lose weight, maintain, gain muscle)</Text>
+                <Text style={styles.bulletItem}>• How active you are daily</Text>
+                <Text style={styles.bulletItem}>• What you want to achieve (lose weight, maintain, gain muscle)</Text>
               </View>
             </View>
             
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>The calculation process:</Text>
+              <Text style={styles.sectionTitle}>In simple terms:</Text>
               <Text style={styles.paragraph}>
-                We first calculate your Basal Metabolic Rate (BMR) - the calories your body needs at rest.
+                First, we calculate how many calories your body needs just to function at rest.
               </Text>
               <Text style={styles.paragraph}>
-                Then we adjust for your activity level to find your Total Daily Energy Expenditure (TDEE).
+                Then we adjust based on how active you are (more active = more calories needed).
               </Text>
               <Text style={styles.paragraph}>
-                Finally, we adjust based on your fitness goals and calculate appropriate protein, carbs, and fat amounts.
+                Finally, we adjust based on your goals (weight loss = fewer calories, muscle gain = more calories).
+              </Text>
+              <Text style={styles.paragraph}>
+                We then split these calories into protein, carbs, and fats based on what's generally recommended for your goals.
               </Text>
             </View>
             
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Important disclaimer</Text>
+              <Text style={styles.sectionTitle}>Important health note</Text>
               <Text style={styles.paragraph}>
-                These calculations are estimates based on general formulas and may not be exact for your unique body.
+                These are just estimates and may not be exact for your unique body and needs.
               </Text>
               <Text style={styles.paragraph}>
                 For personalized nutrition advice, please consult with a registered dietitian, nutritionist, or healthcare provider.
+              </Text>
+              <Text style={styles.paragraph}>
+                Everyone's nutritional needs are different, and what works for one person may not work for another.
               </Text>
             </View>
             
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Adjusting your goals</Text>
               <Text style={styles.paragraph}>
-                If you find these goals too challenging or not challenging enough, you can always adjust them in your profile settings.
+                If these goals don't feel right for you, you can always adjust them in your profile settings.
               </Text>
               <Text style={styles.paragraph}>
-                Listen to your body and adjust as needed - nutrition is personal and may require fine-tuning.
+                Listen to your body - if you're consistently hungry or tired, you might need more calories. If you're not seeing progress toward your goals, you might need to adjust.
               </Text>
             </View>
           </ScrollView>

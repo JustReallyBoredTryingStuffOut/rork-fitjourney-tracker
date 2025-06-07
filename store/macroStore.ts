@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MacroGoals, MacroLog, UserProfile, MealRecommendation, FoodCategory } from "@/types";
-import { mealRecommendations } from "@/mocks/meals";
+import { MacroGoals, MacroLog, UserProfile, FoodCategory } from "@/types";
 import { foodCategories, getFoodCategoriesByMealType } from "@/mocks/foodCategories";
 
 interface MacroState {
@@ -26,11 +25,6 @@ interface MacroState {
   };
   
   getMacroLogsByMealType: (date: string, mealType: string) => MacroLog[];
-  getMealRecommendations: (
-    dietaryRestrictions?: string[],
-    maxCalories?: number,
-    minProtein?: number
-  ) => MealRecommendation[];
   
   getFoodCategories: (mealType: string) => FoodCategory[];
   
@@ -111,31 +105,6 @@ export const useMacroStore = create<MacroState>()(
           new Date(log.date).toDateString() === new Date(date).toDateString() &&
           log.mealType === mealType
         );
-      },
-      
-      getMealRecommendations: (dietaryRestrictions = [], maxCalories, minProtein) => {
-        // Filter recommendations based on dietary restrictions
-        let filtered = mealRecommendations;
-        
-        if (dietaryRestrictions.length > 0) {
-          filtered = filtered.filter(meal => 
-            dietaryRestrictions.every(restriction => 
-              meal.dietaryRestrictions.includes(restriction)
-            )
-          );
-        }
-        
-        // Filter by calories if specified
-        if (maxCalories) {
-          filtered = filtered.filter(meal => meal.calories <= maxCalories);
-        }
-        
-        // Filter by protein if specified
-        if (minProtein) {
-          filtered = filtered.filter(meal => meal.protein >= minProtein);
-        }
-        
-        return filtered;
       },
       
       getFoodCategories: (mealType) => {

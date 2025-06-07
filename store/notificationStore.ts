@@ -97,11 +97,12 @@ const defaultMealReminder: MealReminder = {
   snacks: false,
 };
 
+// Default water reminder times throughout the day
 const defaultWaterReminder: WaterReminder = {
   interval: 60, // 1 hour
   startTime: "08:00",
   endTime: "22:00",
-  specificTimes: ["10:00", "13:00", "15:00", "18:00"] // Default specific reminder times
+  specificTimes: ["10:00", "12:00", "13:30", "15:00", "16:30", "18:00", "19:30", "21:00"] // More frequent reminders
 };
 
 const defaultStepReminder: StepReminder = {
@@ -488,9 +489,10 @@ export const useNotificationStore = create<NotificationState>()(
               const bottlesNeeded = Math.ceil(targetLiters / bottleSize);
               
               // Add bottle-specific messages
-              reminderMessages.push(`Remember to drink your water! You need ${bottlesNeeded} bottle${bottlesNeeded !== 1 ? 's' : ''} today.`);
+              reminderMessages.push(`Remember to drink your water! You need ${bottlesNeeded} ${bottlesNeeded !== 1 ? 'bottles' : 'bottle'} today.`);
               reminderMessages.push(`Have you had a bottle of water in the last hour? Stay on track with your hydration goal!`);
               reminderMessages.push(`Hydration check! Each ${bottleSize}L bottle gets you closer to your daily goal.`);
+              reminderMessages.push(`How many bottles have you had so far? Your goal is ${bottlesNeeded} ${bottlesNeeded !== 1 ? 'bottles' : 'bottle'} today.`);
             }
           }
           
