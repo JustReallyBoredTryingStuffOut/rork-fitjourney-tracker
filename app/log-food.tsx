@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import { useRouter, Stack } from "expo-router";
-import { Plus, Minus, Clock, Coffee, UtensilsCrossed, Soup, ArrowLeft } from "lucide-react-native";
+import { Plus, Minus, Clock, Coffee, UtensilsCrossed, Soup, ArrowLeft, Info } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useMacroStore } from "@/store/macroStore";
 import { MacroLog, FoodItem } from "@/types";
@@ -202,6 +202,18 @@ export default function LogFoodScreen() {
           </View>
         </View>
         
+        <View style={styles.optionSection}>
+          <View style={styles.optionHeader}>
+            <Text style={styles.optionTitle}>Option 1: Select from Food Database</Text>
+            <TouchableOpacity style={styles.infoButton}>
+              <Info size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.optionDescription}>
+            Choose from our food database or enter nutrition information manually below
+          </Text>
+        </View>
+        
         {/* Food Category Selector */}
         <FoodCategorySelector
           mealType={mealType}
@@ -258,12 +270,17 @@ export default function LogFoodScreen() {
           </View>
         )}
         
-        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Nutrition Information</Text>
-        <Text style={styles.sectionSubtitle}>
-          {selectedFood 
-            ? "Values are calculated based on your selection and quantity" 
-            : "Enter values manually or select a food item"}
-        </Text>
+        <View style={styles.optionSection}>
+          <View style={styles.optionHeader}>
+            <Text style={styles.optionTitle}>Option 2: Enter Nutrition Manually</Text>
+            <TouchableOpacity style={styles.infoButton}>
+              <Info size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.optionDescription}>
+            You can directly enter nutrition values without selecting a food
+          </Text>
+        </View>
         
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Calories</Text>
@@ -271,12 +288,13 @@ export default function LogFoodScreen() {
             <TouchableOpacity 
               style={styles.button}
               onPress={() => adjustValue(setCalories, calories, -50)}
+              disabled={!!selectedFood}
             >
-              <Minus size={20} color={colors.text} />
+              <Minus size={20} color={selectedFood ? colors.textLight : colors.text} />
             </TouchableOpacity>
             
             <TextInput
-              style={styles.input}
+              style={[styles.input, selectedFood && styles.inputDisabled]}
               value={calories}
               onChangeText={setCalories}
               keyboardType="numeric"
@@ -306,7 +324,7 @@ export default function LogFoodScreen() {
               </TouchableOpacity>
               
               <TextInput
-                style={styles.input}
+                style={[styles.input, selectedFood && styles.inputDisabled]}
                 value={protein}
                 onChangeText={setProtein}
                 keyboardType="numeric"
@@ -335,7 +353,7 @@ export default function LogFoodScreen() {
               </TouchableOpacity>
               
               <TextInput
-                style={styles.input}
+                style={[styles.input, selectedFood && styles.inputDisabled]}
                 value={carbs}
                 onChangeText={setCarbs}
                 keyboardType="numeric"
@@ -364,7 +382,7 @@ export default function LogFoodScreen() {
               </TouchableOpacity>
               
               <TextInput
-                style={styles.input}
+                style={[styles.input, selectedFood && styles.inputDisabled]}
                 value={fat}
                 onChangeText={setFat}
                 keyboardType="numeric"
@@ -536,6 +554,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
   },
+  inputDisabled: {
+    backgroundColor: colors.backgroundLight,
+    color: colors.textLight,
+  },
   macroContainer: {
     marginBottom: 16,
   },
@@ -682,5 +704,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginBottom: 16,
+  },
+  optionSection: {
+    marginBottom: 16,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    padding: 12,
+  },
+  optionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginRight: 8,
+  },
+  optionDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  infoButton: {
+    padding: 4,
   },
 });

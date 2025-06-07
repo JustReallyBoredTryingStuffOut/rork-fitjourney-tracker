@@ -9,10 +9,11 @@ import {
   Modal,
   ScrollView
 } from "react-native";
-import { Search, X } from "lucide-react-native";
+import { Search, X, ChevronDown } from "lucide-react-native";
 import { TextInput } from "react-native";
 import { FoodCategory, FoodItem } from "@/types";
 import { colors } from "@/constants/colors";
+import { Picker } from "@react-native-picker/picker";
 
 interface FoodCategorySelectorProps {
   mealType: "breakfast" | "lunch" | "dinner" | "snack";
@@ -46,9 +47,12 @@ export default function FoodCategorySelector({
     ) || [];
   };
   
-  const handleSelectCategory = (category: FoodCategory) => {
-    setSelectedCategory(category);
-    setModalVisible(true);
+  const handleSelectCategory = (categoryId: string) => {
+    const category = filteredCategories.find(cat => cat.id === categoryId);
+    if (category) {
+      setSelectedCategory(category);
+      setModalVisible(true);
+    }
   };
   
   const handleSelectFood = (food: FoodItem) => {
@@ -65,23 +69,27 @@ export default function FoodCategorySelector({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Food Categories</Text>
+      <Text style={styles.subtitle}>Select a category to browse foods or enter macros manually below</Text>
       
-      <FlatList
-        data={filteredCategories}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.categoryCard}
-            onPress={() => handleSelectCategory(item)}
-          >
-            <Text style={styles.categoryName}>{item.name}</Text>
-            <Text style={styles.itemCount}>{item.items.length} items</Text>
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.categoriesList}
-      />
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedCategory?.id || ""}
+          onValueChange={(itemValue) => {
+            if (itemValue) handleSelectCategory(itemValue);
+          }}
+          style={styles.picker}
+        >
+          <Picker.Item label="Select a food category..." value="" />
+          {filteredCategories.map((category) => (
+            <Picker.Item 
+              key={category.id} 
+              label={`${category.name} (${category.items.length} items)`} 
+              value={category.id} 
+            />
+          ))}
+        </Picker>
+        <ChevronDown size={20} color={colors.textSecondary} style={styles.pickerIcon} />
+      </View>
       
       <Modal
         visible={modalVisible}
@@ -147,32 +155,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 12,
-  },
-  categoriesList: {
-    paddingVertical: 8,
-  },
-  categoryCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginRight: 12,
-    minWidth: 120,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  categoryName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
     marginBottom: 4,
   },
-  itemCount: {
+  subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  picker: {
+    height: 50,
+    width: "100%",
+  },
+  pickerIcon: {
+    position: "absolute",
+    right: 12,
+    top: 15,
   },
   modalContainer: {
     flex: 1,
