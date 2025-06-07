@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Plus, ChevronRight, UtensilsCrossed, BarChart, Calendar, ArrowLeft } from 'lucide-react-native';
+import { Plus, ChevronRight, UtensilsCrossed, BarChart, Calendar, ArrowLeft, Info } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useMacroStore } from '@/store/macroStore';
 import { useGamificationStore } from '@/store/gamificationStore';
 import MacroProgress from '@/components/MacroProgress';
 import MacroSummary from '@/components/MacroSummary';
 import MealRecommendations from '@/components/MealRecommendations';
+import MacroInfoModal from '@/components/MacroInfoModal';
 
 export default function NutritionScreen() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function NutritionScreen() {
   const { macroGoals, macroLogs, calculateDailyMacros } = useMacroStore();
   const { gamificationEnabled, achievements } = useGamificationStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
 
   // Format date as ISO string (YYYY-MM-DD)
   const dateString = selectedDate.toISOString().split('T')[0];
@@ -116,7 +118,17 @@ export default function NutritionScreen() {
         
         <View style={[styles.macroCard, { backgroundColor: colors.card }]}>
           <View style={styles.macroHeader}>
-            <Text style={[styles.macroTitle, { color: colors.text }]}>Macros</Text>
+            <View style={styles.macroTitleContainer}>
+              <Text style={[styles.macroTitle, { color: colors.text }]}>Macros</Text>
+              <TouchableOpacity 
+                onPress={() => setInfoModalVisible(true)}
+                style={styles.infoButton}
+                accessibilityLabel="Nutrition information"
+                accessibilityHint="Opens a modal with information about how nutrition goals are calculated"
+              >
+                <Info size={16} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={handleAddFood}>
               <View style={[styles.addButton, { backgroundColor: colors.primary }]}>
                 <Plus size={16} color="#FFFFFF" />
@@ -225,6 +237,11 @@ export default function NutritionScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      <MacroInfoModal 
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+      />
     </View>
   );
 }
@@ -270,9 +287,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  macroTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   macroTitle: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  infoButton: {
+    marginLeft: 8,
+    padding: 2,
   },
   addButton: {
     flexDirection: 'row',

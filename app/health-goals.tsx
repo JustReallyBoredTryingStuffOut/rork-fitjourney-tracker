@@ -1,66 +1,58 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from "react-native";
-import { useRouter, Stack } from "expo-router";
-import { Calendar, Award, Target, Plus, Minus, ArrowLeft } from "lucide-react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { ArrowLeft, Info } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { useHealthStore } from "@/store/healthStore";
 import { useMacroStore } from "@/store/macroStore";
-import { HealthGoals } from "@/types";
 import Button from "@/components/Button";
+import { Picker } from "@react-native-picker/picker";
+import MacroInfoModal from "@/components/MacroInfoModal";
 
 export default function HealthGoalsScreen() {
   const router = useRouter();
-  const { healthGoals, updateHealthGoals } = useHealthStore();
-  const { userProfile } = useMacroStore();
+  const { macroGoals, updateMacroGoals, userProfile, calculateIdealMacros } = useMacroStore();
   
-  const [dailySteps, setDailySteps] = useState(healthGoals.dailySteps.toString());
-  const [weeklyWorkouts, setWeeklyWorkouts] = useState(healthGoals.weeklyWorkouts.toString());
-  const [targetWeight, setTargetWeight] = useState(
-    healthGoals.targetWeight > 0 
-      ? healthGoals.targetWeight.toString() 
-      : userProfile.weight.toString()
-  );
-  const [targetDate, setTargetDate] = useState(
-    healthGoals.targetDate 
-      ? new Date(healthGoals.targetDate).toISOString().split('T')[0]
-      : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  );
+  const [calories, setCalories] = useState(macroGoals?.calories?.toString() || "");
+  const [protein, setProtein] = useState(macroGoals?.protein?.toString() || "");
+  const [carbs, setCarbs] = useState(macroGoals?.carbs?.toString() || "");
+  const [fat, setFat] = useState(macroGoals?.fat?.toString() || "");
+  const [useCalculated, setUseCalculated] = useState(true);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  
+  // Calculate ideal macros based on user profile
+  const idealMacros = calculateIdealMacros();
+  
+  useEffect(() => {
+    if (useCalculated) {
+      setCalories(idealMacros.calories.toString());
+      setProtein(idealMacros.protein.toString());
+      setCarbs(idealMacros.carbs.toString());
+      setFat(idealMacros.fat.toString());
+    }
+  }, [useCalculated, idealMacros]);
   
   const handleSave = () => {
-    const newGoals: HealthGoals = {
-      dailySteps: parseInt(dailySteps) || 10000,
-      weeklyWorkouts: parseInt(weeklyWorkouts) || 4,
-      targetWeight: parseFloat(targetWeight) || userProfile.weight,
-      targetDate: new Date(targetDate).toISOString(),
+    const newGoals = {
+      calories: parseInt(calories) || idealMacros.calories,
+      protein: parseInt(protein) || idealMacros.protein,
+      carbs: parseInt(carbs) || idealMacros.carbs,
+      fat: parseInt(fat) || idealMacros.fat,
     };
     
-    updateHealthGoals(newGoals);
-    Alert.alert("Success", "Health goals updated successfully");
+    updateMacroGoals(newGoals);
+    Alert.alert("Success", "Nutrition goals updated successfully");
     router.back();
   };
   
-  const adjustValue = (setter: React.Dispatch<React.SetStateAction<string>>, value: string, amount: number) => {
-    const currentValue = parseInt(value) || 0;
-    const newValue = Math.max(0, currentValue + amount);
-    setter(newValue.toString());
-  };
-  
-  const adjustWeight = (amount: number) => {
-    const currentWeight = parseFloat(targetWeight) || 0;
-    const newWeight = Math.max(0, currentWeight + amount);
-    setTargetWeight(newWeight.toFixed(1));
-  };
-  
   const handleGoBack = () => {
-    router.navigate("/(tabs)");
+    router.back();
   };
   
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Stack.Screen 
         options={{
-          title: "Health Goals",
-          headerBackTitle: "Health",
+          title: "Nutrition Goals",
           headerLeft: () => (
             <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
               <ArrowLeft size={24} color={colors.text} />
@@ -70,139 +62,138 @@ export default function HealthGoalsScreen() {
       />
       
       <View style={styles.header}>
-        <Text style={styles.title}>Set Your Health Goals</Text>
-        <Text style={styles.subtitle}>Define targets to track your progress</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Set Your Nutrition Goals</Text>
+          <TouchableOpacity 
+            onPress={() => setInfoModalVisible(true)}
+            style={styles.infoButton}
+            accessibilityLabel="Nutrition information"
+            accessibilityHint="Opens a modal with information about how nutrition goals are calculated"
+          >
+            <Info size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.subtitle}>Customize your daily macro targets</Text>
+      </View>
+      
+      <View style={styles.optionsContainer}>
+        <TouchableOpacity 
+          style={[
+            styles.optionButton, 
+            useCalculated && styles.optionButtonActive
+          ]}
+          onPress={() => setUseCalculated(true)}
+        >
+          <Text style={[
+            styles.optionText,
+            useCalculated && styles.optionTextActive
+          ]}>
+            Recommended
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[
+            styles.optionButton, 
+            !useCalculated && styles.optionButtonActive
+          ]}
+          onPress={() => setUseCalculated(false)}
+        >
+          <Text style={[
+            styles.optionText,
+            !useCalculated && styles.optionTextActive
+          ]}>
+            Custom
+          </Text>
+        </TouchableOpacity>
       </View>
       
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Daily Steps Goal</Text>
-          <View style={styles.numberInput}>
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={() => adjustValue(setDailySteps, dailySteps, -1000)}
-            >
-              <Minus size={20} color={colors.text} />
-            </TouchableOpacity>
-            
-            <TextInput
-              style={styles.input}
-              value={dailySteps}
-              onChangeText={setDailySteps}
-              keyboardType="numeric"
-            />
-            
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={() => adjustValue(setDailySteps, dailySteps, 1000)}
-            >
-              <Plus size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.helperText}>
-            Recommended: 8,000 - 12,000 steps per day
-          </Text>
+          <Text style={styles.label}>Daily Calories</Text>
+          <TextInput
+            style={styles.input}
+            value={calories}
+            onChangeText={setCalories}
+            keyboardType="numeric"
+            placeholder="Calories (kcal)"
+            editable={!useCalculated}
+          />
+          {useCalculated && (
+            <Text style={styles.calculatedValue}>
+              Recommended: {idealMacros.calories} kcal
+            </Text>
+          )}
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Weekly Workouts</Text>
-          <View style={styles.numberInput}>
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={() => adjustValue(setWeeklyWorkouts, weeklyWorkouts, -1)}
-            >
-              <Minus size={20} color={colors.text} />
-            </TouchableOpacity>
-            
-            <TextInput
-              style={styles.input}
-              value={weeklyWorkouts}
-              onChangeText={setWeeklyWorkouts}
-              keyboardType="numeric"
-            />
-            
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={() => adjustValue(setWeeklyWorkouts, weeklyWorkouts, 1)}
-            >
-              <Plus size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.helperText}>
-            Recommended: 3-5 workouts per week
-          </Text>
+          <Text style={styles.label}>Protein (g)</Text>
+          <TextInput
+            style={styles.input}
+            value={protein}
+            onChangeText={setProtein}
+            keyboardType="numeric"
+            placeholder="Protein (g)"
+            editable={!useCalculated}
+          />
+          {useCalculated && (
+            <Text style={styles.calculatedValue}>
+              Recommended: {idealMacros.protein}g
+            </Text>
+          )}
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Target Weight (kg)</Text>
-          <View style={styles.numberInput}>
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={() => adjustWeight(-0.5)}
-            >
-              <Minus size={20} color={colors.text} />
-            </TouchableOpacity>
-            
-            <TextInput
-              style={styles.input}
-              value={targetWeight}
-              onChangeText={setTargetWeight}
-              keyboardType="numeric"
-            />
-            
-            <TouchableOpacity 
-              style={styles.button}
-              onPress={() => adjustWeight(0.5)}
-            >
-              <Plus size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.helperText}>
-            Current weight: {userProfile.weight} kg
-          </Text>
+          <Text style={styles.label}>Carbohydrates (g)</Text>
+          <TextInput
+            style={styles.input}
+            value={carbs}
+            onChangeText={setCarbs}
+            keyboardType="numeric"
+            placeholder="Carbs (g)"
+            editable={!useCalculated}
+          />
+          {useCalculated && (
+            <Text style={styles.calculatedValue}>
+              Recommended: {idealMacros.carbs}g
+            </Text>
+          )}
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Target Date</Text>
-          <View style={styles.dateInput}>
-            <Calendar size={20} color={colors.textSecondary} />
-            <TextInput
-              style={styles.dateTextInput}
-              value={targetDate}
-              onChangeText={setTargetDate}
-              placeholder="YYYY-MM-DD"
-            />
-          </View>
-          <Text style={styles.helperText}>
-            Set a realistic timeframe for your goals
-          </Text>
-        </View>
-      </View>
-      
-      <View style={styles.tipsContainer}>
-        <View style={styles.tipHeader}>
-          <Award size={20} color={colors.primary} />
-          <Text style={styles.tipTitle}>Goal Setting Tips</Text>
+          <Text style={styles.label}>Fat (g)</Text>
+          <TextInput
+            style={styles.input}
+            value={fat}
+            onChangeText={setFat}
+            keyboardType="numeric"
+            placeholder="Fat (g)"
+            editable={!useCalculated}
+          />
+          {useCalculated && (
+            <Text style={styles.calculatedValue}>
+              Recommended: {idealMacros.fat}g
+            </Text>
+          )}
         </View>
         
-        <Text style={styles.tipText}>
-          • Set specific, measurable, achievable, relevant, and time-bound (SMART) goals
-        </Text>
-        <Text style={styles.tipText}>
-          • For weight loss, aim for 0.5-1 kg per week for sustainable results
-        </Text>
-        <Text style={styles.tipText}>
-          • Gradually increase your step count if you're just starting out
-        </Text>
-        <Text style={styles.tipText}>
-          • Balance your workout schedule with adequate rest days
-        </Text>
+        <View style={styles.disclaimerContainer}>
+          <Text style={styles.disclaimerText}>
+            These recommendations are based on your profile information. For personalized nutrition advice, 
+            please consult with a registered dietitian or healthcare provider.
+          </Text>
+        </View>
       </View>
       
       <Button
-        title="Save Health Goals"
+        title="Save Nutrition Goals"
         onPress={handleSave}
         style={styles.saveButton}
+      />
+      
+      <MacroInfoModal 
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
       />
     </ScrollView>
   );
@@ -220,15 +211,45 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 24,
   },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   title: {
     fontSize: 24,
     fontWeight: "700",
     color: colors.text,
   },
+  infoButton: {
+    marginLeft: 12,
+    padding: 2,
+  },
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  optionsContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  optionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: colors.border,
+  },
+  optionButtonActive: {
+    borderBottomColor: colors.primary,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: colors.textSecondary,
+  },
+  optionTextActive: {
+    color: colors.primary,
   },
   formContainer: {
     backgroundColor: colors.card,
@@ -242,7 +263,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: 16,
@@ -250,78 +271,38 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
-  numberInput: {
-    flexDirection: "row",
-    alignItems: "center",
+  input: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
-    overflow: "hidden",
-  },
-  button: {
-    padding: 12,
-    backgroundColor: colors.background,
-  },
-  input: {
-    flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
     fontSize: 16,
     color: colors.text,
-    textAlign: "center",
   },
-  helperText: {
+  calculatedValue: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: colors.primary,
     marginTop: 8,
-  },
-  dateInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  dateTextInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    color: colors.text,
-  },
-  tipsContainer: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tipHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    marginLeft: 8,
-  },
-  tipText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 8,
-    lineHeight: 20,
+    fontStyle: "italic",
   },
   saveButton: {
     marginTop: 8,
   },
   backButton: {
     padding: 8,
+  },
+  disclaimerContainer: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: "italic",
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

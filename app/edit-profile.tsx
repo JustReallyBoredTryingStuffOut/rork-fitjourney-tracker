@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, ScrollView, Alert, TouchableOpacity, Platform } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { ArrowLeft, Calendar } from "lucide-react-native";
+import { ArrowLeft, Calendar, Info } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useMacroStore } from "@/store/macroStore";
 import { UserProfile } from "@/types";
 import Button from "@/components/Button";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import MacroInfoModal from "@/components/MacroInfoModal";
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function EditProfileScreen() {
     userProfile.dateOfBirth ? new Date(userProfile.dateOfBirth) : null
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   
   const handleSave = () => {
     const updatedProfile: UserProfile = {
@@ -172,7 +174,17 @@ export default function EditProfileScreen() {
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Fitness Goal</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Fitness Goal</Text>
+            <TouchableOpacity 
+              onPress={() => setInfoModalVisible(true)}
+              style={styles.infoButton}
+              accessibilityLabel="Nutrition information"
+              accessibilityHint="Opens a modal with information about how nutrition goals are calculated"
+            >
+              <Info size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={fitnessGoal}
@@ -202,12 +214,24 @@ export default function EditProfileScreen() {
             </Picker>
           </View>
         </View>
+        
+        <View style={styles.disclaimerContainer}>
+          <Text style={styles.disclaimerText}>
+            Your profile information is used to calculate personalized nutrition recommendations. 
+            These are estimates only - for precise guidance, consult a healthcare professional.
+          </Text>
+        </View>
       </View>
       
       <Button
         title="Save Profile"
         onPress={handleSave}
         style={styles.saveButton}
+      />
+      
+      <MacroInfoModal 
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
       />
     </ScrollView>
   );
@@ -249,11 +273,20 @@ const styles = StyleSheet.create({
   inputGroup: {
     marginBottom: 16,
   },
+  labelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   label: {
     fontSize: 16,
     fontWeight: "500",
     color: colors.text,
     marginBottom: 8,
+  },
+  infoButton: {
+    marginLeft: 8,
+    padding: 2,
   },
   input: {
     borderWidth: 1,
@@ -293,5 +326,18 @@ const styles = StyleSheet.create({
   datePickerText: {
     fontSize: 16,
     color: colors.text,
+  },
+  disclaimerContainer: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: "italic",
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

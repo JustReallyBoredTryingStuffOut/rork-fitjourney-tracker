@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "@/constants/colors";
 import { MacroGoals } from "@/types";
 import { useGamificationStore } from "@/store/gamificationStore";
-import { Trophy } from "lucide-react-native";
+import { Trophy, Info } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import MacroInfoModal from "./MacroInfoModal";
 
 interface MacroSummaryProps {
   current: {
@@ -19,6 +20,7 @@ interface MacroSummaryProps {
 export default function MacroSummary({ current, goals }: MacroSummaryProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
   const router = useRouter();
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   
   // Check if goals are valid
   const hasValidGoals = goals && 
@@ -120,7 +122,18 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
     <View style={styles.container}>
       <View style={styles.summaryCard}>
         <View style={styles.calorieSection}>
-          <Text style={styles.calorieTitle}>Calories</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.calorieTitle}>Calories</Text>
+            <TouchableOpacity 
+              onPress={() => setInfoModalVisible(true)}
+              style={styles.infoButton}
+              accessibilityLabel="Nutrition information"
+              accessibilityHint="Opens a modal with information about how nutrition goals are calculated"
+            >
+              <Info size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          
           <View style={styles.calorieNumbers}>
             <Text style={styles.calorieConsumed}>{current.calories}</Text>
             <Text style={styles.calorieDivider}>/</Text>
@@ -201,6 +214,11 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
           </View>
         )}
       </View>
+      
+      <MacroInfoModal 
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+      />
     </View>
   );
 }
@@ -226,11 +244,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 8,
+  },
+  infoButton: {
+    marginLeft: 8,
+    padding: 2,
   },
   calorieNumbers: {
     flexDirection: "row",
