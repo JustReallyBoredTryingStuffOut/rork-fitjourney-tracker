@@ -20,7 +20,6 @@ export default function RootLayout() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [showAiRecommendationsModal, setShowAiRecommendationsModal] = useState(false);
   
   const { 
     gamificationEnabled, 
@@ -685,7 +684,7 @@ export default function RootLayout() {
               />
             )}
             
-            {/* Modern progress bar instead of dots */}
+            {/* Modern progress indicator */}
             <View style={styles.progressContainer}>
               <Animated.View 
                 style={[
@@ -698,9 +697,23 @@ export default function RootLayout() {
                   }
                 ]}
               />
-              <Text style={styles.progressText}>
-                {currentOnboardingStep + 1}/{onboardingSteps.length}
-              </Text>
+              <View style={styles.progressStepsContainer}>
+                {onboardingSteps.map((_, index) => (
+                  <TouchableOpacity 
+                    key={index}
+                    style={[
+                      styles.progressStep,
+                      currentOnboardingStep === index && styles.activeProgressStep
+                    ]}
+                    onPress={() => {
+                      // Only allow going back to previous steps
+                      if (index <= currentOnboardingStep) {
+                        setCurrentOnboardingStep(index);
+                      }
+                    }}
+                  />
+                ))}
+              </View>
             </View>
             
             {currentOnboardingStep >= 4 && (
@@ -785,18 +798,38 @@ const styles = StyleSheet.create({
   // Modern progress indicator
   progressContainer: {
     width: '100%',
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 3,
     marginTop: 20,
     marginBottom: 10,
     position: 'relative',
-    overflow: 'hidden',
   },
   progressBar: {
-    height: '100%',
+    height: 4,
     backgroundColor: colors.primary,
-    borderRadius: 3,
+    borderRadius: 2,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 1,
+  },
+  progressStepsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    position: 'relative',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 2,
+  },
+  progressStep: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    zIndex: 2,
+  },
+  activeProgressStep: {
+    backgroundColor: colors.primary,
+    transform: [{scale: 1.5}],
   },
   progressText: {
     color: '#FFFFFF',

@@ -68,7 +68,9 @@ export default function AddGoalScreen() {
     
     // Add water bottle size if provided
     if (showWaterBottleInput && waterBottleSize) {
-      const bottleSize = parseFloat(waterBottleSize);
+      // Replace comma with dot for decimal parsing
+      const normalizedSize = waterBottleSize.replace(',', '.');
+      const bottleSize = parseFloat(normalizedSize);
       if (!isNaN(bottleSize) && bottleSize > 0) {
         newGoal.waterBottleSize = bottleSize;
       }
@@ -76,6 +78,20 @@ export default function AddGoalScreen() {
     
     addGoal(newGoal);
     router.back();
+  };
+  
+  // Handle water bottle size input to accept both comma and dot
+  const handleWaterBottleSizeChange = (text: string) => {
+    // Allow only numbers and a single decimal separator (comma or dot)
+    const sanitizedText = text.replace(/[^0-9.,]/g, '');
+    
+    // Ensure only one decimal separator
+    const commaCount = (sanitizedText.match(/,/g) || []).length;
+    const dotCount = (sanitizedText.match(/\./g) || []).length;
+    
+    if (commaCount + dotCount <= 1) {
+      setWaterBottleSize(sanitizedText);
+    }
   };
   
   return (
@@ -180,13 +196,13 @@ export default function AddGoalScreen() {
               <TextInput
                 style={styles.input}
                 value={waterBottleSize}
-                onChangeText={setWaterBottleSize}
-                placeholder="e.g., 0.5"
+                onChangeText={handleWaterBottleSizeChange}
+                placeholder="e.g., 0.5 or 0,5"
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="decimal-pad"
               />
               <Text style={styles.helperText}>
-                This helps track your progress in terms of water bottles
+                This helps track your progress in terms of water bottles (use dot or comma for decimals)
               </Text>
             </>
           )}
