@@ -54,3 +54,13 @@ export const darkTheme = {
   primary: "#5C9CE6",
   secondary: "#60D888",
 };
+
+// Function to get colors based on theme and color scheme
+export const getColors = (theme: "light" | "dark", colorScheme?: string) => {
+  // Return the appropriate theme colors
+  const baseTheme = theme === "dark" ? darkTheme : lightTheme;
+  
+  // If a specific color scheme is provided, we could modify colors here
+  // For now, just return the base theme
+  return baseTheme;
+};
