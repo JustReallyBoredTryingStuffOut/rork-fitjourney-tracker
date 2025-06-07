@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  FlatList, 
   Image, 
   Modal,
   ScrollView
 } from "react-native";
-import { Search, X, ChevronDown, Check, Plus } from "lucide-react-native";
+import { Search, X, Check, Plus } from "lucide-react-native";
 import { TextInput } from "react-native";
 import { FoodCategory, FoodItem } from "@/types";
 import { colors } from "@/constants/colors";
@@ -89,7 +88,6 @@ export default function FoodCategorySelector({
             />
           ))}
         </Picker>
-        <ChevronDown size={20} color={colors.textSecondary} style={styles.pickerIcon} />
       </View>
       
       <Modal
@@ -192,11 +190,6 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
     width: "100%",
-  },
-  pickerIcon: {
-    position: "absolute",
-    right: 12,
-    top: 15,
   },
   modalContainer: {
     flex: 1,

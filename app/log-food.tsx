@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import { useRouter, Stack } from "expo-router";
-import { Plus, Minus, Clock, Coffee, UtensilsCrossed, Soup, ArrowLeft, Info } from "lucide-react-native";
+import { Plus, Minus, Clock, Coffee, UtensilsCrossed, Soup, ArrowLeft } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useMacroStore } from "@/store/macroStore";
 import { MacroLog, FoodItem } from "@/types";
@@ -9,7 +9,7 @@ import Button from "@/components/Button";
 import NoteInput from "@/components/NoteInput";
 import { Picker } from "@react-native-picker/picker";
 import FoodCategorySelector from "@/components/FoodCategorySelector";
-import { foodCategories, getFoodCategoriesByMealType } from "@/mocks/foodCategories";
+import { foodCategories } from "@/mocks/foodCategories";
 
 export default function LogFoodScreen() {
   const router = useRouter();
@@ -221,24 +221,19 @@ export default function LogFoodScreen() {
           </View>
         </View>
         
-        <View style={styles.optionSection}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionTitle}>Option 1: Select from Food Database</Text>
-            <TouchableOpacity style={styles.infoButton}>
-              <Info size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.optionDescription}>
-            These are example foods to help you get started. You can select multiple items or enter nutrition information manually below.
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Food Database</Text>
+          <Text style={styles.sectionDescription}>
+            These are example foods to help you get started. You can select multiple items from different categories or enter nutrition information manually below.
           </Text>
+          
+          {/* Food Category Selector */}
+          <FoodCategorySelector
+            mealType={mealType}
+            categories={foodCategories}
+            onSelectFood={handleAddFood}
+          />
         </View>
-        
-        {/* Food Category Selector */}
-        <FoodCategorySelector
-          mealType={mealType}
-          categories={foodCategories}
-          onSelectFood={handleAddFood}
-        />
         
         {/* Selected Food Items Display */}
         {selectedFoodItems.length > 0 && (
@@ -305,14 +300,9 @@ export default function LogFoodScreen() {
           </View>
         )}
         
-        <View style={styles.optionSection}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionTitle}>Option 2: Enter Nutrition Manually</Text>
-            <TouchableOpacity style={styles.infoButton}>
-              <Info size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.optionDescription}>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Manual Nutrition Entry</Text>
+          <Text style={styles.sectionDescription}>
             You can directly enter nutrition values without selecting foods from the database.
             {!areManualInputsEnabled && " (Disabled when foods are selected)"}
           </Text>
@@ -754,40 +744,22 @@ const styles = StyleSheet.create({
     padding: 8,
     marginLeft: 8,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 16,
-  },
-  optionSection: {
+  sectionContainer: {
     marginBottom: 16,
     backgroundColor: colors.background,
     borderRadius: 8,
     padding: 12,
   },
-  optionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  optionTitle: {
+  sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
-    marginRight: 8,
+    marginBottom: 4,
   },
-  optionDescription: {
+  sectionDescription: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginTop: 4,
-  },
-  infoButton: {
-    padding: 4,
+    marginBottom: 8,
   },
   error: {
     color: colors.error,
