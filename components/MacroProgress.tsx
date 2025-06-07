@@ -120,12 +120,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#FFFFFF", // Changed from black to white
+    color: "#FFFFFF",
   },
   value: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF", // Changed from black to white
+    color: "#FFFFFF",
   },
   progressBar: {
     height: 8,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   progressMessage: {
     fontSize: 12,
-    color: "#CCCCCC", // Changed from medium gray to light gray for better visibility
+    color: "#CCCCCC",
     fontStyle: "italic",
     flex: 1,
   },
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   noGoalsText: {
     fontSize: 14,
-    color: "#CCCCCC", // Changed from medium gray to light gray
+    color: "#CCCCCC",
     textAlign: "center",
     marginBottom: 8,
   },

@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000", // Changed from white to black
+    color: "#000000",
   },
   infoButton: {
     marginLeft: 8,
@@ -266,20 +266,20 @@ const styles = StyleSheet.create({
   calorieConsumed: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#000000", // Changed from white to black
+    color: "#000000",
   },
   calorieDivider: {
     fontSize: 20,
-    color: "#666666", // Changed from light gray to darker gray
+    color: "#666666",
     marginHorizontal: 4,
   },
   calorieGoal: {
     fontSize: 20,
-    color: "#666666", // Changed from light gray to darker gray
+    color: "#666666",
   },
   calorieRemaining: {
     fontSize: 14,
-    color: "#666666", // Changed from light gray to darker gray
+    color: "#666666",
     marginBottom: 12,
   },
   progressBarContainer: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#000000", // Changed from colors.primary to black
+    backgroundColor: "#000000",
     borderRadius: 4,
   },
   macroSection: {
@@ -314,13 +314,13 @@ const styles = StyleSheet.create({
   },
   macroTitle: {
     fontSize: 14,
-    color: "#000000", // Changed from white to black
+    color: "#000000",
     fontWeight: "500",
   },
   macroValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000", // Changed from white to black
+    color: "#000000",
   },
   achievementProgress: {
     flexDirection: "row",
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   motivationText: {
     fontSize: 14,
-    color: "#FFFFFF", // Kept as white as requested
+    color: "#FFFFFF",
     fontStyle: "italic",
     textAlign: "center",
   },
@@ -375,12 +375,12 @@ const styles = StyleSheet.create({
   noGoalsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000", // Changed from white to black
+    color: "#000000",
     marginBottom: 8,
   },
   noGoalsDescription: {
     fontSize: 14,
-    color: "#666666", // Changed from light gray to darker gray
+    color: "#666666",
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 20,

@@ -6,7 +6,8 @@ import {
   ScrollView, 
   TouchableOpacity, 
   ActivityIndicator,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { 
@@ -19,7 +20,8 @@ import {
   AlertCircle,
   Coffee,
   UtensilsCrossed,
-  Soup
+  Soup,
+  X
 } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { useMacroStore } from '@/store/macroStore';
@@ -238,6 +240,35 @@ const generateSuggestions = (patterns: string[], averageMacros: any, goals: any)
   return suggestions;
 };
 
+// Info Modal Component
+const InfoModal = ({ visible, onClose, title, content }: { visible: boolean, onClose: () => void, title: string, content: string }) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <X size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalBody}>
+            <Text style={styles.modalText}>{content}</Text>
+          </ScrollView>
+          <TouchableOpacity style={styles.modalButton} onPress={onClose}>
+            <Text style={styles.modalButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function NutritionInsightsScreen() {
   const router = useRouter();
   const { macroLogs, macroGoals } = useMacroStore();
@@ -253,6 +284,8 @@ export default function NutritionInsightsScreen() {
     daysLogged: number;
     totalDays: number;
   } | null>(null);
+  const [patternsInfoVisible, setPatternsInfoVisible] = useState(false);
+  const [suggestionsInfoVisible, setSuggestionsInfoVisible] = useState(false);
   
   useEffect(() => {
     // Simulate loading delay
@@ -523,7 +556,10 @@ export default function NutritionInsightsScreen() {
               <View style={styles.sectionHeader}>
                 <Info size={20} color={colors.primary} />
                 <Text style={styles.sectionTitle}>Patterns Identified</Text>
-                <TouchableOpacity style={styles.infoButton}>
+                <TouchableOpacity 
+                  style={styles.infoButton}
+                  onPress={() => setPatternsInfoVisible(true)}
+                >
                   <Info size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
@@ -543,7 +579,10 @@ export default function NutritionInsightsScreen() {
               <View style={styles.sectionHeader}>
                 <AlertCircle size={20} color={colors.primary} />
                 <Text style={styles.sectionTitle}>Suggestions</Text>
-                <TouchableOpacity style={styles.infoButton}>
+                <TouchableOpacity 
+                  style={styles.infoButton}
+                  onPress={() => setSuggestionsInfoVisible(true)}
+                >
                   <Info size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
@@ -595,6 +634,21 @@ export default function NutritionInsightsScreen() {
           />
         </View>
       )}
+      
+      {/* Info Modals */}
+      <InfoModal
+        visible={patternsInfoVisible}
+        onClose={() => setPatternsInfoVisible(false)}
+        title="About Patterns"
+        content="These patterns are identified based on your logged nutrition data. The analysis looks at your macro distribution, meal timing, and food choices to identify potential trends. This information is meant to help you understand your eating habits better, but should not be considered medical advice. The accuracy of these patterns depends on how consistently you log your meals."
+      />
+      
+      <InfoModal
+        visible={suggestionsInfoVisible}
+        onClose={() => setSuggestionsInfoVisible(false)}
+        title="About Suggestions"
+        content="These suggestions are generated based on the patterns identified in your nutrition data. They are general recommendations that may help you achieve a more balanced diet or reach your nutrition goals. These suggestions are not personalized medical or nutrition advice. For personalized guidance, please consult with a registered dietitian or healthcare provider who can take into account your specific health needs, goals, and preferences."
+      />
     </View>
   );
 }
@@ -865,5 +919,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 20,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalBody: {
+    maxHeight: 300,
+  },
+  modalText: {
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
+  },
+  modalButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
