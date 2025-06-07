@@ -32,16 +32,16 @@ export default function MuscleGroupSelector({
   const getBodyMapImage = () => {
     if (selectedBodyRegion === 'Upper Body') {
       return viewMode === 'front' 
-        ? 'https://images.unsplash.com/photo-1550345332-09e3ac987658?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'
-        : 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80';
+        ? 'https://images.unsplash.com/photo-1571019113664-8a70d82d31d1?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular man front torso
+        : 'https://images.unsplash.com/photo-1616803689943-5601631c7fec?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular man back view
     } else if (selectedBodyRegion === 'Lower Body') {
       return viewMode === 'front'
-        ? 'https://images.unsplash.com/photo-1562771379-eafdca7a02f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'
-        : 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80';
+        ? 'https://images.unsplash.com/photo-1581009137042-c552e485697a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular legs front view
+        : 'https://images.unsplash.com/photo-1584863231364-2edc166de576?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular legs back view
     } else if (selectedBodyRegion === 'Core') {
       return viewMode === 'front'
-        ? 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'
-        : 'https://images.unsplash.com/photo-1566241142559-40e1dab266c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80';
+        ? 'https://images.unsplash.com/photo-1577221084712-45b0445d2b00?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular abs front view
+        : 'https://images.unsplash.com/photo-1616803689943-5601631c7fec?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular back core view
     }
     return '';
   };
