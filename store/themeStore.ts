@@ -1,39 +1,43 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useColorScheme } from "react-native";
+import { ColorSchemeName, useColorScheme } from "react-native";
+
+export type ThemeType = "light" | "dark" | "system";
+export type ColorScheme = "blue" | "green" | "purple" | "orange" | "pink";
 
 interface ThemeState {
-  darkMode: boolean;
-  systemTheme: boolean;
-  accentColor: string;
-  toggleDarkMode: () => void;
-  setSystemTheme: (useSystem: boolean) => void;
-  setAccentColor: (color: string) => void;
+  theme: ThemeType;
+  colorScheme: ColorScheme;
+  
+  // Actions
+  setTheme: (theme: ThemeType) => void;
+  setColorScheme: (colorScheme: ColorScheme) => void;
+  
+  // Computed
+  getCurrentTheme: (deviceTheme: ColorSchemeName) => "light" | "dark";
 }
 
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      darkMode: false,
-      systemTheme: true,
-      accentColor: "#5D5FEF", // Default accent color
+      theme: "system",
+      colorScheme: "blue",
       
-      toggleDarkMode: () => set(state => ({ 
-        darkMode: !state.darkMode,
-        systemTheme: false 
-      })),
+      setTheme: (theme) => set({ theme }),
       
-      setSystemTheme: (useSystem) => {
-        const colorScheme = useColorScheme();
-        set({ 
-          systemTheme: useSystem,
-          // If using system theme, set darkMode based on system preference
-          darkMode: useSystem ? colorScheme === "dark" : get().darkMode
-        });
+      setColorScheme: (colorScheme) => set({ colorScheme }),
+      
+      getCurrentTheme: (deviceTheme) => {
+        const { theme } = get();
+        
+        if (theme === "system") {
+          // Use the device's color scheme
+          return deviceTheme === "dark" ? "dark" : "light";
+        }
+        
+        return theme;
       },
-      
-      setAccentColor: (color) => set({ accentColor: color }),
     }),
     {
       name: "theme-storage",
@@ -41,3 +45,15 @@ export const useThemeStore = create<ThemeState>()(
     }
   )
 );
+
+// Helper hook to get the current theme
+export function useAppTheme(): "light" | "dark" {
+  const { theme } = useThemeStore();
+  const deviceTheme = useColorScheme();
+  
+  if (theme === "system") {
+    return deviceTheme === "dark" ? "dark" : "light";
+  }
+  
+  return theme;
+}

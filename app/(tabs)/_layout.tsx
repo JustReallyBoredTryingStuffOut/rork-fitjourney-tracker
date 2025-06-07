@@ -1,24 +1,25 @@
 import { Tabs } from "expo-router";
-import { useColorScheme } from "react-native";
-import { Home, Dumbbell, Calendar, Utensils, Heart, User } from "lucide-react-native";
-import { colors } from "@/constants/colors";
+import { useTheme } from "@/context/ThemeContext";
+import { Home, Dumbbell, Calendar, Apple, User, Award, ActivitySquare } from "lucide-react-native";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: colorScheme === "dark" ? "#1A1A1A" : "#FFFFFF",
-          borderTopColor: colorScheme === "dark" ? "#333333" : "#E5E5E5",
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
         },
         headerStyle: {
-          backgroundColor: colorScheme === "dark" ? "#1A1A1A" : "#FFFFFF",
+          backgroundColor: colors.background,
         },
-        headerTintColor: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+        headerTitleStyle: {
+          color: colors.text,
+        },
       }}
     >
       <Tabs.Screen
@@ -46,14 +47,22 @@ export default function TabLayout() {
         name="nutrition"
         options={{
           title: "Nutrition",
-          tabBarIcon: ({ color }) => <Utensils size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Apple size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="health"
         options={{
           title: "Health",
-          tabBarIcon: ({ color }) => <Heart size={24} color={color} />,
+          tabBarIcon: ({ color }) => <ActivitySquare size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="achievements"
+        options={{
+          title: "Achievements",
+          tabBarIcon: ({ color }) => <Award size={24} color={color} />,
+          href: "/achievements",
         }}
       />
       <Tabs.Screen

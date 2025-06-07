@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "@/constants/colors";
-import { Trophy, Info } from "lucide-react-native";
+import { Trophy } from "lucide-react-native";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { useRouter } from "expo-router";
 
@@ -14,7 +14,6 @@ type MacroProgressProps = {
   color: string;
   achievementId?: string;
   hasValidGoals?: boolean;
-  onInfoPress?: () => void;
 };
 
 export default function MacroProgress({ 
@@ -25,8 +24,7 @@ export default function MacroProgress({
   percentage, 
   color,
   achievementId,
-  hasValidGoals = true,
-  onInfoPress
+  hasValidGoals = true
 }: MacroProgressProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
   const router = useRouter();
@@ -78,19 +76,7 @@ export default function MacroProgress({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>{title}</Text>
-          {title === "Calories" && onInfoPress && (
-            <TouchableOpacity 
-              onPress={onInfoPress}
-              style={styles.infoButton}
-              accessibilityLabel="Nutrition information"
-              accessibilityHint="Opens a modal with information about how nutrition goals are calculated"
-            >
-              <Info size={14} color={colors.primary} />
-            </TouchableOpacity>
-          )}
-        </View>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.value}>
           {safeCurrent} / {safeGoal} {unit}
         </Text>
@@ -131,18 +117,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 6,
   },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   title: {
     fontSize: 16,
     fontWeight: "500",
     color: colors.text,
-  },
-  infoButton: {
-    marginLeft: 6,
-    padding: 2,
   },
   value: {
     fontSize: 16,
