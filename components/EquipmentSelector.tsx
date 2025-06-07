@@ -7,7 +7,6 @@ import {
   User, 
   Box, 
   ArrowUp, 
-  Armchair, 
   Circle, 
   Anchor, 
   Infinity, 
@@ -61,24 +60,24 @@ export default function EquipmentSelector({
     switch (equipment) {
       case 'Barbell':
         return (
-          <View style={styles.barbellIcon}>
+          <View style={styles.barbellIconContainer}>
             <View style={[styles.barbellBar, { backgroundColor: iconColor }]} />
-            <View style={[styles.barbellWeight, { left: 0, backgroundColor: iconColor }]} />
-            <View style={[styles.barbellWeight, { right: 0, backgroundColor: iconColor }]} />
+            <View style={[styles.barbellWeight, { left: 2, backgroundColor: iconColor }]} />
+            <View style={[styles.barbellWeight, { right: 2, backgroundColor: iconColor }]} />
           </View>
         );
       case 'Dumbbell':
         return <Dumbbell size={iconSize} color={iconColor} />;
       case 'Kettlebell':
         return (
-          <View style={styles.kettlebellIcon}>
-            <View style={[styles.kettlebellBody, { backgroundColor: iconColor }]} />
+          <View style={styles.kettlebellIconContainer}>
             <View style={[styles.kettlebellHandle, { borderColor: iconColor }]} />
+            <View style={[styles.kettlebellBody, { backgroundColor: iconColor }]} />
           </View>
         );
       case 'Cable Machine':
         return (
-          <View style={styles.cableMachineIcon}>
+          <View style={styles.cableMachineIconContainer}>
             <View style={[styles.cableMachineFrame, { borderColor: iconColor }]} />
             <View style={[styles.cableMachineBar, { backgroundColor: iconColor }]} />
             <View style={[styles.cableMachineCable, { backgroundColor: iconColor }]} />
@@ -92,7 +91,7 @@ export default function EquipmentSelector({
         return <ArrowUp size={iconSize} color={iconColor} />;
       case 'Bench':
         return (
-          <View style={styles.benchIcon}>
+          <View style={styles.benchIconContainer}>
             <View style={[styles.benchPad, { backgroundColor: iconColor }]} />
             <View style={[styles.benchLeg, { left: 4, backgroundColor: iconColor }]} />
             <View style={[styles.benchLeg, { right: 4, backgroundColor: iconColor }]} />
@@ -106,8 +105,8 @@ export default function EquipmentSelector({
         return <Anchor size={iconSize} color={iconColor} />;
       case 'Ab Wheel':
         return (
-          <View style={styles.abWheelIcon}>
-            <CircleDot size={iconSize} color={iconColor} />
+          <View style={styles.abWheelIconContainer}>
+            <View style={[styles.abWheelWheel, { borderColor: iconColor }]} />
             <View style={[styles.abWheelHandle, { backgroundColor: iconColor }]} />
           </View>
         );
@@ -125,7 +124,7 @@ export default function EquipmentSelector({
         return <MoveHorizontal size={iconSize} color={iconColor} />;
       case 'Smith Machine':
         return (
-          <View style={styles.smithMachineIcon}>
+          <View style={styles.smithMachineIconContainer}>
             <View style={[styles.smithMachineFrame, { borderColor: iconColor }]} />
             <View style={[styles.smithMachineBar, { backgroundColor: iconColor }]} />
           </View>
@@ -286,8 +285,8 @@ const styles = StyleSheet.create({
   selectedEquipmentText: {
     color: '#FFFFFF',
   },
-  // Custom icon styles
-  barbellIcon: {
+  // Barbell icon
+  barbellIconContainer: {
     width: 40,
     height: 24,
     justifyContent: 'center',
@@ -295,7 +294,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   barbellBar: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 2,
   },
@@ -306,30 +305,32 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     top: 4,
   },
-  kettlebellIcon: {
+  // Kettlebell icon
+  kettlebellIconContainer: {
     width: 24,
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
-  kettlebellBody: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginTop: 6,
-  },
   kettlebellHandle: {
     position: 'absolute',
     top: 0,
     width: 10,
-    height: 10,
+    height: 8,
     borderWidth: 2,
     borderBottomWidth: 0,
     borderTopLeftRadius: 5,
     borderTopRightRadius: 5,
   },
-  cableMachineIcon: {
+  kettlebellBody: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  // Cable machine icon
+  cableMachineIconContainer: {
     width: 24,
     height: 24,
     position: 'relative',
@@ -356,7 +357,8 @@ const styles = StyleSheet.create({
     top: 8,
     left: 11,
   },
-  benchIcon: {
+  // Bench icon
+  benchIconContainer: {
     width: 24,
     height: 24,
     position: 'relative',
@@ -369,24 +371,32 @@ const styles = StyleSheet.create({
     top: 4,
   },
   benchLeg: {
-    width: 2,
+    width: 3,
     height: 10,
     position: 'absolute',
     bottom: 2,
   },
-  abWheelIcon: {
+  // Ab wheel icon
+  abWheelIconContainer: {
     width: 24,
     height: 24,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  abWheelHandle: {
+  abWheelWheel: {
     width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+  },
+  abWheelHandle: {
+    width: 20,
     height: 2,
     position: 'absolute',
   },
-  smithMachineIcon: {
+  // Smith machine icon
+  smithMachineIconContainer: {
     width: 24,
     height: 24,
     position: 'relative',
@@ -406,6 +416,7 @@ const styles = StyleSheet.create({
     top: 12,
     left: 0,
   },
+  // Foam roller icon
   foamRollerIcon: {
     width: 20,
     height: 10,

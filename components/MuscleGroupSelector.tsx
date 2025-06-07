@@ -32,8 +32,8 @@ export default function MuscleGroupSelector({
   const getBodyMapImage = () => {
     if (selectedBodyRegion === 'Upper Body') {
       return viewMode === 'front' 
-        ? 'https://images.unsplash.com/photo-1624920297795-5e6870cd81c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Anatomical muscle diagram front
-        : 'https://images.unsplash.com/photo-1616803689943-5601631c7fec?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular man back view
+        ? 'https://chatgpt.com/s/m_68439419b5b8819183cb7e692d377031' // Anatomical muscle diagram front
+        : 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular back view
     } else if (selectedBodyRegion === 'Lower Body') {
       return viewMode === 'front'
         ? 'https://images.unsplash.com/photo-1581009137042-c552e485697a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular legs front view
