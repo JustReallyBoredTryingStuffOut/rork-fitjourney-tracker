@@ -201,7 +201,7 @@ export default function WorkoutsScreen() {
         <View style={[styles.recommendationsToggle, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <View style={styles.toggleContainer}>
             <Zap size={16} color={colors.primary} />
-            <Text style={[styles.toggleLabel, { color: colors.text }]}>Personalized Recommendations</Text>
+            <Text style={[styles.toggleLabel, { color: colors.text }]}>AI Recommendations</Text>
             <TouchableOpacity 
               style={styles.infoButton}
               onPress={() => setShowAiRecommendationsModal(true)}
@@ -231,9 +231,9 @@ export default function WorkoutsScreen() {
       )}
       
       {viewMode === 'workouts' && workoutRecommendationsEnabled && (
-        <View style={[styles.filterToggle, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={[styles.recommendationsToggle, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <View style={styles.toggleContainer}>
-            <Text style={[styles.toggleLabel, { color: colors.text }]}>Filter: Show recommended workouts only</Text>
+            <Text style={[styles.toggleLabel, { color: colors.text }]}>Show recommended only</Text>
           </View>
           <Switch
             value={showRecommendedOnly}
@@ -483,15 +483,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-  },
-  filterToggle: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.02)", // Slightly different background to show hierarchy
   },
   toggleContainer: {
     flexDirection: "row",

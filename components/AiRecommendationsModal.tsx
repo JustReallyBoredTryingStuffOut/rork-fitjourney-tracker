@@ -55,7 +55,7 @@ const AiRecommendationsModal: React.FC<AiRecommendationsModalProps> = ({
             </View>
           </View>
           
-          <Text style={[styles.title, { color: colors.text }]}>Personalized Workout Recommendations</Text>
+          <Text style={[styles.title, { color: colors.text }]}>AI Workout Recommendations</Text>
           
           <ScrollView style={styles.scrollContent}>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
@@ -92,27 +92,17 @@ const AiRecommendationsModal: React.FC<AiRecommendationsModalProps> = ({
               </View>
             </View>
             
-            <View style={styles.howItWorksContainer}>
-              <Text style={[styles.howItWorksTitle, { color: colors.text }]}>How It Works:</Text>
-              <Text style={[styles.howItWorksText, { color: colors.textSecondary }]}>
-                1. Enable personalized recommendations{"\n"}
-                2. Browse all workouts with recommended ones highlighted{"\n"}
-                3. Or use the filter to show only recommended workouts{"\n"}
-                4. Rate your workouts to improve future recommendations
-              </Text>
-            </View>
-            
             <View style={[styles.privacyNote, { backgroundColor: `${colors.warning}10` }]}>
               <AlertCircle size={20} color={colors.warning} style={styles.privacyIcon} />
               <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-                Your workout data is processed locally on your device. You can disable recommendations at any time in settings.
+                Your workout data is processed locally on your device. You can disable AI recommendations at any time in settings.
               </Text>
             </View>
           </ScrollView>
           
           <View style={styles.buttonContainer}>
             <Button
-              title="Enable Recommendations"
+              title="Enable AI Recommendations"
               onPress={onEnable}
               style={styles.enableButton}
               icon={<Zap size={18} color="#FFFFFF" />}
@@ -192,18 +182,6 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 15,
     flex: 1,
-    lineHeight: 22,
-  },
-  howItWorksContainer: {
-    marginBottom: 20,
-  },
-  howItWorksTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  howItWorksText: {
-    fontSize: 14,
     lineHeight: 22,
   },
   privacyNote: {
