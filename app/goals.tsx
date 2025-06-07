@@ -294,11 +294,6 @@ export default function GoalsScreen() {
     }
   };
   
-  // Set up header with back button
-  useEffect(() => {
-    // This effect sets up the header with a back button
-  }, []);
-  
   return (
     <>
       <Stack.Screen 
