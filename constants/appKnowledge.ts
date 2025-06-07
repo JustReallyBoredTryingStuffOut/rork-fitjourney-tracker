@@ -83,6 +83,30 @@ To set up a goal:
 6. Set reminders if needed
 7. Save your goal
     `,
+    daily: `
+Daily goals are perfect for building consistent habits:
+- Step count goals (e.g., 10,000 steps)
+- Water intake goals (e.g., 8 glasses)
+- Calorie or macro targets
+- Meditation or stretching routines
+- Daily activity minutes
+    `,
+    weekly: `
+Weekly goals help you focus on medium-term progress:
+- Number of workouts per week (e.g., 4 strength sessions)
+- Total distance (running, cycling, swimming)
+- Weight loss/gain targets (0.5-1 lb per week)
+- Trying new workout types
+- Rest day compliance
+    `,
+    monthly: `
+Monthly goals are great for bigger achievements:
+- Total workout minutes or sessions
+- Body measurements changes
+- Mastering new exercises
+- Completing fitness programs
+- Building consistent streaks
+    `,
   },
 
   // Knowledge about workouts
@@ -114,6 +138,25 @@ To create a custom workout:
 5. Set default sets, reps, and weights
 6. Save your workout
     `,
+    scheduling: `
+To schedule a workout:
+1. Go to Schedule tab
+2. Tap on a day
+3. Select "Add Workout"
+4. Choose from your saved workouts
+5. Set time and reminders
+6. Save to your calendar
+    `,
+    recommendations: `
+The app provides personalized workout recommendations based on:
+- Your fitness level
+- Your goals (strength, weight loss, etc.)
+- Available equipment
+- Time constraints
+- Workout history
+
+You can enable or disable these recommendations in the Workouts tab.
+    `,
   },
 
   // Knowledge about nutrition tracking
@@ -141,6 +184,23 @@ To log food:
 4. Enter portion size
 5. Save to your food diary
     `,
+    camera: `
+To analyze food with your camera:
+1. Go to Nutrition tab
+2. Tap "Analyze Food with Camera"
+3. Take a photo of your meal
+4. Review the detected food items
+5. Adjust portions if needed
+6. Save to your food diary
+    `,
+    insights: `
+To view nutrition insights:
+1. Go to Nutrition tab
+2. Tap "Nutrition Insights"
+3. View trends in your calorie and macro intake
+4. See patterns in your eating habits
+5. Get suggestions for improvement
+    `,
   },
 
   // Knowledge about health tracking
@@ -158,6 +218,22 @@ To log your weight:
 3. Enter your current weight
 4. Optionally add notes
 5. Save your entry
+    `,
+    steps: `
+To track steps:
+1. Go to Health tab
+2. View your current step count
+3. Set a daily step goal
+4. View your step history
+5. Connect with health devices for more accurate tracking
+    `,
+    devices: `
+To connect health devices:
+1. Go to Health tab
+2. Tap "Health Devices"
+3. Select device type
+4. Follow pairing instructions
+5. Grant necessary permissions
     `,
   },
 
@@ -183,6 +259,64 @@ Daily quests are small tasks that refresh each day, such as:
 - Log all meals
 - Reach step goal
 - Track water intake
+    `,
+    challenges: `
+Challenges are longer-term goals:
+1. Go to Achievements tab
+2. Tap "Challenges"
+3. Browse available challenges
+4. Join challenges that interest you
+5. Track your progress
+6. Earn rewards upon completion
+    `,
+    streaks: `
+Streaks track your consistency:
+- Workout streaks (consecutive days with workouts)
+- Logging streaks (consecutive days logging nutrition)
+- Step goal streaks (consecutive days meeting step goals)
+
+Maintaining streaks earns bonus points and special badges.
+    `,
+  },
+
+  // Knowledge about profile and settings
+  profile: {
+    features: [
+      "Personal information",
+      "Fitness goals",
+      "Preferences",
+      "Privacy settings",
+    ],
+    editing: `
+To edit your profile:
+1. Go to Profile tab
+2. Tap "Edit Profile"
+3. Update your information
+4. Save changes
+    `,
+    goals: `
+To set fitness goals:
+1. Go to Profile tab
+2. Tap "Health Goals"
+3. Set your primary goal (weight loss, muscle gain, etc.)
+4. Adjust specific targets
+5. Save changes
+    `,
+    theme: `
+To change app theme:
+1. Go to Profile tab
+2. Tap "Theme Settings"
+3. Choose light or dark mode
+4. Select accent color
+5. Save preferences
+    `,
+    notifications: `
+To manage notifications:
+1. Go to Profile tab
+2. Tap "Notifications"
+3. Toggle different notification types
+4. Set quiet hours
+5. Save preferences
     `,
   },
 };

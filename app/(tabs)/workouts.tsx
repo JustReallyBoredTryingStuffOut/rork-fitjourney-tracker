@@ -233,7 +233,9 @@ export default function WorkoutsScreen() {
       {viewMode === 'workouts' && workoutRecommendationsEnabled && (
         <View style={[styles.filterToggle, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <View style={styles.toggleContainer}>
-            <Text style={[styles.toggleLabel, { color: colors.text }]}>Filter: Show recommended workouts only</Text>
+            <Text style={[styles.toggleLabel, { color: colors.text }]}>
+              Show only recommended workouts
+            </Text>
           </View>
           <Switch
             value={showRecommendedOnly}

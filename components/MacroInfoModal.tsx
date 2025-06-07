@@ -42,20 +42,18 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
           <ScrollView style={styles.content}>
             <Text style={styles.sectionTitle}>How We Calculate Your Macros</Text>
             <Text style={styles.paragraph}>
-              Your recommended daily calories and macronutrients are calculated based on your profile information:
+              We estimate your daily nutrition needs based on:
             </Text>
             
             <View style={styles.bulletPoints}>
               <Text style={styles.bulletPoint}>• Your weight and height</Text>
               <Text style={styles.bulletPoint}>• Your age and gender</Text>
-              <Text style={styles.bulletPoint}>• Your activity level (how active you are daily)</Text>
+              <Text style={styles.bulletPoint}>• How active you are daily</Text>
               <Text style={styles.bulletPoint}>• Your fitness goals (lose weight, maintain, or gain muscle)</Text>
             </View>
             
             <Text style={styles.paragraph}>
-              We use a formula called the Mifflin-St Jeor Equation to estimate your basal metabolic rate (BMR), 
-              which is how many calories your body needs at rest. Then we adjust this based on your activity level 
-              and fitness goals.
+              We use a standard formula to estimate how many calories your body needs, then adjust this based on your activity and goals.
             </Text>
             
             <Text style={styles.sectionTitle}>What Your Macros Mean</Text>
@@ -65,7 +63,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               <View style={styles.macroTextContainer}>
                 <Text style={styles.macroTitle}>Protein</Text>
                 <Text style={styles.macroDescription}>
-                  Important for muscle repair and growth. We recommend 1.6-2.2g per kg of body weight depending on your goals.
+                  Helps build and repair muscles. Important if you exercise regularly.
                 </Text>
               </View>
             </View>
@@ -75,7 +73,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               <View style={styles.macroTextContainer}>
                 <Text style={styles.macroTitle}>Carbohydrates</Text>
                 <Text style={styles.macroDescription}>
-                  Your body's main energy source. We calculate this based on your remaining calorie needs after protein and fat.
+                  Your body's main energy source. Fuels your workouts and daily activities.
                 </Text>
               </View>
             </View>
@@ -85,7 +83,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               <View style={styles.macroTextContainer}>
                 <Text style={styles.macroTitle}>Fat</Text>
                 <Text style={styles.macroDescription}>
-                  Essential for hormone production and nutrient absorption. We recommend 20-35% of your total calories from healthy fats.
+                  Essential for hormone health and absorbing vitamins. Provides long-lasting energy.
                 </Text>
               </View>
             </View>
@@ -93,8 +91,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
             <View style={styles.disclaimer}>
               <Text style={styles.disclaimerTitle}>Important Note</Text>
               <Text style={styles.disclaimerText}>
-                These calculations provide estimates only and may not account for individual medical conditions or specific needs. 
-                For personalized nutrition advice, please consult with a registered dietitian, nutritionist, or healthcare provider.
+                These are just estimates. Everyone's body is different. For personalized nutrition advice, please consult with a registered dietitian or healthcare provider.
               </Text>
             </View>
             
