@@ -9,7 +9,7 @@ import {
   Modal,
   ScrollView
 } from "react-native";
-import { Search, X, ChevronDown, Check } from "lucide-react-native";
+import { Search, X, ChevronDown, Check, Plus } from "lucide-react-native";
 import { TextInput } from "react-native";
 import { FoodCategory, FoodItem } from "@/types";
 import { colors } from "@/constants/colors";
@@ -146,7 +146,7 @@ export default function FoodCategorySelector({
                     style={styles.addButton}
                     onPress={() => handleSelectFood(food)}
                   >
-                    <Plus size={20} color={colors.white} />
+                    <Plus size={20} color="#FFFFFF" />
                   </TouchableOpacity>
                 </TouchableOpacity>
               ))}
@@ -314,12 +314,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   doneButtonText: {
-    color: colors.white,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
-  },
-  white: "#FFFFFF",
+  }
 });
-
-// Import Plus icon
-import { Plus } from "lucide-react-native";
