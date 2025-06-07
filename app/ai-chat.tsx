@@ -3,20 +3,20 @@ import { View, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { useAiStore, AiChat } from "@/store/aiStore";
+import { useAiStore } from "@/store/aiStore";
 import AiChatBox from "@/components/AiChatBox";
 
 export default function AiChatScreen() {
   const router = useRouter();
   const { chats, addChat, addMessageToChat } = useAiStore();
   
-  const [currentChat, setCurrentChat] = useState<AiChat | null>(null);
+  const [currentChat, setCurrentChat] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
     // Create a new chat if none exists
     if (!chats || chats.length === 0) {
-      const newChat: AiChat = {
+      const newChat = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
         messages: [
@@ -41,7 +41,7 @@ export default function AiChatScreen() {
     }
   }, [chats, addChat]);
   
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message) => {
     if (!currentChat) return;
     
     // Add user message to chat

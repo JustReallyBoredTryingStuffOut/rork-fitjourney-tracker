@@ -50,6 +50,19 @@ export interface WorkoutAnalysis {
   };
 }
 
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: string;
+}
+
+export interface AiChat {
+  id: string;
+  date: string;
+  messages: ChatMessage[];
+}
+
 interface AiState {
   goals: Goal[];
   weeklyPrompt: string;
@@ -58,6 +71,7 @@ interface AiState {
   lastMoodPromptDate: string | null;
   userMood: UserMood | null;
   userName: string;
+  chats: AiChat[];
   
   // Actions
   addGoal: (goal: Goal) => void;
@@ -88,6 +102,11 @@ interface AiState {
   getLatestWorkoutAnalysis: () => WorkoutAnalysis | null;
   getPromptForTimeframe: (timeframe: "weekly" | "monthly") => string;
   getMoodBasedWorkoutAdvice: () => string | null;
+  
+  // Chat functions
+  addChat: (chat: AiChat) => void;
+  deleteChat: (chatId: string) => void;
+  addMessageToChat: (chatId: string, message: Omit<ChatMessage, "id" | "timestamp">) => void;
 }
 
 export const useAiStore = create<AiState>()(
@@ -100,6 +119,7 @@ export const useAiStore = create<AiState>()(
       lastMoodPromptDate: null,
       userMood: null,
       userName: "",
+      chats: [],
       
       addGoal: (goal) => set((state) => ({
         goals: [...state.goals, goal]
@@ -807,7 +827,35 @@ export const useAiStore = create<AiState>()(
           default:
             return "Remember that consistency matters more than perfection. Any movement is better than none.";
         }
-      }
+      },
+      
+      // Chat functions
+      addChat: (chat) => set((state) => ({
+        chats: [...state.chats, chat]
+      })),
+      
+      deleteChat: (chatId) => set((state) => ({
+        chats: state.chats.filter(chat => chat.id !== chatId)
+      })),
+      
+      addMessageToChat: (chatId, message) => set((state) => ({
+        chats: state.chats.map(chat => {
+          if (chat.id === chatId) {
+            return {
+              ...chat,
+              messages: [
+                ...chat.messages,
+                {
+                  id: Date.now().toString(),
+                  ...message,
+                  timestamp: new Date().toISOString()
+                }
+              ]
+            };
+          }
+          return chat;
+        })
+      }))
     }),
     {
       name: "ai-storage",

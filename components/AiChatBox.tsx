@@ -1,100 +1,109 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   View, 
   Text, 
   StyleSheet, 
   TextInput, 
   TouchableOpacity, 
-  ScrollView,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform
+  FlatList, 
+  KeyboardAvoidingView, 
+  Platform,
+  ActivityIndicator
 } from "react-native";
 import { Send } from "lucide-react-native";
 import { colors } from "@/constants/colors";
+import { ChatMessage } from "@/store/aiStore";
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-};
+interface AiChatBoxProps {
+  messages: ChatMessage[];
+  onSendMessage: (message: string) => void;
+  isLoading: boolean;
+}
 
-type AiChatBoxProps = {
-  messages: Message[];
-  onSendMessage: (message: string) => Promise<void>;
-  isLoading?: boolean;
-};
-
-export default function AiChatBox({ messages, onSendMessage, isLoading = false }: AiChatBoxProps) {
+export default function AiChatBox({ messages, onSendMessage, isLoading }: AiChatBoxProps) {
   const [inputText, setInputText] = useState("");
-  const scrollViewRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList>(null);
   
-  const handleSend = async () => {
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0 && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages]);
+  
+  const handleSend = () => {
     if (inputText.trim() === "" || isLoading) return;
     
-    const message = inputText.trim();
+    onSendMessage(inputText.trim());
     setInputText("");
+  };
+  
+  const renderMessage = ({ item }: { item: ChatMessage }) => {
+    const isUser = item.role === "user";
     
-    await onSendMessage(message);
+    return (
+      <View style={[
+        styles.messageContainer,
+        isUser ? styles.userMessageContainer : styles.assistantMessageContainer
+      ]}>
+        <View style={[
+          styles.messageBubble,
+          isUser ? styles.userMessageBubble : styles.assistantMessageBubble
+        ]}>
+          <Text style={[
+            styles.messageText,
+            isUser ? styles.userMessageText : styles.assistantMessageText
+          ]}>
+            {item.content}
+          </Text>
+        </View>
+      </View>
+    );
   };
   
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={100}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-      >
-        {messages.map((message) => (
-          <View 
-            key={message.id} 
-            style={[
-              styles.messageContainer,
-              message.role === "user" ? styles.userMessage : styles.assistantMessage
-            ]}
-          >
-            <Text style={styles.messageText}>{message.content}</Text>
-            <Text style={styles.timestamp}>
-              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </View>
-        ))}
-        
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingText}>Thinking...</Text>
-          </View>
-        )}
-      </ScrollView>
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.messagesContainer}
+        showsVerticalScrollIndicator={true}
+      />
       
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Ask me anything about fitness..."
-          placeholderTextColor={colors.textLight}
+          placeholder="Ask about fitness, nutrition, or workouts..."
+          placeholderTextColor={colors.textSecondary}
           multiline
           maxLength={500}
           onSubmitEditing={handleSend}
+          editable={!isLoading}
         />
         
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.sendButton,
-            (inputText.trim() === "" || isLoading) && styles.disabledButton
-          ]} 
+            (inputText.trim() === "" || isLoading) && styles.disabledSendButton
+          ]}
           onPress={handleSend}
           disabled={inputText.trim() === "" || isLoading}
         >
-          <Send size={20} color="#FFFFFF" />
+          {isLoading ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Send size={20} color={colors.white} />
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -107,59 +116,47 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
     padding: 16,
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
   messageContainer: {
+    marginBottom: 16,
+    flexDirection: "row",
+  },
+  userMessageContainer: {
+    justifyContent: "flex-end",
+  },
+  assistantMessageContainer: {
+    justifyContent: "flex-start",
+  },
+  messageBubble: {
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     maxWidth: "80%",
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
   },
-  userMessage: {
-    alignSelf: "flex-end",
+  userMessageBubble: {
     backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
   },
-  assistantMessage: {
-    alignSelf: "flex-start",
+  assistantMessageBubble: {
     backgroundColor: colors.card,
-    borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: 16,
-    color: colors.text,
     lineHeight: 22,
   },
-  timestamp: {
-    fontSize: 12,
-    color: colors.textLight,
-    alignSelf: "flex-end",
-    marginTop: 4,
+  userMessageText: {
+    color: colors.white,
   },
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: colors.card,
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: 8,
+  assistantMessageText: {
+    color: colors.text,
   },
   inputContainer: {
     flexDirection: "row",
-    padding: 12,
-    backgroundColor: colors.card,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    backgroundColor: colors.card,
   },
   input: {
     flex: 1,
@@ -169,7 +166,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: colors.text,
-    maxHeight: 100,
+    maxHeight: 120,
   },
   sendButton: {
     width: 44,
@@ -180,7 +177,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 8,
   },
-  disabledButton: {
-    backgroundColor: colors.inactive,
+  disabledSendButton: {
+    backgroundColor: colors.primaryLight,
+    opacity: 0.7,
   },
 });
