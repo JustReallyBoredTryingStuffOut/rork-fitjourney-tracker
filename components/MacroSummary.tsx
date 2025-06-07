@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF", // Changed from black to white
+    color: "#000000", // Changed from white to black
   },
   infoButton: {
     marginLeft: 8,
@@ -266,20 +266,20 @@ const styles = StyleSheet.create({
   calorieConsumed: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#FFFFFF", // Changed from black to white
+    color: "#000000", // Changed from white to black
   },
   calorieDivider: {
     fontSize: 20,
-    color: "#CCCCCC", // Changed from dark gray to light gray
+    color: "#666666", // Changed from light gray to darker gray
     marginHorizontal: 4,
   },
   calorieGoal: {
     fontSize: 20,
-    color: "#CCCCCC", // Changed from dark gray to light gray
+    color: "#666666", // Changed from light gray to darker gray
   },
   calorieRemaining: {
     fontSize: 14,
-    color: "#CCCCCC", // Changed from medium gray to light gray
+    color: "#666666", // Changed from light gray to darker gray
     marginBottom: 12,
   },
   progressBarContainer: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: "100%",
-    backgroundColor: colors.primary,
+    backgroundColor: "#000000", // Changed from colors.primary to black
     borderRadius: 4,
   },
   macroSection: {
@@ -314,13 +314,13 @@ const styles = StyleSheet.create({
   },
   macroTitle: {
     fontSize: 14,
-    color: "#FFFFFF", // Changed from black to white
+    color: "#000000", // Changed from white to black
     fontWeight: "500",
   },
   macroValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF", // Changed from black to white
+    color: "#000000", // Changed from white to black
   },
   achievementProgress: {
     flexDirection: "row",
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   motivationText: {
     fontSize: 14,
-    color: "#FFFFFF", // Changed from black to white
+    color: "#FFFFFF", // Kept as white as requested
     fontStyle: "italic",
     textAlign: "center",
   },
@@ -375,12 +375,12 @@ const styles = StyleSheet.create({
   noGoalsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#FFFFFF", // Changed from black to white
+    color: "#000000", // Changed from white to black
     marginBottom: 8,
   },
   noGoalsDescription: {
     fontSize: 14,
-    color: "#CCCCCC", // Changed from medium gray to light gray
+    color: "#666666", // Changed from light gray to darker gray
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 20,
