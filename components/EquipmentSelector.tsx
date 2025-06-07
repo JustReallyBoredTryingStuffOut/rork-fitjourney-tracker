@@ -4,10 +4,9 @@ import { colors } from '@/constants/colors';
 import { EquipmentType } from '@/types';
 import { 
   Dumbbell, 
-  Cable, 
   User, 
   Box, 
-  Barbell, 
+  Barbell as BarIcon, 
   ArrowUp, 
   Armchair, 
   Circle, 
@@ -17,8 +16,8 @@ import {
   Footprints, 
   ArrowDown, 
   MoveHorizontal,
-  Disc,
-  Gauge
+  CircleDot,
+  Activity
 } from 'lucide-react-native';
 
 type EquipmentSelectorProps = {
@@ -46,13 +45,43 @@ export default function EquipmentSelector({
     
     switch (equipment) {
       case 'Barbell':
-        return <Barbell size={iconSize} color={iconColor} />;
+        return (
+          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ 
+              width: iconSize, 
+              height: iconSize/6, 
+              backgroundColor: iconColor,
+              borderRadius: iconSize/12
+            }} />
+            <View style={{ 
+              position: 'absolute', 
+              left: 0, 
+              width: iconSize/4, 
+              height: iconSize/4, 
+              backgroundColor: iconColor,
+              borderRadius: iconSize/8
+            }} />
+            <View style={{ 
+              position: 'absolute', 
+              right: 0, 
+              width: iconSize/4, 
+              height: iconSize/4, 
+              backgroundColor: iconColor,
+              borderRadius: iconSize/8
+            }} />
+          </View>
+        );
       case 'Dumbbell':
         return <Dumbbell size={iconSize} color={iconColor} />;
       case 'Kettlebell':
         return (
           <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-            <Disc size={iconSize} color={iconColor} />
+            <View style={{ 
+              width: iconSize*0.7, 
+              height: iconSize*0.7, 
+              borderRadius: iconSize*0.35,
+              backgroundColor: iconColor
+            }} />
             <View style={{ 
               position: 'absolute', 
               top: 0, 
@@ -66,7 +95,31 @@ export default function EquipmentSelector({
           </View>
         );
       case 'Cable Machine':
-        return <Cable size={iconSize} color={iconColor} />;
+        return (
+          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ 
+              width: iconSize*0.6, 
+              height: iconSize*0.8, 
+              borderWidth: 2,
+              borderColor: iconColor,
+              borderRadius: 3
+            }} />
+            <View style={{ 
+              position: 'absolute', 
+              top: iconSize*0.2, 
+              width: iconSize*0.8, 
+              height: 2, 
+              backgroundColor: iconColor
+            }} />
+            <View style={{ 
+              position: 'absolute', 
+              top: iconSize*0.4, 
+              width: 2, 
+              height: iconSize*0.6, 
+              backgroundColor: iconColor
+            }} />
+          </View>
+        );
       case 'Machine':
         return <Box size={iconSize} color={iconColor} />;
       case 'Bodyweight':
@@ -74,7 +127,32 @@ export default function EquipmentSelector({
       case 'Pull-up Bar':
         return <ArrowUp size={iconSize} color={iconColor} />;
       case 'Bench':
-        return <Armchair size={iconSize} color={iconColor} />;
+        return (
+          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ 
+              width: iconSize*0.8, 
+              height: iconSize*0.4, 
+              backgroundColor: iconColor,
+              borderRadius: 3
+            }} />
+            <View style={{ 
+              position: 'absolute', 
+              bottom: 0, 
+              left: iconSize*0.15, 
+              width: 2, 
+              height: iconSize*0.3, 
+              backgroundColor: iconColor
+            }} />
+            <View style={{ 
+              position: 'absolute', 
+              bottom: 0, 
+              right: iconSize*0.15, 
+              width: 2, 
+              height: iconSize*0.3, 
+              backgroundColor: iconColor
+            }} />
+          </View>
+        );
       case 'Stability Ball':
         return <Circle size={iconSize} color={iconColor} />;
       case 'Medicine Ball':
@@ -82,7 +160,18 @@ export default function EquipmentSelector({
       case 'TRX':
         return <Anchor size={iconSize} color={iconColor} />;
       case 'Ab Wheel':
-        return <Gauge size={iconSize} color={iconColor} />;
+        return (
+          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+            <CircleDot size={iconSize} color={iconColor} />
+            <View style={{ 
+              position: 'absolute', 
+              left: iconSize*0.3, 
+              width: iconSize*0.4, 
+              height: 2, 
+              backgroundColor: iconColor
+            }} />
+          </View>
+        );
       case 'Resistance Band':
         return <Infinity size={iconSize} color={iconColor} />;
       case 'Rope Attachment':

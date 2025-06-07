@@ -4,8 +4,8 @@ import { Pedometer } from "expo-sensors";
 import { useHealthStore } from "@/store/healthStore";
 import * as ExpoDevice from "expo-device";
 
-// Import the CoreBluetooth module for iOS
-import CoreBluetooth from "../src/NativeModules/CoreBluetooth";
+// Import the CoreBluetooth module with correct path
+import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
 
 export default function useStepCounter() {
   const [isPedometerAvailable, setIsPedometerAvailable] = useState(false);

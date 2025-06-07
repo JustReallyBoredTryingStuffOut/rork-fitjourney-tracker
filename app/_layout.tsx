@@ -203,7 +203,7 @@ export default function RootLayout() {
       const age = birthYear ? new Date().getFullYear() - parseInt(birthYear) : userProfile.age;
       
       updateUserProfile({
-        name: name.trim(),
+        name: name.trim() || "Fitness Enthusiast", // Default name if empty
         weight: weight ? parseFloat(weight) : userProfile.weight,
         height: height ? parseFloat(height) : userProfile.height,
         age: age || 30,
@@ -243,7 +243,7 @@ export default function RootLayout() {
       const age = birthYear ? new Date().getFullYear() - parseInt(birthYear) : userProfile.age;
       
       updateUserProfile({
-        name: name.trim() || userProfile.name || "User",
+        name: name.trim() || "Fitness Enthusiast", // Default name if empty
         weight: weight ? parseFloat(weight) : userProfile.weight,
         height: height ? parseFloat(height) : userProfile.height,
         age: age || 30,
@@ -280,7 +280,6 @@ export default function RootLayout() {
   const handleAiRecommendationsToggle = (enabled: boolean) => {
     toggleWorkoutRecommendations(enabled);
     setAiRecommendationsExplained(true);
-    setShowAiRecommendationsModal(false);
     handleContinue();
   };
   
@@ -310,7 +309,7 @@ export default function RootLayout() {
       icon: <Image source={require('@/assets/images/adaptive-icon.png')} style={styles.welcomeIcon} />,
       action: () => handleContinue(),
       actionText: "Get Started",
-      showSkip: true,
+      showSkip: false, // Don't allow skipping the first screen
     },
     {
       title: "Gamify Your Fitness Journey",
@@ -318,7 +317,7 @@ export default function RootLayout() {
       icon: <Trophy size={80} color={colors.primary} />,
       action: () => handleContinue(),
       actionText: "Tell Me More",
-      showSkip: true,
+      showSkip: false, // Don't allow skipping
     },
     {
       title: "Track Your Progress",
@@ -326,7 +325,7 @@ export default function RootLayout() {
       icon: <Award size={80} color={colors.primary} />,
       action: () => handleContinue(),
       actionText: "Sounds Fun",
-      showSkip: true,
+      showSkip: false, // Don't allow skipping
     },
     {
       title: "Enable Gamification?",
@@ -375,7 +374,7 @@ export default function RootLayout() {
       ),
       action: () => handleContinue(),
       actionText: "Continue",
-      showSkip: false,
+      showSkip: false, // Don't allow skipping name entry
     },
     {
       title: "Your Body Metrics",
@@ -434,7 +433,7 @@ export default function RootLayout() {
       ),
       action: () => handleContinue(),
       actionText: "Continue",
-      showSkip: false,
+      showSkip: false, // Don't allow skipping body metrics
     },
     {
       title: "Your Fitness Profile",
@@ -508,8 +507,7 @@ export default function RootLayout() {
       ),
       action: () => handleContinue(),
       actionText: "Continue",
-      showSkip: true,
-      skipText: "Skip",
+      showSkip: false, // Don't allow skipping fitness profile
     },
     {
       title: "AI Workout Recommendations",

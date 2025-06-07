@@ -25,6 +25,8 @@ import StepCounter from "@/components/StepCounter";
 import WeightTracker from "@/components/WeightTracker";
 import ActivityMap from "@/components/ActivityMap";
 import Button from "@/components/Button";
+
+// Import CoreBluetooth with correct path
 import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
 
 export default function HealthScreen() {
