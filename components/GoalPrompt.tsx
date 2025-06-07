@@ -9,9 +9,10 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
-import { X, Calendar, Target, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { X, Calendar, Target, ChevronDown, ChevronUp, Droplet } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import Button from './Button';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -20,7 +21,7 @@ interface GoalPromptProps {
   visible: boolean;
   prompt: string;
   onClose: () => void;
-  onSubmit: (goalText: string, timeframe: "weekly" | "monthly", targetDate?: string) => void;
+  onSubmit: (goalText: string, timeframe: "weekly" | "monthly", targetDate?: string, waterBottleSize?: number) => void;
   isLoading?: boolean;
   examples?: string[];
   timeframe: "weekly" | "monthly";
@@ -42,6 +43,8 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
   const [showExamples, setShowExamples] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [targetDate, setTargetDate] = useState<Date | undefined>(undefined);
+  const [showWaterBottlePrompt, setShowWaterBottlePrompt] = useState(false);
+  const [waterBottleSize, setWaterBottleSize] = useState<string>('');
   
   // Calculate default target date based on timeframe
   useEffect(() => {
@@ -67,12 +70,31 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
       setGoalText('');
       setShowExamples(false);
       setShowDatePicker(false);
+      setShowWaterBottlePrompt(false);
+      setWaterBottleSize('');
     }
   }, [visible]);
   
   const handleSubmit = () => {
     if (goalText.trim()) {
-      onSubmit(goalText, timeframe, targetDate?.toISOString());
+      // Check if it's a water goal
+      const isWaterGoal = goalText.toLowerCase().includes('water') || 
+                          goalText.toLowerCase().includes('drink') || 
+                          goalText.toLowerCase().includes('hydrate') ||
+                          goalText.toLowerCase().includes('liter');
+      
+      if (isWaterGoal && !showWaterBottlePrompt) {
+        // Show water bottle size prompt
+        setShowWaterBottlePrompt(true);
+        return;
+      }
+      
+      // If water bottle prompt is shown and size is entered, or it's not a water goal
+      const bottleSize = waterBottleSize ? parseFloat(waterBottleSize) : undefined;
+      onSubmit(goalText, timeframe, targetDate?.toISOString(), bottleSize);
+      
+      // Reset water bottle prompt
+      setShowWaterBottlePrompt(false);
     }
   };
   
@@ -113,6 +135,33 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
     setShowDatePicker(true);
   };
   
+  // Handle water bottle size input
+  const handleWaterBottleSizeChange = (text: string) => {
+    // Only allow numbers and decimal point
+    const filteredText = text.replace(/[^0-9.]/g, '');
+    setWaterBottleSize(filteredText);
+  };
+  
+  // Calculate number of bottles needed
+  const calculateBottlesNeeded = () => {
+    if (!waterBottleSize || isNaN(parseFloat(waterBottleSize)) || parseFloat(waterBottleSize) <= 0) {
+      return null;
+    }
+    
+    // Extract target water amount from goal text (assuming it's in liters)
+    const matches = goalText.match(/(\d+(\.\d+)?)\s*(l|liter|liters)/i);
+    if (!matches || !matches[1]) return null;
+    
+    const targetLiters = parseFloat(matches[1]);
+    const bottleSize = parseFloat(waterBottleSize);
+    
+    // Calculate bottles needed
+    const bottlesNeeded = Math.ceil(targetLiters / bottleSize);
+    return bottlesNeeded;
+  };
+  
+  const bottlesNeeded = calculateBottlesNeeded();
+  
   return (
     <Modal
       visible={visible}
@@ -137,174 +186,238 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
             </TouchableOpacity>
           </View>
           
-          <Text style={[styles.prompt, { color: colors.textSecondary }]}>{prompt}</Text>
-          
-          <View style={styles.timeframeSelector}>
-            <TouchableOpacity 
-              style={[
-                styles.timeframeOption, 
-                timeframe === "weekly" && { backgroundColor: colors.primary },
-                { borderColor: colors.border }
-              ]}
-              onPress={() => onTimeframeChange("weekly")}
-            >
-              <Target size={16} color={timeframe === "weekly" ? "#FFFFFF" : colors.text} />
-              <Text 
-                style={[
-                  styles.timeframeText, 
-                  { color: timeframe === "weekly" ? "#FFFFFF" : colors.text }
-                ]}
-              >
-                Weekly
+          {showWaterBottlePrompt ? (
+            // Water bottle size prompt
+            <View style={styles.waterBottlePromptContainer}>
+              <View style={styles.waterIconContainer}>
+                <Droplet size={40} color={colors.primary} />
+              </View>
+              
+              <Text style={[styles.waterPromptTitle, { color: colors.text }]}>
+                Water Bottle Size
               </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[
-                styles.timeframeOption, 
-                timeframe === "monthly" && { backgroundColor: colors.primary },
-                { borderColor: colors.border }
-              ]}
-              onPress={() => onTimeframeChange("monthly")}
-            >
-              <Calendar size={16} color={timeframe === "monthly" ? "#FFFFFF" : colors.text} />
-              <Text 
-                style={[
-                  styles.timeframeText, 
-                  { color: timeframe === "monthly" ? "#FFFFFF" : colors.text }
-                ]}
-              >
-                Monthly
+              
+              <Text style={[styles.waterPromptDescription, { color: colors.textSecondary }]}>
+                To help track your water intake, please enter the size of your water bottle in liters.
               </Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[
-                styles.input, 
-                { 
-                  backgroundColor: colors.background, 
-                  color: colors.text,
-                  borderColor: colors.border
-                }
-              ]}
-              placeholder="Enter your fitness goal..."
-              placeholderTextColor={colors.textLight}
-              value={goalText}
-              onChangeText={setGoalText}
-              multiline
-              autoFocus
-            />
-          </View>
-          
-          {/* Target Date Button - Made more prominent and clearly interactive */}
-          <TouchableOpacity 
-            style={[
-              styles.targetDateButton, 
-              { 
-                backgroundColor: colors.background,
-                borderColor: colors.primary,
-                borderWidth: 1
-              }
-            ]}
-            onPress={openDatePicker}
-            activeOpacity={0.7}
-          >
-            <Calendar size={20} color={colors.primary} />
-            <Text style={[styles.targetDateText, { color: colors.text }]}>
-              {targetDate 
-                ? `Target Date: ${formatDate(targetDate)}` 
-                : "Set Target Date (Optional)"}
-            </Text>
-            <View style={styles.editIndicator}>
-              <Text style={[styles.editText, { color: colors.primary }]}>Edit</Text>
-            </View>
-          </TouchableOpacity>
-          
-          {/* Date Picker */}
-          {showDatePicker && (
-            <View style={[styles.datePickerContainer, { backgroundColor: colors.background }]}>
-              {Platform.OS === 'ios' && (
-                <View style={styles.datePickerHeader}>
-                  <Text style={[styles.datePickerTitle, { color: colors.text }]}>
-                    Select Target Date
+              
+              <View style={styles.waterInputContainer}>
+                <TextInput
+                  style={[
+                    styles.waterInput, 
+                    { 
+                      backgroundColor: colors.background, 
+                      color: colors.text,
+                      borderColor: colors.border
+                    }
+                  ]}
+                  placeholder="0.5"
+                  placeholderTextColor={colors.textLight}
+                  value={waterBottleSize}
+                  onChangeText={handleWaterBottleSizeChange}
+                  keyboardType="numeric"
+                  autoFocus
+                />
+                <Text style={[styles.waterInputUnit, { color: colors.text }]}>L</Text>
+              </View>
+              
+              {bottlesNeeded !== null && (
+                <View style={[styles.bottlesNeededContainer, { backgroundColor: colors.background }]}>
+                  <Text style={[styles.bottlesNeededText, { color: colors.text }]}>
+                    You'll need to drink approximately {bottlesNeeded} {bottlesNeeded === 1 ? 'bottle' : 'bottles'} per day to reach your goal.
                   </Text>
                 </View>
               )}
               
-              <DateTimePicker
-                value={targetDate || new Date()}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleDateChange}
-                minimumDate={new Date()}
-                style={styles.datePicker}
-                testID="dateTimePicker"
-              />
+              <View style={styles.waterButtonsContainer}>
+                <Button
+                  title="Back"
+                  onPress={() => setShowWaterBottlePrompt(false)}
+                  variant="outline"
+                  style={styles.waterBackButton}
+                />
+                <Button
+                  title={isLoading ? "Setting Goal..." : "Set Goal"}
+                  onPress={handleSubmit}
+                  disabled={isLoading}
+                  style={styles.waterSubmitButton}
+                  icon={isLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined}
+                />
+              </View>
+            </View>
+          ) : (
+            // Regular goal prompt
+            <>
+              <Text style={[styles.prompt, { color: colors.textSecondary }]}>{prompt}</Text>
               
-              {Platform.OS === 'ios' && (
-                <View style={styles.datePickerActions}>
-                  <TouchableOpacity 
-                    style={[styles.datePickerCancel, { backgroundColor: colors.background }]}
-                    onPress={() => setShowDatePicker(false)}
+              <View style={styles.timeframeSelector}>
+                <TouchableOpacity 
+                  style={[
+                    styles.timeframeOption, 
+                    timeframe === "weekly" && { backgroundColor: colors.primary },
+                    { borderColor: colors.border }
+                  ]}
+                  onPress={() => onTimeframeChange("weekly")}
+                >
+                  <Target size={16} color={timeframe === "weekly" ? "#FFFFFF" : colors.text} />
+                  <Text 
+                    style={[
+                      styles.timeframeText, 
+                      { color: timeframe === "weekly" ? "#FFFFFF" : colors.text }
+                    ]}
                   >
-                    <Text style={[styles.datePickerButtonText, { color: colors.error }]}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.datePickerDone, { backgroundColor: colors.background }]}
-                    onPress={() => setShowDatePicker(false)}
+                    Weekly
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[
+                    styles.timeframeOption, 
+                    timeframe === "monthly" && { backgroundColor: colors.primary },
+                    { borderColor: colors.border }
+                  ]}
+                  onPress={() => onTimeframeChange("monthly")}
+                >
+                  <Calendar size={16} color={timeframe === "monthly" ? "#FFFFFF" : colors.text} />
+                  <Text 
+                    style={[
+                      styles.timeframeText, 
+                      { color: timeframe === "monthly" ? "#FFFFFF" : colors.text }
+                    ]}
                   >
-                    <Text style={[styles.datePickerButtonText, { color: colors.primary }]}>Done</Text>
-                  </TouchableOpacity>
+                    Monthly
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input, 
+                    { 
+                      backgroundColor: colors.background, 
+                      color: colors.text,
+                      borderColor: colors.border
+                    }
+                  ]}
+                  placeholder="Enter your fitness goal..."
+                  placeholderTextColor={colors.textLight}
+                  value={goalText}
+                  onChangeText={setGoalText}
+                  multiline
+                  autoFocus
+                />
+              </View>
+              
+              {/* Target Date Button - Made more prominent and clearly interactive */}
+              <TouchableOpacity 
+                style={[
+                  styles.targetDateButton, 
+                  { 
+                    backgroundColor: colors.background,
+                    borderColor: colors.primary,
+                    borderWidth: 1
+                  }
+                ]}
+                onPress={openDatePicker}
+                activeOpacity={0.7}
+              >
+                <Calendar size={20} color={colors.primary} />
+                <Text style={[styles.targetDateText, { color: colors.text }]}>
+                  {targetDate 
+                    ? `Target Date: ${formatDate(targetDate)}` 
+                    : "Set Target Date (Optional)"}
+                </Text>
+                <View style={styles.editIndicator}>
+                  <Text style={[styles.editText, { color: colors.primary }]}>Edit</Text>
+                </View>
+              </TouchableOpacity>
+              
+              {/* Date Picker */}
+              {showDatePicker && (
+                <View style={[styles.datePickerContainer, { backgroundColor: colors.background }]}>
+                  {Platform.OS === 'ios' && (
+                    <View style={styles.datePickerHeader}>
+                      <Text style={[styles.datePickerTitle, { color: colors.text }]}>
+                        Select Target Date
+                      </Text>
+                    </View>
+                  )}
+                  
+                  <DateTimePicker
+                    value={targetDate || new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleDateChange}
+                    minimumDate={new Date()}
+                    style={styles.datePicker}
+                    testID="dateTimePicker"
+                  />
+                  
+                  {Platform.OS === 'ios' && (
+                    <View style={styles.datePickerActions}>
+                      <TouchableOpacity 
+                        style={[styles.datePickerCancel, { backgroundColor: colors.background }]}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text style={[styles.datePickerButtonText, { color: colors.error }]}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.datePickerDone, { backgroundColor: colors.background }]}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text style={[styles.datePickerButtonText, { color: colors.primary }]}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               )}
-            </View>
+              
+              <TouchableOpacity 
+                style={styles.examplesHeader}
+                onPress={() => setShowExamples(!showExamples)}
+              >
+                <Text style={[styles.examplesTitle, { color: colors.primary }]}>
+                  Need inspiration? View examples
+                </Text>
+                {showExamples ? (
+                  <ChevronUp size={20} color={colors.primary} />
+                ) : (
+                  <ChevronDown size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+              
+              {showExamples && (
+                <ScrollView style={styles.examplesList} contentContainerStyle={styles.examplesContent}>
+                  {examples.map((example, index) => (
+                    <TouchableOpacity 
+                      key={index}
+                      style={[styles.exampleItem, { backgroundColor: colors.background }]}
+                      onPress={() => handleSelectExample(example)}
+                    >
+                      <Text style={[styles.exampleText, { color: colors.text }]}>{example}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+              
+              <View style={styles.footer}>
+                <Button
+                  title="Cancel"
+                  onPress={onClose}
+                  variant="outline"
+                  style={styles.cancelButton}
+                />
+                <Button
+                  title={isLoading ? "Setting Goal..." : "Set Goal"}
+                  onPress={handleSubmit}
+                  disabled={!goalText.trim() || isLoading}
+                  style={styles.submitButton}
+                  icon={isLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined}
+                />
+              </View>
+            </>
           )}
-          
-          <TouchableOpacity 
-            style={styles.examplesHeader}
-            onPress={() => setShowExamples(!showExamples)}
-          >
-            <Text style={[styles.examplesTitle, { color: colors.primary }]}>
-              Need inspiration? View examples
-            </Text>
-            {showExamples ? (
-              <ChevronUp size={20} color={colors.primary} />
-            ) : (
-              <ChevronDown size={20} color={colors.primary} />
-            )}
-          </TouchableOpacity>
-          
-          {showExamples && (
-            <ScrollView style={styles.examplesList} contentContainerStyle={styles.examplesContent}>
-              {examples.map((example, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={[styles.exampleItem, { backgroundColor: colors.background }]}
-                  onPress={() => handleSelectExample(example)}
-                >
-                  <Text style={[styles.exampleText, { color: colors.text }]}>{example}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-          
-          <View style={styles.footer}>
-            <Button
-              title="Cancel"
-              onPress={onClose}
-              variant="outline"
-              style={styles.cancelButton}
-            />
-            <Button
-              title={isLoading ? "Setting Goal..." : "Set Goal"}
-              onPress={handleSubmit}
-              disabled={!goalText.trim() || isLoading}
-              style={styles.submitButton}
-              icon={isLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined}
-            />
-          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -485,6 +598,73 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   submitButton: {
+    flex: 2,
+  },
+  // Water bottle prompt styles
+  waterBottlePromptContainer: {
+    alignItems: 'center',
+  },
+  waterIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  waterPromptTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  waterPromptDescription: {
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  waterInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%',
+  },
+  waterInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  waterInputUnit: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
+  bottlesNeededContainer: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    width: '100%',
+  },
+  bottlesNeededText: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  waterButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  waterBackButton: {
+    flex: 1,
+    marginRight: 8,
+  },
+  waterSubmitButton: {
     flex: 2,
   },
 });

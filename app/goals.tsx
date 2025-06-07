@@ -22,7 +22,8 @@ import {
   X, 
   ChevronRight,
   ArrowLeft,
-  Clock
+  Clock,
+  Droplet
 } from "lucide-react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from "@/context/ThemeContext";
@@ -88,7 +89,7 @@ export default function GoalsScreen() {
   const weeklyGoals = filteredGoals.filter(goal => goal.timeframe === "weekly");
   const monthlyGoals = filteredGoals.filter(goal => goal.timeframe === "monthly");
   
-  const handleSubmitGoal = async (goalText: string, timeframe: "weekly" | "monthly", targetDate?: string) => {
+  const handleSubmitGoal = async (goalText: string, timeframe: "weekly" | "monthly", targetDate?: string, waterBottleSize?: number) => {
     setIsSettingGoal(true);
     
     try {
@@ -116,7 +117,8 @@ export default function GoalsScreen() {
         targetValue,
         timePeriod: timePeriod || (timeframe === 'weekly' ? 'weekly' : 'monthly'),
         reminderSchedule: category === 'water' ? 'hourly' : 'daily',
-        currentValue: 0
+        currentValue: 0,
+        waterBottleSize
       };
       
       // Add the goal
@@ -425,6 +427,16 @@ export default function GoalsScreen() {
                                   <Edit size={12} color={colors.primary} style={styles.targetDateEditIcon} />
                                 </TouchableOpacity>
                               )}
+                              
+                              {/* Water bottle size indicator for water goals */}
+                              {goal.category === 'water' && goal.waterBottleSize && (
+                                <View style={styles.waterBottleContainer}>
+                                  <Droplet size={14} color={colors.primary} style={styles.waterBottleIcon} />
+                                  <Text style={[styles.waterBottleText, { color: colors.primary }]}>
+                                    Bottle size: {goal.waterBottleSize}L
+                                  </Text>
+                                </View>
+                              )}
                             </View>
                             
                             {/* Progress bar for goal */}
@@ -548,6 +560,16 @@ export default function GoalsScreen() {
                                   </Text>
                                   <Edit size={12} color={colors.primary} style={styles.targetDateEditIcon} />
                                 </TouchableOpacity>
+                              )}
+                              
+                              {/* Water bottle size indicator for water goals */}
+                              {goal.category === 'water' && goal.waterBottleSize && (
+                                <View style={styles.waterBottleContainer}>
+                                  <Droplet size={14} color={colors.primary} style={styles.waterBottleIcon} />
+                                  <Text style={[styles.waterBottleText, { color: colors.primary }]}>
+                                    Bottle size: {goal.waterBottleSize}L
+                                  </Text>
+                                </View>
                               )}
                             </View>
                             
@@ -841,6 +863,7 @@ const styles = StyleSheet.create({
   targetDateContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 4,
   },
   targetDateIcon: {
     marginRight: 4,
@@ -851,6 +874,18 @@ const styles = StyleSheet.create({
   },
   targetDateEditIcon: {
     marginLeft: 4,
+  },
+  // Water bottle size styles
+  waterBottleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  waterBottleIcon: {
+    marginRight: 4,
+  },
+  waterBottleText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   goalTimeframeBadge: {
     alignSelf: "flex-start",

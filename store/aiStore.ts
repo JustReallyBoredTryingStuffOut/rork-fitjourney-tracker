@@ -23,6 +23,7 @@ export interface Goal {
   reminderSchedule?: "hourly" | "daily" | "custom"; // How often to send reminders
   currentValue?: number; // Current progress value
   dailyProgress?: Record<string, boolean>; // For tracking daily completion of weekly goals
+  waterBottleSize?: number; // Size of water bottle in liters
 }
 
 export interface GoalMilestone {
@@ -559,6 +560,28 @@ export const useAiStore = create<AiState>()(
             return "Almost there! You've met your water goal for 6 days this week. Just one more day to complete your goal!";
           } else {
             return "You've met your water goal every day this week! Great job staying hydrated!";
+          }
+        }
+        
+        // Special message for water goals with bottle size
+        if (goal.category === "water" && goal.waterBottleSize) {
+          // Extract target water amount (in liters)
+          const matches = goal.text.match(/(\d+(\.\d+)?)\s*(l|liter|liters)/i);
+          if (matches) {
+            const targetWater = parseFloat(matches[1]);
+            const bottleSize = goal.waterBottleSize;
+            const bottlesNeeded = Math.ceil(targetWater / bottleSize);
+            const currentValue = goal.currentValue || 0;
+            const bottlesCompleted = Math.floor(currentValue / bottleSize);
+            const bottlesRemaining = Math.max(0, bottlesNeeded - bottlesCompleted);
+            
+            if (bottlesCompleted === 0) {
+              return `You need to drink ${bottlesNeeded} bottle${bottlesNeeded !== 1 ? 's' : ''} (${bottleSize}L each) to reach your goal.`;
+            } else if (bottlesCompleted < bottlesNeeded) {
+              return `You've had ${bottlesCompleted} bottle${bottlesCompleted !== 1 ? 's' : ''} so far. ${bottlesRemaining} more to go!`;
+            } else {
+              return "You've reached your water intake goal for today!";
+            }
           }
         }
         

@@ -531,93 +531,6 @@ export default function HomeScreen() {
     return '';
   };
   
-  const handleMoodSelected = (mood: string, emoji: string, preference?: string) => {
-    const moodData: UserMood = {
-      mood,
-      emoji,
-      date: new Date().toISOString(),
-      preference
-    };
-    
-    setUserMood(moodData);
-    setShowMoodSelector(false);
-    
-    // If user selected "rest" preference, show rest day activities
-    if (preference === "rest") {
-      setShowRestDayActivities(true);
-    }
-    
-    // Speak response if voice is enabled
-    if (voiceEnabled && Platform.OS !== 'web') {
-      let response = "";
-      
-      if (preference === "rest") {
-        response = "Rest days are important for recovery. I'll suggest some light activities you can do instead.";
-      } else if (preference === "shorter" && mood === "tired") {
-        response = "I understand you're tired. I'll recommend shorter, effective workouts to match your energy level today.";
-      } else if (preference === "light" && mood === "bad") {
-        response = "I'm sorry you're not feeling great. Light exercise can help improve your mood. I'll suggest some gentle options.";
-      } else if (preference === "challenging" && (mood === "great" || mood === "good")) {
-        response = "You're feeling great! I'll suggest some challenging workouts to match your energy today.";
-      } else {
-        switch (mood) {
-          case "great":
-            response = "That's awesome! Let's keep that energy going with a great workout!";
-            break;
-          case "good":
-            response = "Good to hear! A workout will make your day even better.";
-            break;
-          case "okay":
-            response = "A workout might be just what you need to turn your day around!";
-            break;
-          case "tired":
-            response = "I understand. Maybe a lighter workout today would be good for you.";
-            break;
-          case "bad":
-            response = "I'm sorry to hear that. Exercise can help boost your mood. Let's start with something gentle.";
-            break;
-          default:
-            response = "Thanks for sharing how you're feeling. Let's find a workout that matches your energy today.";
-        }
-      }
-      
-      Speech.speak(response, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
-      });
-    }
-  };
-  
-  const toggleVoice = () => {
-    setVoiceEnabled(!voiceEnabled);
-    
-    if (!voiceEnabled && Platform.OS !== 'web') {
-      Speech.speak("Voice assistant enabled. I'm here to help with your fitness journey.", {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
-      });
-    }
-  };
-  
-  const handleAnalyzeWorkouts = () => {
-    // Analyze workout durations
-    const analysis = analyzeWorkoutDurations(workoutLogs);
-    
-    // Show analysis modal
-    setShowWorkoutAnalysis(true);
-    
-    // Speak analysis if voice is enabled
-    if (voiceEnabled && Platform.OS !== 'web' && analysis.recommendations.timeOptimization.length > 0) {
-      Speech.speak(`Based on your workout history, here's a tip: ${analysis.recommendations.timeOptimization[0]}`, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
-      });
-    }
-  };
-  
   const handleEditGoal = (goal: Goal) => {
     setEditingGoalId(goal.id);
     setEditedGoalText(goal.text);
@@ -703,6 +616,93 @@ export default function HomeScreen() {
   // Navigate to daily quests screen
   const navigateToDailyQuests = () => {
     router.push("/daily-quests");
+  };
+  
+  const handleMoodSelected = (mood: string, emoji: string, preference?: string) => {
+    const moodData: UserMood = {
+      mood,
+      emoji,
+      date: new Date().toISOString(),
+      preference
+    };
+    
+    setUserMood(moodData);
+    setShowMoodSelector(false);
+    
+    // If user selected "rest" preference, show rest day activities
+    if (preference === "rest") {
+      setShowRestDayActivities(true);
+    }
+    
+    // Speak response if voice is enabled
+    if (voiceEnabled && Platform.OS !== 'web') {
+      let response = "";
+      
+      if (preference === "rest") {
+        response = "Rest days are important for recovery. I'll suggest some light activities you can do instead.";
+      } else if (preference === "shorter" && mood === "tired") {
+        response = "I understand you're tired. I'll recommend shorter, effective workouts to match your energy level today.";
+      } else if (preference === "light" && mood === "bad") {
+        response = "I'm sorry you're not feeling great. Light exercise can help improve your mood. I'll suggest some gentle options.";
+      } else if (preference === "challenging" && (mood === "great" || mood === "good")) {
+        response = "You're feeling great! I'll suggest some challenging workouts to match your energy today.";
+      } else {
+        switch (mood) {
+          case "great":
+            response = "That's awesome! Let's keep that energy going with a great workout!";
+            break;
+          case "good":
+            response = "Good to hear! A workout will make your day even better.";
+            break;
+          case "okay":
+            response = "A workout might be just what you need to turn your day around!";
+            break;
+          case "tired":
+            response = "I understand. Maybe a lighter workout today would be good for you.";
+            break;
+          case "bad":
+            response = "I'm sorry to hear that. Exercise can help boost your mood. Let's start with something gentle.";
+            break;
+          default:
+            response = "Thanks for sharing how you're feeling. Let's find a workout that matches your energy today.";
+        }
+      }
+      
+      Speech.speak(response, {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.9
+      });
+    }
+  };
+  
+  const toggleVoice = () => {
+    setVoiceEnabled(!voiceEnabled);
+    
+    if (!voiceEnabled && Platform.OS !== 'web') {
+      Speech.speak("Voice assistant enabled. I'm here to help with your fitness journey.", {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.9
+      });
+    }
+  };
+  
+  const handleAnalyzeWorkouts = () => {
+    // Analyze workout durations
+    const analysis = analyzeWorkoutDurations(workoutLogs);
+    
+    // Show analysis modal
+    setShowWorkoutAnalysis(true);
+    
+    // Speak analysis if voice is enabled
+    if (voiceEnabled && Platform.OS !== 'web' && analysis.recommendations.timeOptimization.length > 0) {
+      Speech.speak(`Based on your workout history, here's a tip: ${analysis.recommendations.timeOptimization[0]}`, {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.9
+      });
+    }
   };
   
   return (

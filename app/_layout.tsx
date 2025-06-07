@@ -53,6 +53,7 @@ export default function RootLayout() {
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
   const loadingBarWidth = useRef(new Animated.Value(0)).current;
   const welcomeFadeIn = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
   
   // Check if it's the first launch
   useEffect(() => {
@@ -96,8 +97,24 @@ export default function RootLayout() {
         duration: 800,
         useNativeDriver: true,
       }).start();
+      
+      // Animate progress bar
+      Animated.timing(progressAnim, {
+        toValue: currentOnboardingStep / (onboardingSteps.length - 1),
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
     }
-  }, [showWelcome, fadeAnim, slideAnim]);
+  }, [showWelcome, fadeAnim, slideAnim, currentOnboardingStep]);
+  
+  // Update progress bar when step changes
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: currentOnboardingStep / (onboardingSteps.length - 1),
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [currentOnboardingStep]);
   
   // Run loading screen animations
   useEffect(() => {
@@ -668,16 +685,22 @@ export default function RootLayout() {
               />
             )}
             
-            <View style={styles.dotsContainer}>
-              {onboardingSteps.map((_, index) => (
-                <View 
-                  key={index} 
-                  style={[
-                    styles.dot, 
-                    index === currentOnboardingStep && styles.activeDot
-                  ]} 
-                />
-              ))}
+            {/* Modern progress bar instead of dots */}
+            <View style={styles.progressContainer}>
+              <Animated.View 
+                style={[
+                  styles.progressBar,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%']
+                    })
+                  }
+                ]}
+              />
+              <Text style={styles.progressText}>
+                {currentOnboardingStep + 1}/{onboardingSteps.length}
+              </Text>
             </View>
             
             {currentOnboardingStep >= 4 && (
@@ -759,20 +782,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 4,
   },
-  dotsContainer: {
-    flexDirection: 'row',
+  // Modern progress indicator
+  progressContainer: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
     marginTop: 20,
+    marginBottom: 10,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#555555',
-    marginHorizontal: 4,
-  },
-  activeDot: {
+  progressBar: {
+    height: '100%',
     backgroundColor: colors.primary,
-    width: 20,
+    borderRadius: 3,
+  },
+  progressText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.7,
   },
   choiceButtons: {
     flexDirection: 'row',
