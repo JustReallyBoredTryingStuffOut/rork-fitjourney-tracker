@@ -25,7 +25,6 @@ import {
 } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { useWorkoutStore } from "@/store/workoutStore";
-import { exercises } from "@/mocks/exercises";
 import { Exercise } from "@/types";
 import Button from "@/components/Button";
 import ExerciseCard from "@/components/ExerciseCard";
@@ -33,7 +32,7 @@ import ExerciseCard from "@/components/ExerciseCard";
 export default function CreateWorkoutScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { addWorkout } = useWorkoutStore();
+  const { addWorkout, exercises } = useWorkoutStore();
   
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -44,38 +43,95 @@ export default function CreateWorkoutScreen() {
   
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [selectedBodyRegion, setSelectedBodyRegion] = useState<string | null>(null);
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
+  const [selectedEquipmentCategory, setSelectedEquipmentCategory] = useState<string | null>(null);
+  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
+  const [bodyViewMode, setBodyViewMode] = useState<'front' | 'back'>('front');
   
   // Get unique categories and muscle groups for filtering
-  const exerciseCategories = Array.from(new Set(exercises.map(ex => ex.category)));
-  const muscleGroups = Array.from(
-    new Set(exercises.flatMap(ex => ex.muscleGroups))
-  ).sort();
+  const bodyRegions = Array.from(new Set(exercises.map(ex => ex.bodyRegion)));
+  
+  const getMuscleGroups = () => {
+    const groups = new Set<string>();
+    exercises.forEach(ex => {
+      if (!selectedBodyRegion || ex.bodyRegion === selectedBodyRegion) {
+        ex.muscleGroups.forEach(group => groups.add(group));
+      }
+    });
+    return Array.from(groups).sort();
+  };
+  
+  const muscleGroups = getMuscleGroups();
+  
+  // Equipment categories
+  const EQUIPMENT_CATEGORIES = {
+    'Free Weights': ['Barbell', 'Dumbbell', 'Kettlebell'],
+    'Machines': ['Cable Machine', 'Machine', 'Leg Extension Machine', 'Leg Curl Machine', 'Lat Pulldown Machine', 'Leg Press Machine', 'Smith Machine'],
+    'Bodyweight': ['Bodyweight', 'Pull-up Bar'],
+    'Accessories': ['Bench', 'Stability Ball', 'Medicine Ball', 'TRX', 'Ab Wheel', 'Resistance Band', 'Rope Attachment'],
+  };
+  
+  // Get filtered equipment types by selected category
+  const getFilteredEquipmentTypes = () => {
+    if (!selectedEquipmentCategory) {
+      const allEquipment = new Set<string>();
+      exercises.forEach(ex => ex.equipment.forEach(eq => allEquipment.add(eq)));
+      return Array.from(allEquipment).sort();
+    }
+    
+    const categoryEquipment = EQUIPMENT_CATEGORIES[selectedEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES] || [];
+    const availableEquipment = new Set<string>();
+    
+    exercises.forEach(ex => {
+      ex.equipment.forEach(eq => {
+        if (categoryEquipment.includes(eq)) {
+          availableEquipment.add(eq);
+        }
+      });
+    });
+    
+    return Array.from(availableEquipment).sort();
+  };
+  
+  const equipmentTypes = getFilteredEquipmentTypes();
   
   // Filter exercises based on search query and filters
   const filteredExercises = exercises.filter(exercise => {
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      return (
-        exercise.name.toLowerCase().includes(query) ||
-        exercise.description.toLowerCase().includes(query) ||
-        exercise.muscleGroups.some(mg => mg.toLowerCase().includes(query))
-      );
+      const nameMatch = exercise.name.toLowerCase().includes(query);
+      const descriptionMatch = exercise.description.toLowerCase().includes(query);
+      const muscleGroupMatch = exercise.muscleGroups.some(mg => mg.toLowerCase().includes(query));
+      
+      if (!nameMatch && !descriptionMatch && !muscleGroupMatch) {
+        return false;
+      }
     }
-    return true;
-  }).filter(exercise => {
-    // Filter by category
-    if (selectedFilter) {
-      return exercise.category === selectedFilter;
+    
+    // Filter by body region
+    if (selectedBodyRegion && exercise.bodyRegion !== selectedBodyRegion) {
+      return false;
     }
-    return true;
-  }).filter(exercise => {
+    
     // Filter by muscle group
-    if (selectedMuscleGroup) {
-      return exercise.muscleGroups.includes(selectedMuscleGroup);
+    if (selectedMuscleGroup && !exercise.muscleGroups.includes(selectedMuscleGroup)) {
+      return false;
     }
+    
+    // Filter by equipment
+    if (selectedEquipment && !exercise.equipment.includes(selectedEquipment)) {
+      return false;
+    }
+    
+    // Filter by equipment category
+    if (selectedEquipmentCategory && !exercise.equipment.some(eq => 
+      EQUIPMENT_CATEGORIES[selectedEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES]?.includes(eq)
+    )) {
+      return false;
+    }
+    
     return true;
   });
   
@@ -91,6 +147,18 @@ export default function CreateWorkoutScreen() {
   
   const handleRemoveExercise = (exerciseId: string) => {
     setSelectedExercises(selectedExercises.filter(ex => ex.id !== exerciseId));
+  };
+  
+  const toggleBodyViewMode = () => {
+    setBodyViewMode(bodyViewMode === 'front' ? 'back' : 'front');
+  };
+  
+  const clearFilters = () => {
+    setSelectedBodyRegion(null);
+    setSelectedMuscleGroup(null);
+    setSelectedEquipmentCategory(null);
+    setSelectedEquipment(null);
+    setBodyViewMode('front');
   };
   
   const handleSaveWorkout = () => {
@@ -242,7 +310,7 @@ export default function CreateWorkoutScreen() {
       />
       
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Workout Details</Text>
           
           <View style={styles.inputContainer}>
@@ -388,7 +456,7 @@ export default function CreateWorkoutScreen() {
                   <View style={styles.exerciseContent}>
                     <Text style={[styles.exerciseName, { color: colors.text }]}>{exercise.name}</Text>
                     <Text style={[styles.exerciseCategory, { color: colors.textSecondary }]}>
-                      {exercise.category} • {exercise.muscleGroups.join(", ")}
+                      {exercise.bodyRegion} • {exercise.muscleGroups.join(", ")}
                     </Text>
                   </View>
                   
@@ -473,40 +541,108 @@ export default function CreateWorkoutScreen() {
                 <TouchableOpacity 
                   style={[
                     styles.filterChip,
-                    { backgroundColor: colors.card },
-                    selectedFilter === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    selectedBodyRegion === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
                   ]}
-                  onPress={() => setSelectedFilter(null)}
+                  onPress={() => {
+                    setSelectedBodyRegion(null);
+                    setSelectedMuscleGroup(null);
+                  }}
                 >
                   <Text style={[
                     styles.filterChipText,
                     { color: colors.text },
-                    selectedFilter === null && [styles.filterChipTextActive, { color: "#FFFFFF" }]
+                    selectedBodyRegion === null && styles.filterChipTextActive
                   ]}>
-                    All Types
+                    All Body Regions
                   </Text>
                 </TouchableOpacity>
                 
-                {exerciseCategories.map(category => (
+                {bodyRegions.map(region => (
                   <TouchableOpacity 
-                    key={category}
+                    key={region}
                     style={[
                       styles.filterChip,
-                      { backgroundColor: colors.card },
-                      selectedFilter === category && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                      { backgroundColor: colors.card, borderColor: colors.border },
+                      selectedBodyRegion === region && [styles.filterChipActive, { backgroundColor: colors.primary }]
                     ]}
-                    onPress={() => setSelectedFilter(category)}
+                    onPress={() => {
+                      setSelectedBodyRegion(region);
+                      setSelectedMuscleGroup(null);
+                      setBodyViewMode('front');
+                    }}
                   >
                     <Text style={[
                       styles.filterChipText,
                       { color: colors.text },
-                      selectedFilter === category && [styles.filterChipTextActive, { color: "#FFFFFF" }]
+                      selectedBodyRegion === region && styles.filterChipTextActive
                     ]}>
-                      {category}
+                      {region}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+              
+              {selectedBodyRegion && (
+                <>
+                  <View style={styles.viewToggleRow}>
+                    <Text style={[styles.filterSectionTitle, { color: colors.text, flex: 1 }]}>
+                      {selectedBodyRegion} View
+                    </Text>
+                    <TouchableOpacity 
+                      style={[styles.viewToggleButton, { backgroundColor: colors.primary }]}
+                      onPress={toggleBodyViewMode}
+                    >
+                      <Text style={styles.viewToggleButtonText}>
+                        {bodyViewMode === 'front' ? 'Switch to Back' : 'Switch to Front'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filtersContainer}
+                  >
+                    <TouchableOpacity 
+                      style={[
+                        styles.filterChip,
+                        { backgroundColor: colors.card, borderColor: colors.border },
+                        selectedMuscleGroup === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                      ]}
+                      onPress={() => setSelectedMuscleGroup(null)}
+                    >
+                      <Text style={[
+                        styles.filterChipText,
+                        { color: colors.text },
+                        selectedMuscleGroup === null && styles.filterChipTextActive
+                      ]}>
+                        All Muscle Groups
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {muscleGroups.map(group => (
+                      <TouchableOpacity 
+                        key={group}
+                        style={[
+                          styles.filterChip,
+                          { backgroundColor: colors.card, borderColor: colors.border },
+                          selectedMuscleGroup === group && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                        ]}
+                        onPress={() => setSelectedMuscleGroup(group)}
+                      >
+                        <Text style={[
+                          styles.filterChipText,
+                          { color: colors.text },
+                          selectedMuscleGroup === group && styles.filterChipTextActive
+                        ]}>
+                          {group}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </>
+              )}
               
               <ScrollView 
                 horizontal 
@@ -516,40 +652,100 @@ export default function CreateWorkoutScreen() {
                 <TouchableOpacity 
                   style={[
                     styles.filterChip,
-                    { backgroundColor: colors.card },
-                    selectedMuscleGroup === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    selectedEquipmentCategory === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
                   ]}
-                  onPress={() => setSelectedMuscleGroup(null)}
+                  onPress={() => {
+                    setSelectedEquipmentCategory(null);
+                    setSelectedEquipment(null);
+                  }}
                 >
                   <Text style={[
                     styles.filterChipText,
                     { color: colors.text },
-                    selectedMuscleGroup === null && [styles.filterChipTextActive, { color: "#FFFFFF" }]
+                    selectedEquipmentCategory === null && styles.filterChipTextActive
                   ]}>
-                    All Muscles
+                    All Equipment
                   </Text>
                 </TouchableOpacity>
                 
-                {muscleGroups.map(muscleGroup => (
+                {Object.keys(EQUIPMENT_CATEGORIES).map(category => (
                   <TouchableOpacity 
-                    key={muscleGroup}
+                    key={category}
                     style={[
                       styles.filterChip,
-                      { backgroundColor: colors.card },
-                      selectedMuscleGroup === muscleGroup && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                      { backgroundColor: colors.card, borderColor: colors.border },
+                      selectedEquipmentCategory === category && [styles.filterChipActive, { backgroundColor: colors.primary }]
                     ]}
-                    onPress={() => setSelectedMuscleGroup(muscleGroup)}
+                    onPress={() => {
+                      setSelectedEquipmentCategory(category);
+                      setSelectedEquipment(null);
+                    }}
                   >
                     <Text style={[
                       styles.filterChipText,
                       { color: colors.text },
-                      selectedMuscleGroup === muscleGroup && [styles.filterChipTextActive, { color: "#FFFFFF" }]
+                      selectedEquipmentCategory === category && styles.filterChipTextActive
                     ]}>
-                      {muscleGroup}
+                      {category}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+              
+              {selectedEquipmentCategory && equipmentTypes.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filtersContainer}
+                >
+                  <TouchableOpacity 
+                    style={[
+                      styles.filterChip,
+                      { backgroundColor: colors.card, borderColor: colors.border },
+                      selectedEquipment === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                    ]}
+                    onPress={() => setSelectedEquipment(null)}
+                  >
+                    <Text style={[
+                      styles.filterChipText,
+                      { color: colors.text },
+                      selectedEquipment === null && styles.filterChipTextActive
+                    ]}>
+                      All {selectedEquipmentCategory}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {equipmentTypes.map(equipment => (
+                    <TouchableOpacity 
+                      key={equipment}
+                      style={[
+                        styles.filterChip,
+                        { backgroundColor: colors.card, borderColor: colors.border },
+                        selectedEquipment === equipment && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                      ]}
+                      onPress={() => setSelectedEquipment(equipment)}
+                    >
+                      <Text style={[
+                        styles.filterChipText,
+                        { color: colors.text },
+                        selectedEquipment === equipment && styles.filterChipTextActive
+                      ]}>
+                        {equipment}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+              
+              {(selectedBodyRegion || selectedMuscleGroup || selectedEquipmentCategory || selectedEquipment) && (
+                <TouchableOpacity 
+                  style={[styles.clearFiltersButton, { borderColor: colors.border }]}
+                  onPress={clearFilters}
+                >
+                  <Text style={[styles.clearFiltersText, { color: colors.text }]}>Clear All Filters</Text>
+                </TouchableOpacity>
+              )}
             </View>
             
             <FlatList
@@ -567,8 +763,16 @@ export default function CreateWorkoutScreen() {
                   <View style={styles.exerciseListItemContent}>
                     <Text style={[styles.exerciseListItemName, { color: colors.text }]}>{item.name}</Text>
                     <Text style={[styles.exerciseListItemDetails, { color: colors.textSecondary }]}>
-                      {item.category} • {item.muscleGroups.join(", ")}
+                      {item.bodyRegion} • {item.muscleGroups.join(", ")}
                     </Text>
+                    <View style={styles.exerciseListItemEquipment}>
+                      {item.equipment.map(eq => (
+                        <View key={eq} style={styles.equipmentTag}>
+                          <Dumbbell size={10} color={colors.textSecondary} />
+                          <Text style={[styles.equipmentTagText, { color: colors.textSecondary }]}>{eq}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
                   
                   {isExerciseSelected(item.id) && (
@@ -579,6 +783,13 @@ export default function CreateWorkoutScreen() {
                 </TouchableOpacity>
               )}
               contentContainerStyle={styles.exerciseListContainer}
+              ListEmptyComponent={
+                <View style={styles.emptyExercises}>
+                  <Text style={[styles.emptyExercisesText, { color: colors.textSecondary }]}>
+                    No exercises found with the selected filters.
+                  </Text>
+                </View>
+              }
             />
           </Pressable>
         </Pressable>
@@ -602,7 +813,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   section: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -812,6 +1022,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginRight: 8,
     marginBottom: 8,
+    borderWidth: 1,
   },
   filterChipActive: {
   },
@@ -819,6 +1030,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   filterChipTextActive: {
+    color: "#FFFFFF",
   },
   exerciseListContainer: {
     padding: 16,
@@ -840,6 +1052,25 @@ const styles = StyleSheet.create({
   },
   exerciseListItemDetails: {
     fontSize: 14,
+    marginBottom: 6,
+  },
+  exerciseListItemEquipment: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  equipmentTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  equipmentTagText: {
+    fontSize: 12,
+    marginLeft: 4,
   },
   selectedCheckmark: {
     width: 24,
@@ -847,5 +1078,37 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  viewToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  viewToggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  viewToggleButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  clearFiltersButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+    borderWidth: 1,
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

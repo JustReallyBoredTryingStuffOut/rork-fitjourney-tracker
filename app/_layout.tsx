@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, TextInput, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, TextInput, ScrollView, Platform, ActivityIndicator, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGamificationStore } from '@/store/gamificationStore';
 import { useMacroStore } from '@/store/macroStore';
@@ -46,6 +46,7 @@ export default function RootLayout() {
   const [nameError, setNameError] = useState("");
   const [weightError, setWeightError] = useState("");
   const [heightError, setHeightError] = useState("");
+  const [birthYearError, setBirthYearError] = useState("");
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -177,6 +178,34 @@ export default function RootLayout() {
     return true;
   };
   
+  // Calculate current year for birth year validation
+  const currentYear = new Date().getFullYear();
+  const minBirthYear = currentYear - 100;
+  const maxBirthYear = currentYear - 13;
+  
+  // Validate birth year input
+  const validateBirthYear = (value: string) => {
+    if (!value) {
+      setBirthYear("");
+      setBirthYearError("");
+      return true; // Birth year is optional
+    }
+    
+    const year = parseInt(value);
+    if (isNaN(year)) {
+      setBirthYearError("Please enter a valid year");
+      return false;
+    }
+    
+    if (year < minBirthYear || year > maxBirthYear) {
+      setBirthYearError(`Year must be between ${minBirthYear} and ${maxBirthYear}`);
+      return false;
+    }
+    
+    setBirthYearError("");
+    return true;
+  };
+  
   // Handle continue button press
   const handleContinue = () => {
     // If we're on the name step, validate name
@@ -190,8 +219,9 @@ export default function RootLayout() {
     if (currentOnboardingStep === 5) {
       const isWeightValid = validateWeight(weight);
       const isHeightValid = validateHeight(height);
+      const isBirthYearValid = validateBirthYear(birthYear);
       
-      if (!isWeightValid || !isHeightValid) {
+      if (!isWeightValid || !isHeightValid || !isBirthYearValid) {
         return;
       }
     }
@@ -283,21 +313,15 @@ export default function RootLayout() {
     handleContinue();
   };
   
-  // Calculate current year for birth year validation
-  const currentYear = new Date().getFullYear();
-  const minBirthYear = currentYear - 100;
-  const maxBirthYear = currentYear - 13;
-  
-  // Validate birth year input
-  const validateBirthYear = (value: string) => {
-    const year = parseInt(value);
-    if (!value || isNaN(year)) {
-      setBirthYear("");
-      return;
-    }
+  // Handle birth year input
+  const handleBirthYearChange = (text: string) => {
+    // Only allow digits
+    const numericValue = text.replace(/[^0-9]/g, '');
     
-    if (year >= minBirthYear && year <= maxBirthYear) {
-      setBirthYear(value);
+    // Limit to 4 digits
+    if (numericValue.length <= 4) {
+      setBirthYear(numericValue);
+      validateBirthYear(numericValue);
     }
   };
   
@@ -418,17 +442,21 @@ export default function RootLayout() {
           
           <Text style={styles.formLabel}>Birth Year</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, birthYearError ? styles.inputError : null]}
             value={birthYear}
-            onChangeText={validateBirthYear}
+            onChangeText={handleBirthYearChange}
             placeholder={`${currentYear - 30}`}
             keyboardType="numeric"
             maxLength={4}
             placeholderTextColor={colors.textLight}
           />
-          <Text style={styles.inputHint}>
-            This helps us determine your age group for better recommendations
-          </Text>
+          {birthYearError ? (
+            <Text style={styles.errorText}>{birthYearError}</Text>
+          ) : (
+            <Text style={styles.inputHint}>
+              This helps us determine your age group for better recommendations
+            </Text>
+          )}
         </View>
       ),
       action: () => handleContinue(),

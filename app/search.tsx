@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, Modal, Pressable } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Search as SearchIcon, X, ArrowLeft, Filter, SlidersHorizontal, Dumbbell } from "lucide-react-native";
-import { colors } from "@/constants/colors";
+import { useTheme } from "@/context/ThemeContext";
 import { useWorkoutStore } from "@/store/workoutStore";
 import WorkoutCard from "@/components/WorkoutCard";
 import { Exercise, Workout, BodyRegion, MuscleGroup, EquipmentType } from "@/types";
@@ -10,6 +10,7 @@ import ExerciseCard from "@/components/ExerciseCard";
 
 export default function SearchScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { 
     workouts, 
     exercises,
@@ -27,14 +28,34 @@ export default function SearchScreen() {
   const [filterType, setFilterType] = useState<"all" | "workouts" | "exercises">("all");
   const [filterBodyRegion, setFilterBodyRegion] = useState<BodyRegion | null>(null);
   const [filterMuscleGroup, setFilterMuscleGroup] = useState<MuscleGroup | null>(null);
+  const [filterEquipmentCategory, setFilterEquipmentCategory] = useState<string | null>(null);
   const [filterEquipment, setFilterEquipment] = useState<EquipmentType | null>(null);
   const [filterDifficulty, setFilterDifficulty] = useState<string | null>(null);
+  const [bodyViewMode, setBodyViewMode] = useState<'front' | 'back'>('front');
   
   // Get filter options
   const bodyRegions = getBodyRegions();
   const muscleGroups = getMuscleGroups(filterBodyRegion || undefined);
   const equipmentTypes = getEquipmentTypes();
   const difficulties = ["beginner", "intermediate", "advanced"];
+  
+  // Equipment categories
+  const EQUIPMENT_CATEGORIES = {
+    'Free Weights': ['Barbell', 'Dumbbell', 'Kettlebell'],
+    'Machines': ['Cable Machine', 'Machine', 'Leg Extension Machine', 'Leg Curl Machine', 'Lat Pulldown Machine', 'Leg Press Machine', 'Smith Machine'],
+    'Bodyweight': ['Bodyweight', 'Pull-up Bar'],
+    'Accessories': ['Bench', 'Stability Ball', 'Medicine Ball', 'TRX', 'Ab Wheel', 'Resistance Band', 'Rope Attachment'],
+  };
+  
+  // Get filtered equipment types by selected category
+  const getFilteredEquipmentTypes = () => {
+    if (!filterEquipmentCategory) return equipmentTypes;
+    
+    const categoryEquipment = EQUIPMENT_CATEGORIES[filterEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES] || [];
+    return equipmentTypes.filter(e => categoryEquipment.includes(e));
+  };
+  
+  const filteredEquipmentTypes = getFilteredEquipmentTypes();
   
   useEffect(() => {
     if (query.trim().length > 0) {
@@ -61,10 +82,13 @@ export default function SearchScreen() {
               workout.name.toLowerCase().includes(lowerQuery) || 
               workout.description.toLowerCase().includes(lowerQuery) ||
               workout.category.toLowerCase().includes(lowerQuery) ||
-              workout.exercises.some(ex => 
-                ex.name.toLowerCase().includes(lowerQuery) ||
-                ex.muscleGroups.some(mg => mg.toLowerCase().includes(lowerQuery))
-              )
+              workout.exercises.some(ex => {
+                const exercise = exercises.find(e => e.id === ex.id);
+                return exercise && (
+                  exercise.name.toLowerCase().includes(lowerQuery) ||
+                  exercise.muscleGroups.some(mg => mg.toLowerCase().includes(lowerQuery))
+                );
+              })
             )
           );
       
@@ -86,12 +110,17 @@ export default function SearchScreen() {
     setFilterType("all");
     setFilterBodyRegion(null);
     setFilterMuscleGroup(null);
+    setFilterEquipmentCategory(null);
     setFilterEquipment(null);
     setFilterDifficulty(null);
   };
   
   const applyFilters = () => {
     setShowFilterModal(false);
+  };
+  
+  const toggleBodyViewMode = () => {
+    setBodyViewMode(bodyViewMode === 'front' ? 'back' : 'front');
   };
 
   const handleGoBack = () => {
@@ -105,14 +134,14 @@ export default function SearchScreen() {
     | { type: "exercise"; data: Exercise };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{
           headerShown: false,
         }}
       />
       
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={handleGoBack}
@@ -120,10 +149,10 @@ export default function SearchScreen() {
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
         
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
           <SearchIcon size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search workouts, exercises, or muscle groups..."
             placeholderTextColor={colors.textSecondary}
             value={query}
@@ -140,7 +169,7 @@ export default function SearchScreen() {
         </View>
         
         <TouchableOpacity 
-          style={styles.filterButton}
+          style={[styles.filterButton, { backgroundColor: colors.background }]}
           onPress={() => setShowFilterModal(true)}
         >
           <SlidersHorizontal size={24} color={colors.text} />
@@ -150,15 +179,15 @@ export default function SearchScreen() {
       <View style={styles.content}>
         {query.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>Search Workouts & Exercises</Text>
-            <Text style={styles.emptyStateText}>
+            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>Search Workouts & Exercises</Text>
+            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
               Search by name, muscle group, or equipment type
             </Text>
           </View>
         ) : workoutResults.length === 0 && exerciseResults.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>No results found</Text>
-            <Text style={styles.emptyStateText}>
+            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No results found</Text>
+            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
               Try searching for different keywords or adjusting your filters
             </Text>
           </View>
@@ -180,12 +209,12 @@ export default function SearchScreen() {
             renderItem={({ item }) => {
               if (item.type === "workoutHeader") {
                 return (
-                  <Text style={styles.sectionHeader}>Workouts ({workoutResults.length})</Text>
+                  <Text style={[styles.sectionHeader, { color: colors.text }]}>Workouts ({workoutResults.length})</Text>
                 );
               }
               if (item.type === "exerciseHeader") {
                 return (
-                  <Text style={styles.sectionHeader}>Exercises ({exerciseResults.length})</Text>
+                  <Text style={[styles.sectionHeader, { color: colors.text }]}>Exercises ({exerciseResults.length})</Text>
                 );
               }
               if (item.type === "workout") {
@@ -213,9 +242,9 @@ export default function SearchScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowFilterModal(false)}
         >
-          <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter Results</Text>
+          <Pressable style={[styles.modalContent, { backgroundColor: colors.background }]} onPress={e => e.stopPropagation()}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Filter Results</Text>
               <TouchableOpacity 
                 onPress={() => setShowFilterModal(false)}
                 style={styles.modalCloseButton}
@@ -224,220 +253,318 @@ export default function SearchScreen() {
               </TouchableOpacity>
             </View>
             
-            <View style={styles.modalBody}>
-              <Text style={styles.filterSectionTitle}>Type</Text>
-              <View style={styles.filterTypeContainer}>
-                <TouchableOpacity 
-                  style={[
-                    styles.filterTypeButton,
-                    filterType === "all" && styles.filterTypeButtonActive
-                  ]}
-                  onPress={() => setFilterType("all")}
-                >
-                  <Text style={[
-                    styles.filterTypeText,
-                    filterType === "all" && styles.filterTypeTextActive
-                  ]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.filterTypeButton,
-                    filterType === "workouts" && styles.filterTypeButtonActive
-                  ]}
-                  onPress={() => setFilterType("workouts")}
-                >
-                  <Text style={[
-                    styles.filterTypeText,
-                    filterType === "workouts" && styles.filterTypeTextActive
-                  ]}>
-                    Workouts
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.filterTypeButton,
-                    filterType === "exercises" && styles.filterTypeButtonActive
-                  ]}
-                  onPress={() => setFilterType("exercises")}
-                >
-                  <Text style={[
-                    styles.filterTypeText,
-                    filterType === "exercises" && styles.filterTypeTextActive
-                  ]}>
-                    Exercises
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              <Text style={styles.filterSectionTitle}>Body Region</Text>
-              <View style={styles.filterCategoryContainer}>
-                <TouchableOpacity 
-                  style={[
-                    styles.filterCategoryChip,
-                    filterBodyRegion === null && styles.filterCategoryChipActive
-                  ]}
-                  onPress={() => {
-                    setFilterBodyRegion(null);
-                    setFilterMuscleGroup(null);
-                  }}
-                >
-                  <Text style={[
-                    styles.filterCategoryText,
-                    filterBodyRegion === null && styles.filterCategoryTextActive
-                  ]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                
-                {bodyRegions.map(region => (
-                  <TouchableOpacity 
-                    key={region}
-                    style={[
-                      styles.filterCategoryChip,
-                      filterBodyRegion === region && styles.filterCategoryChipActive
-                    ]}
-                    onPress={() => {
-                      setFilterBodyRegion(region);
-                      setFilterMuscleGroup(null);
-                    }}
-                  >
-                    <Text style={[
-                      styles.filterCategoryText,
-                      filterBodyRegion === region && styles.filterCategoryTextActive
-                    ]}>
-                      {region}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              
-              {filterBodyRegion && (
-                <>
-                  <Text style={styles.filterSectionTitle}>Muscle Group</Text>
-                  <View style={styles.filterCategoryContainer}>
+            <FlatList
+              data={[1]} // Dummy data to render content
+              keyExtractor={() => "filters"}
+              renderItem={() => (
+                <View style={styles.modalBody}>
+                  <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Type</Text>
+                  <View style={styles.filterTypeContainer}>
                     <TouchableOpacity 
                       style={[
-                        styles.filterCategoryChip,
-                        filterMuscleGroup === null && styles.filterCategoryChipActive
+                        styles.filterTypeButton,
+                        { backgroundColor: colors.card, borderColor: colors.border },
+                        filterType === "all" && [styles.filterTypeButtonActive, { backgroundColor: colors.primary }]
                       ]}
-                      onPress={() => setFilterMuscleGroup(null)}
+                      onPress={() => setFilterType("all")}
                     >
                       <Text style={[
-                        styles.filterCategoryText,
-                        filterMuscleGroup === null && styles.filterCategoryTextActive
+                        styles.filterTypeText,
+                        { color: colors.text },
+                        filterType === "all" && styles.filterTypeTextActive
                       ]}>
                         All
                       </Text>
                     </TouchableOpacity>
                     
-                    {muscleGroups.map(group => (
+                    <TouchableOpacity 
+                      style={[
+                        styles.filterTypeButton,
+                        { backgroundColor: colors.card, borderColor: colors.border },
+                        filterType === "workouts" && [styles.filterTypeButtonActive, { backgroundColor: colors.primary }]
+                      ]}
+                      onPress={() => setFilterType("workouts")}
+                    >
+                      <Text style={[
+                        styles.filterTypeText,
+                        { color: colors.text },
+                        filterType === "workouts" && styles.filterTypeTextActive
+                      ]}>
+                        Workouts
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[
+                        styles.filterTypeButton,
+                        { backgroundColor: colors.card, borderColor: colors.border },
+                        filterType === "exercises" && [styles.filterTypeButtonActive, { backgroundColor: colors.primary }]
+                      ]}
+                      onPress={() => setFilterType("exercises")}
+                    >
+                      <Text style={[
+                        styles.filterTypeText,
+                        { color: colors.text },
+                        filterType === "exercises" && styles.filterTypeTextActive
+                      ]}>
+                        Exercises
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {(filterType === "all" || filterType === "exercises") && (
+                    <>
+                      <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Body Region</Text>
+                      <View style={styles.filterCategoryContainer}>
+                        <TouchableOpacity 
+                          style={[
+                            styles.filterCategoryChip,
+                            { backgroundColor: colors.card, borderColor: colors.border },
+                            filterBodyRegion === null && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                          ]}
+                          onPress={() => {
+                            setFilterBodyRegion(null);
+                            setFilterMuscleGroup(null);
+                          }}
+                        >
+                          <Text style={[
+                            styles.filterCategoryText,
+                            { color: colors.text },
+                            filterBodyRegion === null && styles.filterCategoryTextActive
+                          ]}>
+                            All
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        {bodyRegions.map(region => (
+                          <TouchableOpacity 
+                            key={region}
+                            style={[
+                              styles.filterCategoryChip,
+                              { backgroundColor: colors.card, borderColor: colors.border },
+                              filterBodyRegion === region && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                            ]}
+                            onPress={() => {
+                              setFilterBodyRegion(region);
+                              setFilterMuscleGroup(null);
+                              setBodyViewMode('front');
+                            }}
+                          >
+                            <Text style={[
+                              styles.filterCategoryText,
+                              { color: colors.text },
+                              filterBodyRegion === region && styles.filterCategoryTextActive
+                            ]}>
+                              {region}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                      
+                      {filterBodyRegion && (
+                        <>
+                          <View style={styles.viewToggleRow}>
+                            <Text style={[styles.filterSectionTitle, { color: colors.text, flex: 1 }]}>
+                              {filterBodyRegion} View
+                            </Text>
+                            <TouchableOpacity 
+                              style={[styles.viewToggleButton, { backgroundColor: colors.primary }]}
+                              onPress={toggleBodyViewMode}
+                            >
+                              <Text style={styles.viewToggleButtonText}>
+                                {bodyViewMode === 'front' ? 'Switch to Back' : 'Switch to Front'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                          
+                          <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Muscle Group</Text>
+                          <View style={styles.filterCategoryContainer}>
+                            <TouchableOpacity 
+                              style={[
+                                styles.filterCategoryChip,
+                                { backgroundColor: colors.card, borderColor: colors.border },
+                                filterMuscleGroup === null && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                              ]}
+                              onPress={() => setFilterMuscleGroup(null)}
+                            >
+                              <Text style={[
+                                styles.filterCategoryText,
+                                { color: colors.text },
+                                filterMuscleGroup === null && styles.filterCategoryTextActive
+                              ]}>
+                                All
+                              </Text>
+                            </TouchableOpacity>
+                            
+                            {muscleGroups.map(group => (
+                              <TouchableOpacity 
+                                key={group}
+                                style={[
+                                  styles.filterCategoryChip,
+                                  { backgroundColor: colors.card, borderColor: colors.border },
+                                  filterMuscleGroup === group && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                                ]}
+                                onPress={() => setFilterMuscleGroup(group)}
+                              >
+                                <Text style={[
+                                  styles.filterCategoryText,
+                                  { color: colors.text },
+                                  filterMuscleGroup === group && styles.filterCategoryTextActive
+                                ]}>
+                                  {group}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </>
+                      )}
+                      
+                      <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Equipment Type</Text>
+                      <View style={styles.filterCategoryContainer}>
+                        <TouchableOpacity 
+                          style={[
+                            styles.filterCategoryChip,
+                            { backgroundColor: colors.card, borderColor: colors.border },
+                            filterEquipmentCategory === null && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                          ]}
+                          onPress={() => {
+                            setFilterEquipmentCategory(null);
+                            setFilterEquipment(null);
+                          }}
+                        >
+                          <Text style={[
+                            styles.filterCategoryText,
+                            { color: colors.text },
+                            filterEquipmentCategory === null && styles.filterCategoryTextActive
+                          ]}>
+                            All
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        {Object.keys(EQUIPMENT_CATEGORIES).map(category => (
+                          <TouchableOpacity 
+                            key={category}
+                            style={[
+                              styles.filterCategoryChip,
+                              { backgroundColor: colors.card, borderColor: colors.border },
+                              filterEquipmentCategory === category && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                            ]}
+                            onPress={() => {
+                              setFilterEquipmentCategory(category);
+                              setFilterEquipment(null);
+                            }}
+                          >
+                            <Text style={[
+                              styles.filterCategoryText,
+                              { color: colors.text },
+                              filterEquipmentCategory === category && styles.filterCategoryTextActive
+                            ]}>
+                              {category}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                      
+                      {filterEquipmentCategory && (
+                        <>
+                          <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Equipment</Text>
+                          <View style={styles.filterCategoryContainer}>
+                            <TouchableOpacity 
+                              style={[
+                                styles.filterCategoryChip,
+                                { backgroundColor: colors.card, borderColor: colors.border },
+                                filterEquipment === null && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                              ]}
+                              onPress={() => setFilterEquipment(null)}
+                            >
+                              <Text style={[
+                                styles.filterCategoryText,
+                                { color: colors.text },
+                                filterEquipment === null && styles.filterCategoryTextActive
+                              ]}>
+                                All
+                              </Text>
+                            </TouchableOpacity>
+                            
+                            {filteredEquipmentTypes.map(equipment => (
+                              <TouchableOpacity 
+                                key={equipment}
+                                style={[
+                                  styles.filterCategoryChip,
+                                  { backgroundColor: colors.card, borderColor: colors.border },
+                                  filterEquipment === equipment && [styles.filterCategoryChipActive, { backgroundColor: colors.primary }]
+                                ]}
+                                onPress={() => setFilterEquipment(equipment)}
+                              >
+                                <Text style={[
+                                  styles.filterCategoryText,
+                                  { color: colors.text },
+                                  filterEquipment === equipment && styles.filterCategoryTextActive
+                                ]}>
+                                  {equipment}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </>
+                      )}
+                    </>
+                  )}
+                  
+                  <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Difficulty</Text>
+                  <View style={styles.filterDifficultyContainer}>
+                    <TouchableOpacity 
+                      style={[
+                        styles.filterDifficultyChip,
+                        { backgroundColor: colors.card, borderColor: colors.border },
+                        filterDifficulty === null && [styles.filterDifficultyChipActive, { backgroundColor: colors.primary }]
+                      ]}
+                      onPress={() => setFilterDifficulty(null)}
+                    >
+                      <Text style={[
+                        styles.filterDifficultyText,
+                        { color: colors.text },
+                        filterDifficulty === null && styles.filterDifficultyTextActive
+                      ]}>
+                        All
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {difficulties.map(difficulty => (
                       <TouchableOpacity 
-                        key={group}
+                        key={difficulty}
                         style={[
-                          styles.filterCategoryChip,
-                          filterMuscleGroup === group && styles.filterCategoryChipActive
+                          styles.filterDifficultyChip,
+                          { backgroundColor: colors.card, borderColor: colors.border },
+                          filterDifficulty === difficulty && [styles.filterDifficultyChipActive, { backgroundColor: colors.primary }]
                         ]}
-                        onPress={() => setFilterMuscleGroup(group)}
+                        onPress={() => setFilterDifficulty(difficulty)}
                       >
                         <Text style={[
-                          styles.filterCategoryText,
-                          filterMuscleGroup === group && styles.filterCategoryTextActive
+                          styles.filterDifficultyText,
+                          { color: colors.text },
+                          filterDifficulty === difficulty && styles.filterDifficultyTextActive
                         ]}>
-                          {group}
+                          {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
-                </>
+                </View>
               )}
-              
-              <Text style={styles.filterSectionTitle}>Equipment</Text>
-              <View style={styles.filterCategoryContainer}>
-                <TouchableOpacity 
-                  style={[
-                    styles.filterCategoryChip,
-                    filterEquipment === null && styles.filterCategoryChipActive
-                  ]}
-                  onPress={() => setFilterEquipment(null)}
-                >
-                  <Text style={[
-                    styles.filterCategoryText,
-                    filterEquipment === null && styles.filterCategoryTextActive
-                  ]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                
-                {equipmentTypes.map(equipment => (
-                  <TouchableOpacity 
-                    key={equipment}
-                    style={[
-                      styles.filterCategoryChip,
-                      filterEquipment === equipment && styles.filterCategoryChipActive
-                    ]}
-                    onPress={() => setFilterEquipment(equipment)}
-                  >
-                    <Text style={[
-                      styles.filterCategoryText,
-                      filterEquipment === equipment && styles.filterCategoryTextActive
-                    ]}>
-                      {equipment}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              
-              <Text style={styles.filterSectionTitle}>Difficulty</Text>
-              <View style={styles.filterDifficultyContainer}>
-                <TouchableOpacity 
-                  style={[
-                    styles.filterDifficultyChip,
-                    filterDifficulty === null && styles.filterDifficultyChipActive
-                  ]}
-                  onPress={() => setFilterDifficulty(null)}
-                >
-                  <Text style={[
-                    styles.filterDifficultyText,
-                    filterDifficulty === null && styles.filterDifficultyTextActive
-                  ]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                
-                {difficulties.map(difficulty => (
-                  <TouchableOpacity 
-                    key={difficulty}
-                    style={[
-                      styles.filterDifficultyChip,
-                      filterDifficulty === difficulty && styles.filterDifficultyChipActive
-                    ]}
-                    onPress={() => setFilterDifficulty(difficulty)}
-                  >
-                    <Text style={[
-                      styles.filterDifficultyText,
-                      filterDifficulty === difficulty && styles.filterDifficultyTextActive
-                    ]}>
-                      {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+              contentContainerStyle={styles.modalBodyScroll}
+            />
             
-            <View style={styles.modalFooter}>
+            <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
               <TouchableOpacity 
-                style={styles.clearFiltersButton}
+                style={[styles.clearFiltersButton, { borderColor: colors.border }]}
                 onPress={clearFilters}
               >
-                <Text style={styles.clearFiltersText}>Clear All</Text>
+                <Text style={[styles.clearFiltersText, { color: colors.text }]}>Clear All</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.applyFiltersButton}
+                style={[styles.applyFiltersButton, { backgroundColor: colors.primary }]}
                 onPress={applyFilters}
               >
                 <Text style={styles.applyFiltersText}>Apply Filters</Text>
@@ -453,7 +580,6 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -461,9 +587,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     marginRight: 12,
@@ -472,7 +596,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.background,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 44,
@@ -483,7 +606,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
     height: "100%",
   },
   clearButton: {
@@ -492,6 +614,11 @@ const styles = StyleSheet.create({
   filterButton: {
     marginLeft: 12,
     padding: 8,
+    borderRadius: 8,
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     flex: 1,
@@ -506,13 +633,11 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 8,
     textAlign: "center",
   },
   emptyStateText: {
     fontSize: 16,
-    color: colors.textSecondary,
     textAlign: "center",
   },
   resultsList: {
@@ -521,7 +646,6 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     marginTop: 16,
     marginBottom: 12,
   },
@@ -531,7 +655,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: colors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 16,
@@ -544,24 +667,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
   },
   modalCloseButton: {
     padding: 4,
   },
   modalBody: {
     padding: 16,
-    maxHeight: "70%",
+  },
+  modalBodyScroll: {
+    paddingBottom: 20,
   },
   filterSectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 12,
     marginTop: 8,
   },
@@ -573,17 +695,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     alignItems: "center",
-    backgroundColor: colors.card,
     marginHorizontal: 4,
     borderRadius: 8,
+    borderWidth: 1,
   },
   filterTypeButtonActive: {
-    backgroundColor: colors.primary,
   },
   filterTypeText: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   filterTypeTextActive: {
     color: "#FFFFFF",
@@ -594,19 +714,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   filterCategoryChip: {
-    backgroundColor: colors.card,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginRight: 8,
     marginBottom: 8,
+    borderWidth: 1,
   },
   filterCategoryChipActive: {
-    backgroundColor: colors.primary,
   },
   filterCategoryText: {
     fontSize: 14,
-    color: colors.text,
   },
   filterCategoryTextActive: {
     color: "#FFFFFF",
@@ -617,19 +735,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   filterDifficultyChip: {
-    backgroundColor: colors.card,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginRight: 8,
     marginBottom: 8,
+    borderWidth: 1,
   },
   filterDifficultyChipActive: {
-    backgroundColor: colors.primary,
   },
   filterDifficultyText: {
     fontSize: 14,
-    color: colors.text,
   },
   filterDifficultyTextActive: {
     color: "#FFFFFF",
@@ -638,7 +754,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   clearFiltersButton: {
     flex: 1,
@@ -646,16 +761,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 8,
   },
   clearFiltersText: {
     fontSize: 16,
-    color: colors.text,
   },
   applyFiltersButton: {
     flex: 2,
-    backgroundColor: colors.primary,
     paddingVertical: 12,
     alignItems: "center",
     borderRadius: 8,
@@ -663,6 +775,21 @@ const styles = StyleSheet.create({
   applyFiltersText: {
     fontSize: 16,
     color: "#FFFFFF",
+    fontWeight: "500",
+  },
+  viewToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  viewToggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  viewToggleButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "500",
   },
 });

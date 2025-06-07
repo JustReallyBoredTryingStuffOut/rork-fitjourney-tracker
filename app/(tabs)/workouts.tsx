@@ -35,9 +35,11 @@ export default function WorkoutsScreen() {
   const [viewMode, setViewMode] = useState<'workouts' | 'exercises'>('workouts');
   const [selectedBodyRegion, setSelectedBodyRegion] = useState<BodyRegion | null>(null);
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup | null>(null);
+  const [selectedEquipmentCategory, setSelectedEquipmentCategory] = useState<string | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentType | null>(null);
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [showAiRecommendationsModal, setShowAiRecommendationsModal] = useState(false);
+  const [bodyViewMode, setBodyViewMode] = useState<'front' | 'back'>('front');
   
   // Get recommended workouts based on user's fitness level and goals
   const recommendedWorkouts = getRecommendedWorkouts(5);
@@ -98,6 +100,8 @@ export default function WorkoutsScreen() {
     } else {
       setSelectedBodyRegion(region);
       setSelectedMuscleGroup(null);
+      // Reset to front view when changing body region
+      setBodyViewMode('front');
     }
   };
   
@@ -105,13 +109,22 @@ export default function WorkoutsScreen() {
     setSelectedMuscleGroup(selectedMuscleGroup === group ? null : group);
   };
   
+  const handleSelectEquipmentCategory = (category: string | null) => {
+    setSelectedEquipmentCategory(category);
+  };
+  
   const handleSelectEquipment = (equipment: EquipmentType) => {
     setSelectedEquipment(selectedEquipment === equipment ? null : equipment);
+  };
+  
+  const toggleBodyViewMode = () => {
+    setBodyViewMode(bodyViewMode === 'front' ? 'back' : 'front');
   };
   
   const clearFilters = () => {
     setSelectedBodyRegion(null);
     setSelectedMuscleGroup(null);
+    setSelectedEquipmentCategory(null);
     setSelectedEquipment(null);
   };
   
@@ -324,17 +337,21 @@ export default function WorkoutsScreen() {
               onSelectMuscleGroup={handleSelectMuscleGroup}
               bodyRegions={bodyRegions}
               muscleGroups={muscleGroups}
+              viewMode={bodyViewMode}
+              toggleViewMode={toggleBodyViewMode}
             />
             
             {/* Equipment Selector */}
             <EquipmentSelector
+              selectedEquipmentCategory={selectedEquipmentCategory}
               selectedEquipment={selectedEquipment}
+              onSelectEquipmentCategory={handleSelectEquipmentCategory}
               onSelectEquipment={handleSelectEquipment}
               equipmentTypes={equipmentTypes}
             />
             
             {/* Clear Filters Button */}
-            {(selectedBodyRegion || selectedMuscleGroup || selectedEquipment) && (
+            {(selectedBodyRegion || selectedMuscleGroup || selectedEquipmentCategory || selectedEquipment) && (
               <TouchableOpacity 
                 style={[styles.clearFiltersButton, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={clearFilters}

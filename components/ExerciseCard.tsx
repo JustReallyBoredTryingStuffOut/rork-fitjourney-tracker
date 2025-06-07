@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Dumbbell, ChevronRight } from "lucide-react-native";
-import { colors } from "@/constants/colors";
+import { useTheme } from "@/context/ThemeContext";
 import { Exercise } from "@/types";
 
 type ExerciseCardProps = {
@@ -13,6 +13,7 @@ type ExerciseCardProps = {
 
 export default function ExerciseCard({ exercise, onPress, compact = false }: ExerciseCardProps) {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const handlePress = () => {
     if (onPress) {
@@ -25,12 +26,12 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
   if (compact) {
     return (
       <TouchableOpacity 
-        style={styles.compactContainer} 
+        style={[styles.compactContainer, { backgroundColor: colors.card, borderColor: colors.border }]} 
         onPress={handlePress}
         activeOpacity={0.7}
       >
         <View style={styles.compactContent}>
-          <Text style={styles.compactTitle} numberOfLines={1}>{exercise.name}</Text>
+          <Text style={[styles.compactTitle, { color: colors.text }]} numberOfLines={1}>{exercise.name}</Text>
           <View style={styles.compactTags}>
             {exercise.muscleGroups.slice(0, 1).map(group => (
               <View key={group} style={styles.compactTag}>
@@ -40,7 +41,7 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
             {exercise.equipment.length > 0 && (
               <View style={styles.compactEquipment}>
                 <Dumbbell size={10} color={colors.textSecondary} />
-                <Text style={styles.compactEquipmentText}>
+                <Text style={[styles.compactEquipmentText, { color: colors.textSecondary }]}>
                   {exercise.equipment[0]}
                 </Text>
               </View>
@@ -54,19 +55,19 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
 
   return (
     <TouchableOpacity 
-      style={styles.container} 
+      style={[styles.container, { backgroundColor: colors.card }]} 
       onPress={handlePress}
       activeOpacity={0.7}
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>{exercise.name}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{exercise.name}</Text>
           <View style={[styles.badge, { backgroundColor: getBadgeColor(exercise.difficulty) }]}>
             <Text style={styles.badgeText}>{exercise.difficulty}</Text>
           </View>
         </View>
         
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
           {exercise.description}
         </Text>
         
@@ -82,7 +83,7 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
           {exercise.equipment.map(item => (
             <View key={item} style={styles.equipmentItem}>
               <Dumbbell size={12} color={colors.textSecondary} />
-              <Text style={styles.equipmentText}>{item}</Text>
+              <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>{item}</Text>
             </View>
           ))}
         </View>
@@ -114,13 +115,12 @@ const getBadgeColor = (difficulty: "beginner" | "intermediate" | "advanced") => 
     case "advanced":
       return "#FF3B30";
     default:
-      return colors.primary;
+      return "#5E5CE6";
   }
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     flex: 1,
     marginRight: 8,
   },
@@ -160,7 +159,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 12,
   },
   tags: {
@@ -196,7 +194,6 @@ const styles = StyleSheet.create({
   },
   equipmentText: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginLeft: 4,
   },
   imageContainer: {
@@ -217,14 +214,12 @@ const styles = StyleSheet.create({
   
   // Compact styles
   compactContainer: {
-    backgroundColor: colors.card,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.border,
   },
   compactContent: {
     flex: 1,
@@ -232,7 +227,6 @@ const styles = StyleSheet.create({
   compactTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: colors.text,
     marginBottom: 4,
   },
   compactTags: {
@@ -260,7 +254,6 @@ const styles = StyleSheet.create({
   },
   compactEquipmentText: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginLeft: 4,
   },
 });

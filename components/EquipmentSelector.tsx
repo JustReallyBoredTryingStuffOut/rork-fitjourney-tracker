@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { colors } from '@/constants/colors';
+import { useTheme } from '@/context/ThemeContext';
 import { EquipmentType } from '@/types';
 import { 
   Dumbbell, 
   User, 
   Box, 
-  Barbell as BarIcon, 
   ArrowUp, 
   Armchair, 
   Circle, 
@@ -21,23 +20,39 @@ import {
 } from 'lucide-react-native';
 
 type EquipmentSelectorProps = {
+  selectedEquipmentCategory: string | null;
   selectedEquipment: EquipmentType | null;
+  onSelectEquipmentCategory: (category: string) => void;
   onSelectEquipment: (equipment: EquipmentType) => void;
   equipmentTypes: EquipmentType[];
 };
 
+// Equipment categories
+const EQUIPMENT_CATEGORIES = {
+  'Free Weights': ['Barbell', 'Dumbbell', 'Kettlebell'],
+  'Machines': ['Cable Machine', 'Machine', 'Leg Extension Machine', 'Leg Curl Machine', 'Lat Pulldown Machine', 'Leg Press Machine', 'Smith Machine', 'Chest Press Machine', 'Shoulder Press Machine'],
+  'Bodyweight': ['Bodyweight', 'Pull-up Bar'],
+  'Accessories': ['Bench', 'Stability Ball', 'Medicine Ball', 'TRX', 'Ab Wheel', 'Resistance Band', 'Rope Attachment', 'Foam Roller'],
+};
+
 export default function EquipmentSelector({
+  selectedEquipmentCategory,
   selectedEquipment,
+  onSelectEquipmentCategory,
   onSelectEquipment,
   equipmentTypes,
 }: EquipmentSelectorProps) {
-  // Group equipment into categories
-  const categories = {
-    'Free Weights': ['Barbell', 'Dumbbell', 'Kettlebell'],
-    'Machines': ['Cable Machine', 'Machine', 'Leg Extension Machine', 'Leg Curl Machine', 'Lat Pulldown Machine', 'Leg Press Machine'],
-    'Bodyweight': ['Bodyweight', 'Pull-up Bar'],
-    'Accessories': ['Bench', 'Stability Ball', 'Medicine Ball', 'TRX', 'Ab Wheel', 'Resistance Band', 'Rope Attachment'],
+  const { colors } = useTheme();
+
+  // Filter equipment types by selected category
+  const getFilteredEquipment = () => {
+    if (!selectedEquipmentCategory) return equipmentTypes;
+    
+    const categoryEquipment = EQUIPMENT_CATEGORIES[selectedEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES] || [];
+    return equipmentTypes.filter(e => categoryEquipment.includes(e));
   };
+
+  const filteredEquipment = getFilteredEquipment();
 
   const getEquipmentIcon = (equipment: string) => {
     const iconColor = selectedEquipment === equipment ? '#FFFFFF' : colors.text;
@@ -46,78 +61,27 @@ export default function EquipmentSelector({
     switch (equipment) {
       case 'Barbell':
         return (
-          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ 
-              width: iconSize, 
-              height: iconSize/6, 
-              backgroundColor: iconColor,
-              borderRadius: iconSize/12
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              left: 0, 
-              width: iconSize/4, 
-              height: iconSize/4, 
-              backgroundColor: iconColor,
-              borderRadius: iconSize/8
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              right: 0, 
-              width: iconSize/4, 
-              height: iconSize/4, 
-              backgroundColor: iconColor,
-              borderRadius: iconSize/8
-            }} />
+          <View style={styles.barbellIcon}>
+            <View style={[styles.barbellBar, { backgroundColor: iconColor }]} />
+            <View style={[styles.barbellWeight, { left: 0, backgroundColor: iconColor }]} />
+            <View style={[styles.barbellWeight, { right: 0, backgroundColor: iconColor }]} />
           </View>
         );
       case 'Dumbbell':
         return <Dumbbell size={iconSize} color={iconColor} />;
       case 'Kettlebell':
         return (
-          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ 
-              width: iconSize*0.7, 
-              height: iconSize*0.7, 
-              borderRadius: iconSize*0.35,
-              backgroundColor: iconColor
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              top: 0, 
-              width: iconSize/3, 
-              height: iconSize/2, 
-              borderWidth: 2, 
-              borderColor: iconColor, 
-              borderRadius: 3,
-              borderBottomWidth: 0
-            }} />
+          <View style={styles.kettlebellIcon}>
+            <View style={[styles.kettlebellBody, { backgroundColor: iconColor }]} />
+            <View style={[styles.kettlebellHandle, { borderColor: iconColor }]} />
           </View>
         );
       case 'Cable Machine':
         return (
-          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ 
-              width: iconSize*0.6, 
-              height: iconSize*0.8, 
-              borderWidth: 2,
-              borderColor: iconColor,
-              borderRadius: 3
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              top: iconSize*0.2, 
-              width: iconSize*0.8, 
-              height: 2, 
-              backgroundColor: iconColor
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              top: iconSize*0.4, 
-              width: 2, 
-              height: iconSize*0.6, 
-              backgroundColor: iconColor
-            }} />
+          <View style={styles.cableMachineIcon}>
+            <View style={[styles.cableMachineFrame, { borderColor: iconColor }]} />
+            <View style={[styles.cableMachineBar, { backgroundColor: iconColor }]} />
+            <View style={[styles.cableMachineCable, { backgroundColor: iconColor }]} />
           </View>
         );
       case 'Machine':
@@ -128,29 +92,10 @@ export default function EquipmentSelector({
         return <ArrowUp size={iconSize} color={iconColor} />;
       case 'Bench':
         return (
-          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ 
-              width: iconSize*0.8, 
-              height: iconSize*0.4, 
-              backgroundColor: iconColor,
-              borderRadius: 3
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              bottom: 0, 
-              left: iconSize*0.15, 
-              width: 2, 
-              height: iconSize*0.3, 
-              backgroundColor: iconColor
-            }} />
-            <View style={{ 
-              position: 'absolute', 
-              bottom: 0, 
-              right: iconSize*0.15, 
-              width: 2, 
-              height: iconSize*0.3, 
-              backgroundColor: iconColor
-            }} />
+          <View style={styles.benchIcon}>
+            <View style={[styles.benchPad, { backgroundColor: iconColor }]} />
+            <View style={[styles.benchLeg, { left: 4, backgroundColor: iconColor }]} />
+            <View style={[styles.benchLeg, { right: 4, backgroundColor: iconColor }]} />
           </View>
         );
       case 'Stability Ball':
@@ -161,15 +106,9 @@ export default function EquipmentSelector({
         return <Anchor size={iconSize} color={iconColor} />;
       case 'Ab Wheel':
         return (
-          <View style={{ position: 'relative', width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={styles.abWheelIcon}>
             <CircleDot size={iconSize} color={iconColor} />
-            <View style={{ 
-              position: 'absolute', 
-              left: iconSize*0.3, 
-              width: iconSize*0.4, 
-              height: 2, 
-              backgroundColor: iconColor
-            }} />
+            <View style={[styles.abWheelHandle, { backgroundColor: iconColor }]} />
           </View>
         );
       case 'Resistance Band':
@@ -184,6 +123,17 @@ export default function EquipmentSelector({
         return <ArrowDown size={iconSize} color={iconColor} />;
       case 'Leg Press Machine':
         return <MoveHorizontal size={iconSize} color={iconColor} />;
+      case 'Smith Machine':
+        return (
+          <View style={styles.smithMachineIcon}>
+            <View style={[styles.smithMachineFrame, { borderColor: iconColor }]} />
+            <View style={[styles.smithMachineBar, { backgroundColor: iconColor }]} />
+          </View>
+        );
+      case 'Foam Roller':
+        return (
+          <View style={[styles.foamRollerIcon, { borderColor: iconColor }]} />
+        );
       default:
         return <Box size={iconSize} color={iconColor} />;
     }
@@ -191,44 +141,94 @@ export default function EquipmentSelector({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Equipment</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Equipment Type</Text>
       
-      {Object.entries(categories).map(([category, items]) => {
-        const categoryEquipment = equipmentTypes.filter(e => items.includes(e));
-        if (categoryEquipment.length === 0) return null;
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoriesContainer}
+      >
+        <TouchableOpacity
+          style={[
+            styles.categoryButton,
+            { backgroundColor: colors.card, borderColor: colors.border },
+            selectedEquipmentCategory === null && [styles.selectedCategoryButton, { backgroundColor: colors.primary, borderColor: colors.primary }],
+          ]}
+          onPress={() => {
+            onSelectEquipmentCategory(null);
+            onSelectEquipment(null);
+          }}
+        >
+          <Text
+            style={[
+              styles.categoryButtonText,
+              { color: colors.text },
+              selectedEquipmentCategory === null && styles.selectedCategoryButtonText,
+            ]}
+          >
+            All
+          </Text>
+        </TouchableOpacity>
         
-        return (
-          <View key={category} style={styles.categoryContainer}>
-            <Text style={styles.categoryTitle}>{category}</Text>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.equipmentContainer}
+        {Object.keys(EQUIPMENT_CATEGORIES).map((category) => (
+          <TouchableOpacity
+            key={category}
+            style={[
+              styles.categoryButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              selectedEquipmentCategory === category && [styles.selectedCategoryButton, { backgroundColor: colors.primary, borderColor: colors.primary }],
+            ]}
+            onPress={() => {
+              onSelectEquipmentCategory(category);
+              onSelectEquipment(null);
+            }}
+          >
+            <Text
+              style={[
+                styles.categoryButtonText,
+                { color: colors.text },
+                selectedEquipmentCategory === category && styles.selectedCategoryButtonText,
+              ]}
             >
-              {categoryEquipment.map((equipment) => (
-                <TouchableOpacity
-                  key={equipment}
+              {category}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      
+      {filteredEquipment.length > 0 && (
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>Equipment</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.equipmentContainer}
+          >
+            {filteredEquipment.map((equipment) => (
+              <TouchableOpacity
+                key={equipment}
+                style={[
+                  styles.equipmentButton,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  selectedEquipment === equipment && [styles.selectedEquipment, { backgroundColor: colors.primary, borderColor: colors.primary }],
+                ]}
+                onPress={() => onSelectEquipment(equipment)}
+              >
+                {getEquipmentIcon(equipment)}
+                <Text
                   style={[
-                    styles.equipmentButton,
-                    selectedEquipment === equipment && styles.selectedEquipment,
+                    styles.equipmentText,
+                    { color: colors.text },
+                    selectedEquipment === equipment && styles.selectedEquipmentText,
                   ]}
-                  onPress={() => onSelectEquipment(equipment)}
                 >
-                  {getEquipmentIcon(equipment)}
-                  <Text
-                    style={[
-                      styles.equipmentText,
-                      selectedEquipment === equipment && styles.selectedEquipmentText,
-                    ]}
-                  >
-                    {equipment.replace('Machine', '').trim()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        );
-      })}
+                  {equipment.replace('Machine', '').trim()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 }
@@ -240,17 +240,26 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
-  categoryContainer: {
-    marginBottom: 16,
+  categoriesContainer: {
+    paddingBottom: 8,
   },
-  categoryTitle: {
-    fontSize: 16,
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginRight: 8,
+    borderWidth: 1,
+  },
+  selectedCategoryButton: {
+  },
+  categoryButtonText: {
+    fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
-    marginBottom: 8,
+  },
+  selectedCategoryButtonText: {
+    color: '#FFFFFF',
   },
   equipmentContainer: {
     paddingBottom: 8,
@@ -259,27 +268,148 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: colors.card,
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
     width: 100,
     height: 100,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   selectedEquipment: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   equipmentText: {
     fontSize: 12,
     fontWeight: '500',
-    color: colors.text,
     marginTop: 8,
     textAlign: 'center',
   },
   selectedEquipmentText: {
     color: '#FFFFFF',
+  },
+  // Custom icon styles
+  barbellIcon: {
+    width: 40,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  barbellBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  barbellWeight: {
+    position: 'absolute',
+    width: 8,
+    height: 16,
+    borderRadius: 2,
+    top: 4,
+  },
+  kettlebellIcon: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  kettlebellBody: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    marginTop: 6,
+  },
+  kettlebellHandle: {
+    position: 'absolute',
+    top: 0,
+    width: 10,
+    height: 10,
+    borderWidth: 2,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+  },
+  cableMachineIcon: {
+    width: 24,
+    height: 24,
+    position: 'relative',
+  },
+  cableMachineFrame: {
+    width: 20,
+    height: 24,
+    borderWidth: 2,
+    borderRadius: 2,
+    position: 'absolute',
+    left: 2,
+  },
+  cableMachineBar: {
+    width: 16,
+    height: 2,
+    position: 'absolute',
+    top: 8,
+    left: 4,
+  },
+  cableMachineCable: {
+    width: 2,
+    height: 16,
+    position: 'absolute',
+    top: 8,
+    left: 11,
+  },
+  benchIcon: {
+    width: 24,
+    height: 24,
+    position: 'relative',
+  },
+  benchPad: {
+    width: 24,
+    height: 8,
+    borderRadius: 2,
+    position: 'absolute',
+    top: 4,
+  },
+  benchLeg: {
+    width: 2,
+    height: 10,
+    position: 'absolute',
+    bottom: 2,
+  },
+  abWheelIcon: {
+    width: 24,
+    height: 24,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  abWheelHandle: {
+    width: 16,
+    height: 2,
+    position: 'absolute',
+  },
+  smithMachineIcon: {
+    width: 24,
+    height: 24,
+    position: 'relative',
+  },
+  smithMachineFrame: {
+    width: 20,
+    height: 24,
+    borderWidth: 2,
+    borderRadius: 2,
+    position: 'absolute',
+    left: 2,
+  },
+  smithMachineBar: {
+    width: 24,
+    height: 2,
+    position: 'absolute',
+    top: 12,
+    left: 0,
+  },
+  foamRollerIcon: {
+    width: 20,
+    height: 10,
+    borderWidth: 2,
+    borderRadius: 5,
   },
 });

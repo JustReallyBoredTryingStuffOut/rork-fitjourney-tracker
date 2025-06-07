@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { colors } from '@/constants/colors';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 import { BodyRegion, MuscleGroup } from '@/types';
 
 type MuscleGroupSelectorProps = {
@@ -10,6 +10,8 @@ type MuscleGroupSelectorProps = {
   onSelectMuscleGroup: (group: MuscleGroup) => void;
   bodyRegions: BodyRegion[];
   muscleGroups: MuscleGroup[];
+  viewMode: 'front' | 'back';
+  toggleViewMode: () => void;
 };
 
 export default function MuscleGroupSelector({
@@ -19,10 +21,84 @@ export default function MuscleGroupSelector({
   onSelectMuscleGroup,
   bodyRegions,
   muscleGroups,
+  viewMode,
+  toggleViewMode
 }: MuscleGroupSelectorProps) {
+  const { colors } = useTheme();
+  const screenWidth = Dimensions.get('window').width;
+  const imageHeight = 280;
+
+  // Get the appropriate body map image based on region and view
+  const getBodyMapImage = () => {
+    if (selectedBodyRegion === 'Upper Body') {
+      return viewMode === 'front' 
+        ? 'https://images.unsplash.com/photo-1550345332-09e3ac987658?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'
+        : 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80';
+    } else if (selectedBodyRegion === 'Lower Body') {
+      return viewMode === 'front'
+        ? 'https://images.unsplash.com/photo-1562771379-eafdca7a02f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'
+        : 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80';
+    } else if (selectedBodyRegion === 'Core') {
+      return viewMode === 'front'
+        ? 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'
+        : 'https://images.unsplash.com/photo-1566241142559-40e1dab266c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80';
+    }
+    return '';
+  };
+
+  // Define clickable areas for each muscle group based on body region and view
+  const getMuscleGroupAreas = () => {
+    if (selectedBodyRegion === 'Upper Body') {
+      if (viewMode === 'front') {
+        return [
+          { group: 'Chest', style: styles.chestFront },
+          { group: 'Shoulders', style: styles.shouldersFront },
+          { group: 'Biceps', style: styles.bicepsFront },
+          { group: 'Forearms', style: styles.forearmsFront },
+          { group: 'Traps', style: styles.trapsFront },
+        ];
+      } else {
+        return [
+          { group: 'Back', style: styles.backArea },
+          { group: 'Traps', style: styles.trapsBack },
+          { group: 'Triceps', style: styles.tricepsBack },
+          { group: 'Lats', style: styles.latsBack },
+          { group: 'Rear Deltoids', style: styles.rearDeltoids },
+        ];
+      }
+    } else if (selectedBodyRegion === 'Lower Body') {
+      if (viewMode === 'front') {
+        return [
+          { group: 'Quadriceps', style: styles.quadsFront },
+          { group: 'Calves', style: styles.calvesFront },
+          { group: 'Hip Flexors', style: styles.hipFlexors },
+        ];
+      } else {
+        return [
+          { group: 'Hamstrings', style: styles.hamstringsBack },
+          { group: 'Glutes', style: styles.glutesBack },
+          { group: 'Calves', style: styles.calvesBack },
+        ];
+      }
+    } else if (selectedBodyRegion === 'Core') {
+      if (viewMode === 'front') {
+        return [
+          { group: 'Abs', style: styles.absFront },
+          { group: 'Obliques', style: styles.obliquesFront },
+        ];
+      } else {
+        return [
+          { group: 'Lower Back', style: styles.lowerBack },
+          { group: 'Obliques', style: styles.obliquesBack },
+        ];
+      }
+    }
+    return [];
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Body Region</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Body Region</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -33,13 +109,15 @@ export default function MuscleGroupSelector({
             key={region}
             style={[
               styles.bodyRegionButton,
-              selectedBodyRegion === region && styles.selectedBodyRegion,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              selectedBodyRegion === region && [styles.selectedBodyRegion, { backgroundColor: colors.primary, borderColor: colors.primary }],
             ]}
             onPress={() => onSelectBodyRegion(region)}
           >
             <Text
               style={[
                 styles.bodyRegionText,
+                { color: colors.text },
                 selectedBodyRegion === region && styles.selectedBodyRegionText,
               ]}
             >
@@ -51,20 +129,61 @@ export default function MuscleGroupSelector({
 
       {selectedBodyRegion && (
         <>
-          <Text style={styles.sectionTitle}>Muscle Group</Text>
+          <View style={styles.viewToggleContainer}>
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 8 }]}>
+              {selectedBodyRegion === 'Upper Body' ? 'Upper Body View' : 
+               selectedBodyRegion === 'Lower Body' ? 'Lower Body View' : 'Core View'}
+            </Text>
+            <TouchableOpacity 
+              style={[styles.viewToggleButton, { backgroundColor: colors.primary }]} 
+              onPress={toggleViewMode}
+            >
+              <Text style={styles.viewToggleText}>
+                {viewMode === 'front' ? 'Switch to Back View' : 'Switch to Front View'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.bodyMapContainer}>
+            <Image
+              source={{ uri: getBodyMapImage() }}
+              style={[styles.bodyMapImage, { width: screenWidth - 32, height: imageHeight }]}
+              resizeMode="contain"
+            />
+            
+            <View style={[styles.bodyMapOverlay, { width: screenWidth - 32, height: imageHeight }]}>
+              {getMuscleGroupAreas().map((area) => (
+                <TouchableOpacity
+                  key={area.group}
+                  style={[
+                    area.style,
+                    styles.clickableArea,
+                    selectedMuscleGroup === area.group && styles.selectedMuscleArea
+                  ]}
+                  onPress={() => onSelectMuscleGroup(area.group as MuscleGroup)}
+                >
+                  <Text style={styles.muscleGroupLabel}>{area.group}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>Muscle Groups</Text>
           <View style={styles.muscleGroupsContainer}>
             {muscleGroups.map((group) => (
               <TouchableOpacity
                 key={group}
                 style={[
                   styles.muscleGroupButton,
-                  selectedMuscleGroup === group && styles.selectedMuscleGroup,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  selectedMuscleGroup === group && [styles.selectedMuscleGroup, { backgroundColor: colors.primary, borderColor: colors.primary }],
                 ]}
                 onPress={() => onSelectMuscleGroup(group)}
               >
                 <Text
                   style={[
                     styles.muscleGroupText,
+                    { color: colors.text },
                     selectedMuscleGroup === group && styles.selectedMuscleGroupText,
                   ]}
                 >
@@ -74,90 +193,6 @@ export default function MuscleGroupSelector({
             ))}
           </View>
         </>
-      )}
-
-      {selectedBodyRegion === 'Upper Body' && (
-        <View style={styles.bodyMapContainer}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80' }}
-            style={styles.bodyMapImage}
-            resizeMode="contain"
-          />
-          <View style={styles.bodyMapOverlay}>
-            {/* Chest highlight */}
-            {selectedMuscleGroup === 'Chest' && (
-              <View style={[styles.muscleHighlight, styles.chestHighlight]} />
-            )}
-            {/* Back highlight */}
-            {selectedMuscleGroup === 'Back' && (
-              <View style={[styles.muscleHighlight, styles.backHighlight]} />
-            )}
-            {/* Shoulders highlight */}
-            {selectedMuscleGroup === 'Shoulders' && (
-              <View style={[styles.muscleHighlight, styles.shouldersHighlight]} />
-            )}
-            {/* Biceps highlight */}
-            {selectedMuscleGroup === 'Biceps' && (
-              <View style={[styles.muscleHighlight, styles.bicepsHighlight]} />
-            )}
-            {/* Triceps highlight */}
-            {selectedMuscleGroup === 'Triceps' && (
-              <View style={[styles.muscleHighlight, styles.tricepsHighlight]} />
-            )}
-          </View>
-        </View>
-      )}
-
-      {selectedBodyRegion === 'Lower Body' && (
-        <View style={styles.bodyMapContainer}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80' }}
-            style={styles.bodyMapImage}
-            resizeMode="contain"
-          />
-          <View style={styles.bodyMapOverlay}>
-            {/* Quads highlight */}
-            {selectedMuscleGroup === 'Quadriceps' && (
-              <View style={[styles.muscleHighlight, styles.quadsHighlight]} />
-            )}
-            {/* Hamstrings highlight */}
-            {selectedMuscleGroup === 'Hamstrings' && (
-              <View style={[styles.muscleHighlight, styles.hamstringsHighlight]} />
-            )}
-            {/* Glutes highlight */}
-            {selectedMuscleGroup === 'Glutes' && (
-              <View style={[styles.muscleHighlight, styles.glutesHighlight]} />
-            )}
-            {/* Calves highlight */}
-            {selectedMuscleGroup === 'Calves' && (
-              <View style={[styles.muscleHighlight, styles.calvesHighlight]} />
-            )}
-          </View>
-        </View>
-      )}
-
-      {selectedBodyRegion === 'Core' && (
-        <View style={styles.bodyMapContainer}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1566241142559-40e1dab266c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80' }}
-            style={styles.bodyMapImage}
-            resizeMode="contain"
-          />
-          <View style={styles.bodyMapOverlay}>
-            {/* Abs highlight */}
-            {selectedMuscleGroup === 'Abs' && (
-              <View style={[styles.muscleHighlight, styles.absHighlight]} />
-            )}
-            {/* Obliques highlight */}
-            {selectedMuscleGroup === 'Obliques' && (
-              <View style={[styles.muscleHighlight, styles.obliquesHighlight]} />
-            )}
-            {/* Lower back highlight */}
-            {selectedMuscleGroup === 'Lower Back' && (
-              <View style={[styles.muscleHighlight, styles.lowerBackHighlight]} />
-            )}
-          </View>
-        </View>
       )}
     </View>
   );
@@ -170,7 +205,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
   bodyRegionsContainer: {
@@ -180,22 +214,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: colors.card,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   selectedBodyRegion: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   bodyRegionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
   },
   selectedBodyRegionText: {
     color: '#FFFFFF',
+  },
+  viewToggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  viewToggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  viewToggleText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
   },
   muscleGroupsContainer: {
     flexDirection: 'row',
@@ -206,111 +252,187 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: colors.card,
     marginRight: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   selectedMuscleGroup: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   muscleGroupText: {
     fontSize: 14,
-    color: colors.text,
   },
   selectedMuscleGroupText: {
     color: '#FFFFFF',
   },
   bodyMapContainer: {
     position: 'relative',
-    height: 200,
-    marginTop: 16,
-    marginBottom: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 16,
   },
   bodyMapImage: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.7,
+    borderRadius: 12,
+    opacity: 0.8,
   },
   bodyMapOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  muscleHighlight: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 59, 48, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.7)',
-    borderRadius: 8,
+    top: 0,
+    left: 0,
   },
-  // Upper body highlights
-  chestHighlight: {
+  clickableArea: {
+    position: 'absolute',
+    backgroundColor: 'rgba(52, 152, 219, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(52, 152, 219, 0.7)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedMuscleArea: {
+    backgroundColor: 'rgba(255, 59, 48, 0.4)',
+    borderColor: 'rgba(255, 59, 48, 0.8)',
+  },
+  muscleGroupLabel: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    fontSize: 12,
+  },
+  // Upper body front
+  chestFront: {
     width: 100,
     height: 60,
-    top: 60,
+    top: 70,
+    left: '50%',
+    marginLeft: -50,
   },
-  backHighlight: {
-    width: 100,
-    height: 80,
-    top: 50,
-  },
-  shouldersHighlight: {
+  shouldersFront: {
     width: 120,
     height: 30,
     top: 40,
+    left: '50%',
+    marginLeft: -60,
   },
-  bicepsHighlight: {
+  bicepsFront: {
     width: 30,
-    height: 50,
-    top: 80,
-    left: 50,
-  },
-  tricepsHighlight: {
-    width: 30,
-    height: 50,
-    top: 80,
-    right: 50,
-  },
-  // Lower body highlights
-  quadsHighlight: {
-    width: 80,
-    height: 80,
-    top: 60,
-  },
-  hamstringsHighlight: {
-    width: 80,
     height: 60,
-    top: 100,
+    top: 80,
+    left: '30%',
   },
-  glutesHighlight: {
-    width: 80,
-    height: 40,
-    top: 40,
-  },
-  calvesHighlight: {
-    width: 60,
-    height: 50,
+  forearmsFront: {
+    width: 25,
+    height: 60,
     top: 140,
+    left: '30%',
   },
-  // Core highlights
-  absHighlight: {
+  trapsFront: {
+    width: 60,
+    height: 30,
+    top: 30,
+    left: '50%',
+    marginLeft: -30,
+  },
+  // Upper body back
+  backArea: {
+    width: 100,
+    height: 80,
+    top: 70,
+    left: '50%',
+    marginLeft: -50,
+  },
+  trapsBack: {
+    width: 80,
+    height: 30,
+    top: 40,
+    left: '50%',
+    marginLeft: -40,
+  },
+  tricepsBack: {
+    width: 30,
+    height: 60,
+    top: 80,
+    right: '30%',
+  },
+  latsBack: {
+    width: 40,
+    height: 70,
+    top: 80,
+    left: '35%',
+  },
+  rearDeltoids: {
+    width: 30,
+    height: 30,
+    top: 50,
+    left: '30%',
+  },
+  // Lower body front
+  quadsFront: {
+    width: 40,
+    height: 80,
+    top: 100,
+    left: '40%',
+  },
+  calvesFront: {
+    width: 30,
+    height: 60,
+    top: 200,
+    left: '40%',
+  },
+  hipFlexors: {
+    width: 40,
+    height: 30,
+    top: 90,
+    left: '50%',
+    marginLeft: -20,
+  },
+  // Lower body back
+  hamstringsBack: {
+    width: 40,
+    height: 80,
+    top: 120,
+    left: '40%',
+  },
+  glutesBack: {
+    width: 80,
+    height: 40,
+    top: 80,
+    left: '50%',
+    marginLeft: -40,
+  },
+  calvesBack: {
+    width: 30,
+    height: 60,
+    top: 200,
+    left: '40%',
+  },
+  // Core front
+  absFront: {
     width: 60,
     height: 80,
-    top: 60,
+    top: 80,
+    left: '50%',
+    marginLeft: -30,
   },
-  obliquesHighlight: {
-    width: 80,
-    height: 60,
-    top: 70,
+  obliquesFront: {
+    width: 30,
+    height: 80,
+    top: 80,
+    left: '30%',
   },
-  lowerBackHighlight: {
+  // Core back
+  lowerBack: {
     width: 80,
     height: 40,
     top: 100,
+    left: '50%',
+    marginLeft: -40,
+  },
+  obliquesBack: {
+    width: 30,
+    height: 80,
+    top: 80,
+    left: '30%',
   },
 });
