@@ -1,7 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "@/constants/colors";
 import { MacroGoals } from "@/types";
+import { useGamificationStore } from "@/store/gamificationStore";
+import { Trophy } from "lucide-react-native";
 
 interface MacroSummaryProps {
   current: {
@@ -14,6 +16,8 @@ interface MacroSummaryProps {
 }
 
 export default function MacroSummary({ current, goals }: MacroSummaryProps) {
+  const { gamificationEnabled, achievements } = useGamificationStore();
+  
   // Calculate remaining macros
   const remaining = {
     calories: Math.max(0, goals.calories - current.calories),
@@ -28,6 +32,59 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
     protein: Math.min(100, (current.protein / goals.protein) * 100 || 0),
     carbs: Math.min(100, (current.carbs / goals.carbs) * 100 || 0),
     fat: Math.min(100, (current.fat / goals.fat) * 100 || 0),
+  };
+  
+  // Get nutrition achievements
+  const nutritionAchievements = achievements.filter(a => 
+    a.category === "nutrition" && !a.completed
+  );
+  
+  // Check if we're close to any nutrition achievements
+  const proteinGoalAchievement = nutritionAchievements.find(a => a.id === "nutrition-protein-goal");
+  const balancedMacrosAchievement = nutritionAchievements.find(a => a.id === "nutrition-balanced-10");
+  
+  // Generate motivational messages
+  const getMotivationalMessage = () => {
+    // Check if all macros are at least 90% complete
+    const allMacrosNearlyComplete = 
+      percentages.protein >= 90 && 
+      percentages.carbs >= 90 && 
+      percentages.fat >= 90;
+    
+    if (allMacrosNearlyComplete) {
+      return "Great job! You've nearly hit all your macro targets for today! 🎯";
+    }
+    
+    // Check if protein is highest
+    if (percentages.protein >= percentages.carbs && percentages.protein >= percentages.fat) {
+      if (percentages.protein >= 90) {
+        return "Excellent protein intake today! Your muscles thank you! 💪";
+      } else if (percentages.protein >= 70) {
+        return "You're doing well with protein today. Keep it up! 💪";
+      } else {
+        return "Focus on getting more protein to support your fitness goals! 🥩";
+      }
+    }
+    
+    // Check if carbs are highest
+    if (percentages.carbs >= percentages.protein && percentages.carbs >= percentages.fat) {
+      if (percentages.carbs >= 90) {
+        return "You've fueled up well with carbs today! Great energy source! 🍚";
+      } else if (percentages.carbs >= 70) {
+        return "Good carb intake today. Keeping your energy levels up! 🍞";
+      } else {
+        return "Consider adding more complex carbs for sustained energy! 🌾";
+      }
+    }
+    
+    // Check if fats are highest
+    if (percentages.fat >= 90) {
+      return "You're doing great with healthy fats today! 🥑";
+    } else if (percentages.fat >= 70) {
+      return "Good fat intake today. Important for hormone health! 🧠";
+    } else {
+      return "Don't forget healthy fats - they're essential for your body! 🫒";
+    }
   };
 
   return (
@@ -65,6 +122,14 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
             <Text style={styles.macroValue}>
               {current.protein}g / {goals.protein}g
             </Text>
+            {proteinGoalAchievement && gamificationEnabled && (
+              <View style={styles.achievementProgress}>
+                <Trophy size={12} color={colors.primary} />
+                <Text style={styles.achievementText}>
+                  {proteinGoalAchievement.progress}/{proteinGoalAchievement.target} days
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.macroItem}>
@@ -91,6 +156,21 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
             </Text>
           </View>
         </View>
+        
+        {gamificationEnabled && (
+          <View style={styles.motivationContainer}>
+            <Text style={styles.motivationText}>{getMotivationalMessage()}</Text>
+            
+            {balancedMacrosAchievement && (
+              <TouchableOpacity style={styles.achievementButton}>
+                <Trophy size={14} color={colors.primary} />
+                <Text style={styles.achievementButtonText}>
+                  {balancedMacrosAchievement.progress}/{balancedMacrosAchievement.target} balanced days
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -161,6 +241,7 @@ const styles = StyleSheet.create({
   macroSection: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 16,
   },
   macroItem: {
     flex: 1,
@@ -184,5 +265,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
+  },
+  achievementProgress: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  achievementText: {
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  motivationContainer: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 4,
+  },
+  motivationText: {
+    fontSize: 14,
+    color: colors.text,
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+  achievementButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    padding: 6,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  achievementButtonText: {
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+    fontWeight: "500",
   },
 });

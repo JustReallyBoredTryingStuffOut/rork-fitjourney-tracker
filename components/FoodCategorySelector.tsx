@@ -8,7 +8,7 @@ import {
   Modal,
   ScrollView
 } from "react-native";
-import { Search, X, Check, Plus } from "lucide-react-native";
+import { Search, X, Plus } from "lucide-react-native";
 import { TextInput } from "react-native";
 import { FoodCategory, FoodItem } from "@/types";
 import { colors } from "@/constants/colors";
@@ -36,12 +36,14 @@ export default function FoodCategorySelector({
   
   // Filter food items by search query
   const getFilteredItems = () => {
+    if (!selectedCategory) return [];
+    
     if (!searchQuery.trim()) {
-      return selectedCategory?.items || [];
+      return selectedCategory.items || [];
     }
     
     const query = searchQuery.toLowerCase();
-    return selectedCategory?.items.filter(
+    return selectedCategory.items.filter(
       item => item.name.toLowerCase().includes(query)
     ) || [];
   };
@@ -67,9 +69,6 @@ export default function FoodCategorySelector({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Food Categories</Text>
-      <Text style={styles.subtitle}>
-        Select a category to browse foods. You can select multiple items from different categories.
-      </Text>
       
       <View style={styles.pickerContainer}>
         <Picker
@@ -174,11 +173,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.text,
     marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 12,
   },
   pickerContainer: {
     borderWidth: 1,

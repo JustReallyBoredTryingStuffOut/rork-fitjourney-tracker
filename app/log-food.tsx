@@ -4,6 +4,7 @@ import { useRouter, Stack } from "expo-router";
 import { Plus, Minus, Clock, Coffee, UtensilsCrossed, Soup, ArrowLeft } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useMacroStore } from "@/store/macroStore";
+import { useGamificationStore } from "@/store/gamificationStore";
 import { MacroLog, FoodItem } from "@/types";
 import Button from "@/components/Button";
 import NoteInput from "@/components/NoteInput";
@@ -13,7 +14,8 @@ import { foodCategories } from "@/mocks/foodCategories";
 
 export default function LogFoodScreen() {
   const router = useRouter();
-  const { addMacroLog } = useMacroStore();
+  const { addMacroLog, macroGoals, calculateDailyMacros } = useMacroStore();
+  const { gamificationEnabled, achievements, updateAchievementProgress, unlockAchievement } = useGamificationStore();
   
   const [calories, setCalories] = useState("0");
   const [protein, setProtein] = useState("0");
@@ -29,6 +31,12 @@ export default function LogFoodScreen() {
   const hours = now.getHours().toString().padStart(2, "0");
   const minutes = now.getMinutes().toString().padStart(2, "0");
   const [mealTime, setMealTime] = useState(`${hours}:${minutes}`);
+  
+  // Get today's date as ISO string
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Get current daily macros
+  const todayMacros = calculateDailyMacros(today);
   
   // Update macros when food items are selected
   useEffect(() => {
@@ -75,6 +83,12 @@ export default function LogFoodScreen() {
     };
     
     addMacroLog(newLog);
+    
+    // Check for nutrition achievements if gamification is enabled
+    if (gamificationEnabled) {
+      checkNutritionAchievements();
+    }
+    
     Alert.alert(
       "Success", 
       "Food logged successfully",
@@ -85,6 +99,60 @@ export default function LogFoodScreen() {
         }
       ]
     );
+  };
+  
+  const checkNutritionAchievements = () => {
+    // Find nutrition achievements
+    const nutritionAchievements = achievements.filter(a => 
+      a.category === "nutrition" && !a.completed
+    );
+    
+    // Check for first meal logged achievement
+    const firstMealAchievement = nutritionAchievements.find(a => a.id === "nutrition-log-first");
+    if (firstMealAchievement) {
+      updateAchievementProgress(firstMealAchievement.id, 1);
+      unlockAchievement(firstMealAchievement.id);
+    }
+    
+    // Check for protein goal achievement
+    const proteinGoalAchievement = nutritionAchievements.find(a => a.id === "nutrition-protein-goal");
+    if (proteinGoalAchievement) {
+      const proteinValue = parseInt(protein) || 0;
+      if (proteinValue >= (macroGoals?.protein || 0)) {
+        updateAchievementProgress(proteinGoalAchievement.id, proteinGoalAchievement.progress + 1);
+        
+        // If we've reached the target, unlock the achievement
+        if (proteinGoalAchievement.progress + 1 >= proteinGoalAchievement.target) {
+          unlockAchievement(proteinGoalAchievement.id);
+        }
+      }
+    }
+    
+    // Check for balanced macros achievement
+    const balancedMacrosAchievement = nutritionAchievements.find(a => a.id === "nutrition-balanced-10");
+    if (balancedMacrosAchievement) {
+      const proteinValue = parseInt(protein) || 0;
+      const carbsValue = parseInt(carbs) || 0;
+      const fatValue = parseInt(fat) || 0;
+      
+      // Check if macros are within 10% of target ratios
+      const isBalanced = 
+        proteinValue >= (macroGoals?.protein || 0) * 0.9 && 
+        proteinValue <= (macroGoals?.protein || 0) * 1.1 &&
+        carbsValue >= (macroGoals?.carbs || 0) * 0.9 && 
+        carbsValue <= (macroGoals?.carbs || 0) * 1.1 &&
+        fatValue >= (macroGoals?.fat || 0) * 0.9 && 
+        fatValue <= (macroGoals?.fat || 0) * 1.1;
+      
+      if (isBalanced) {
+        updateAchievementProgress(balancedMacrosAchievement.id, balancedMacrosAchievement.progress + 1);
+        
+        // If we've reached the target, unlock the achievement
+        if (balancedMacrosAchievement.progress + 1 >= balancedMacrosAchievement.target) {
+          unlockAchievement(balancedMacrosAchievement.id);
+        }
+      }
+    }
   };
   
   const adjustValue = (setter: React.Dispatch<React.SetStateAction<string>>, value: string, amount: number) => {
@@ -160,6 +228,42 @@ export default function LogFoodScreen() {
   };
   
   const areManualInputsEnabled = selectedFoodItems.length === 0;
+  
+  // Calculate remaining macros for the day
+  const remainingCalories = Math.max(0, (macroGoals?.calories || 0) - todayMacros.calories - parseInt(calories || "0"));
+  const remainingProtein = Math.max(0, (macroGoals?.protein || 0) - todayMacros.protein - parseInt(protein || "0"));
+  const remainingCarbs = Math.max(0, (macroGoals?.carbs || 0) - todayMacros.carbs - parseInt(carbs || "0"));
+  const remainingFat = Math.max(0, (macroGoals?.fat || 0) - todayMacros.fat - parseInt(fat || "0"));
+  
+  // Calculate percentage of daily goals
+  const caloriePercentage = Math.min(100, (((todayMacros.calories + parseInt(calories || "0")) / (macroGoals?.calories || 1)) * 100));
+  const proteinPercentage = Math.min(100, (((todayMacros.protein + parseInt(protein || "0")) / (macroGoals?.protein || 1)) * 100));
+  const carbsPercentage = Math.min(100, (((todayMacros.carbs + parseInt(carbs || "0")) / (macroGoals?.carbs || 1)) * 100));
+  const fatPercentage = Math.min(100, (((todayMacros.fat + parseInt(fat || "0")) / (macroGoals?.fat || 1)) * 100));
+  
+  // Generate progress messages
+  const getProgressMessage = (current: number, goal: number, nutrient: string) => {
+    const percentage = (current / goal) * 100;
+    
+    if (percentage >= 100) {
+      return `You've reached your daily ${nutrient} goal! 🎉`;
+    } else if (percentage >= 90) {
+      return `Almost there! Just a little more ${nutrient} to reach your goal.`;
+    } else if (percentage >= 75) {
+      return `You're making great progress on your ${nutrient} intake.`;
+    } else if (percentage >= 50) {
+      return `You're halfway to your ${nutrient} goal for today.`;
+    } else if (percentage >= 25) {
+      return `You've started on your ${nutrient} intake for today.`;
+    } else {
+      return `You still need more ${nutrient} to reach your daily goal.`;
+    }
+  };
+  
+  const calorieMessage = getProgressMessage(todayMacros.calories + parseInt(calories || "0"), macroGoals?.calories || 0, "calorie");
+  const proteinMessage = getProgressMessage(todayMacros.protein + parseInt(protein || "0"), macroGoals?.protein || 0, "protein");
+  const carbsMessage = getProgressMessage(todayMacros.carbs + parseInt(carbs || "0"), macroGoals?.carbs || 0, "carbs");
+  const fatMessage = getProgressMessage(todayMacros.fat + parseInt(fat || "0"), macroGoals?.fat || 0, "fat");
   
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -467,6 +571,106 @@ export default function LogFoodScreen() {
               </Text>
             </View>
           </View>
+          
+          <View style={styles.goalProgress}>
+            <Text style={styles.goalProgressTitle}>Daily Goal Progress</Text>
+            
+            <View style={styles.goalProgressItem}>
+              <View style={styles.goalProgressHeader}>
+                <Text style={styles.goalProgressLabel}>Calories</Text>
+                <Text style={styles.goalProgressValue}>
+                  {todayMacros.calories + parseInt(calories || "0")} / {macroGoals?.calories || 0} kcal
+                </Text>
+              </View>
+              <View style={styles.goalProgressBar}>
+                <View 
+                  style={[
+                    styles.goalProgressFill, 
+                    { width: `${caloriePercentage}%`, backgroundColor: colors.primary }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.goalProgressMessage}>
+                {remainingCalories > 0 
+                  ? `${remainingCalories} kcal remaining` 
+                  : calorieMessage}
+              </Text>
+            </View>
+            
+            <View style={styles.goalProgressItem}>
+              <View style={styles.goalProgressHeader}>
+                <Text style={styles.goalProgressLabel}>Protein</Text>
+                <Text style={styles.goalProgressValue}>
+                  {todayMacros.protein + parseInt(protein || "0")} / {macroGoals?.protein || 0}g
+                </Text>
+              </View>
+              <View style={styles.goalProgressBar}>
+                <View 
+                  style={[
+                    styles.goalProgressFill, 
+                    { width: `${proteinPercentage}%`, backgroundColor: colors.macroProtein }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.goalProgressMessage}>
+                {remainingProtein > 0 
+                  ? `${remainingProtein}g remaining` 
+                  : proteinMessage}
+              </Text>
+            </View>
+            
+            <View style={styles.goalProgressItem}>
+              <View style={styles.goalProgressHeader}>
+                <Text style={styles.goalProgressLabel}>Carbs</Text>
+                <Text style={styles.goalProgressValue}>
+                  {todayMacros.carbs + parseInt(carbs || "0")} / {macroGoals?.carbs || 0}g
+                </Text>
+              </View>
+              <View style={styles.goalProgressBar}>
+                <View 
+                  style={[
+                    styles.goalProgressFill, 
+                    { width: `${carbsPercentage}%`, backgroundColor: colors.macroCarbs }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.goalProgressMessage}>
+                {remainingCarbs > 0 
+                  ? `${remainingCarbs}g remaining` 
+                  : carbsMessage}
+              </Text>
+            </View>
+            
+            <View style={styles.goalProgressItem}>
+              <View style={styles.goalProgressHeader}>
+                <Text style={styles.goalProgressLabel}>Fat</Text>
+                <Text style={styles.goalProgressValue}>
+                  {todayMacros.fat + parseInt(fat || "0")} / {macroGoals?.fat || 0}g
+                </Text>
+              </View>
+              <View style={styles.goalProgressBar}>
+                <View 
+                  style={[
+                    styles.goalProgressFill, 
+                    { width: `${fatPercentage}%`, backgroundColor: colors.macroFat }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.goalProgressMessage}>
+                {remainingFat > 0 
+                  ? `${remainingFat}g remaining` 
+                  : fatMessage}
+              </Text>
+            </View>
+            
+            {gamificationEnabled && (
+              <View style={styles.achievementHint}>
+                <Text style={styles.achievementHintText}>
+                  💡 Meeting your nutrition goals consistently unlocks achievements and earns you points!
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
       
@@ -608,6 +812,7 @@ const styles = StyleSheet.create({
   macroBreakdown: {
     flexDirection: "row",
     justifyContent: "space-around",
+    marginBottom: 24,
   },
   macroItem: {
     alignItems: "center",
@@ -632,6 +837,65 @@ const styles = StyleSheet.create({
   macroCalories: {
     fontSize: 12,
     color: colors.textLight,
+  },
+  goalProgress: {
+    marginTop: 8,
+    backgroundColor: colors.card,
+    borderRadius: 8,
+    padding: 16,
+  },
+  goalProgressTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  goalProgressItem: {
+    marginBottom: 16,
+  },
+  goalProgressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  goalProgressLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.text,
+  },
+  goalProgressValue: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  goalProgressBar: {
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 6,
+  },
+  goalProgressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  goalProgressMessage: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: "italic",
+  },
+  achievementHint: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  achievementHintText: {
+    fontSize: 14,
+    color: colors.text,
   },
   buttonContainer: {
     marginTop: 8,

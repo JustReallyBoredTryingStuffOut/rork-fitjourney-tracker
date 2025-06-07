@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "@/constants/colors";
+import { Trophy } from "lucide-react-native";
+import { useGamificationStore } from "@/store/gamificationStore";
 
 type MacroProgressProps = {
   title: string;
@@ -9,6 +11,7 @@ type MacroProgressProps = {
   unit: string;
   percentage: number;
   color: string;
+  achievementId?: string;
 };
 
 export default function MacroProgress({ 
@@ -17,12 +20,37 @@ export default function MacroProgress({
   goal, 
   unit, 
   percentage, 
-  color 
+  color,
+  achievementId
 }: MacroProgressProps) {
+  const { gamificationEnabled, achievements } = useGamificationStore();
+  
   // Ensure we have valid numbers to prevent NaN errors
   const safePercentage = isNaN(percentage) ? 0 : Math.min(100, percentage);
   const safeCurrent = isNaN(current) ? 0 : current;
   const safeGoal = isNaN(goal) ? 0 : goal;
+  
+  // Get achievement if ID is provided
+  const achievement = achievementId && gamificationEnabled 
+    ? achievements.find(a => a.id === achievementId) 
+    : null;
+  
+  // Generate progress message
+  const getProgressMessage = () => {
+    if (safePercentage >= 100) {
+      return `Great job! You've reached your ${title.toLowerCase()} goal! 🎉`;
+    } else if (safePercentage >= 90) {
+      return `Almost there! Just ${Math.round(safeGoal - safeCurrent)}${unit} to go!`;
+    } else if (safePercentage >= 75) {
+      return `You're making great progress!`;
+    } else if (safePercentage >= 50) {
+      return `Halfway to your goal!`;
+    } else if (safePercentage >= 25) {
+      return `You've made a good start!`;
+    } else {
+      return `${Math.round(safeGoal - safeCurrent)}${unit} remaining to reach your goal`;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -40,6 +68,19 @@ export default function MacroProgress({
             { width: `${safePercentage}%`, backgroundColor: color }
           ]} 
         />
+      </View>
+      
+      <View style={styles.messageContainer}>
+        <Text style={styles.progressMessage}>{getProgressMessage()}</Text>
+        
+        {achievement && !achievement.completed && (
+          <TouchableOpacity style={styles.achievementButton}>
+            <Trophy size={12} color={colors.primary} />
+            <Text style={styles.achievementText}>
+              {achievement.progress}/{achievement.target} days
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -74,5 +115,32 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     borderRadius: 4,
+  },
+  messageContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  progressMessage: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: "italic",
+    flex: 1,
+  },
+  achievementButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  achievementText: {
+    fontSize: 10,
+    color: colors.primary,
+    marginLeft: 4,
   },
 });

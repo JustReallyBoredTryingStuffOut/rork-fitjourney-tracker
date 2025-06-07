@@ -4,6 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Plus, ChevronRight, UtensilsCrossed, BarChart, Calendar, ArrowLeft } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useMacroStore } from '@/store/macroStore';
+import { useGamificationStore } from '@/store/gamificationStore';
 import MacroProgress from '@/components/MacroProgress';
 import MacroSummary from '@/components/MacroSummary';
 import MealRecommendations from '@/components/MealRecommendations';
@@ -12,6 +13,7 @@ export default function NutritionScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { macroGoals, macroLogs, calculateDailyMacros } = useMacroStore();
+  const { gamificationEnabled, achievements } = useGamificationStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Format date as ISO string (YYYY-MM-DD)
@@ -25,6 +27,16 @@ export default function NutritionScreen() {
   const proteinPercentage = Math.min(100, ((todayMacros.protein || 0) / (macroGoals?.protein || 1)) * 100);
   const carbsPercentage = Math.min(100, ((todayMacros.carbs || 0) / (macroGoals?.carbs || 1)) * 100);
   const fatPercentage = Math.min(100, ((todayMacros.fat || 0) / (macroGoals?.fat || 1)) * 100);
+  
+  // Get nutrition achievements
+  const nutritionAchievements = achievements.filter(a => 
+    a.category === "nutrition" && !a.completed
+  );
+  
+  // Find specific achievements
+  const proteinGoalAchievement = nutritionAchievements.find(a => a.id === "nutrition-protein-goal");
+  const balancedMacrosAchievement = nutritionAchievements.find(a => a.id === "nutrition-balanced-10");
+  const logWeekAchievement = nutritionAchievements.find(a => a.id === "nutrition-log-week");
 
   const handleAddFood = () => {
     router.push('/log-food');
@@ -44,6 +56,25 @@ export default function NutritionScreen() {
   
   const handleGoBack = () => {
     router.back();
+  };
+  
+  // Generate achievement progress message
+  const getAchievementProgressMessage = () => {
+    if (!gamificationEnabled) return null;
+    
+    if (proteinGoalAchievement && proteinGoalAchievement.progress > 0) {
+      return `You've met your protein goal ${proteinGoalAchievement.progress} out of ${proteinGoalAchievement.target} days. Keep it up!`;
+    }
+    
+    if (balancedMacrosAchievement && balancedMacrosAchievement.progress > 0) {
+      return `You've maintained balanced macros for ${balancedMacrosAchievement.progress} out of ${balancedMacrosAchievement.target} days!`;
+    }
+    
+    if (logWeekAchievement && logWeekAchievement.progress > 0) {
+      return `You've logged your meals for ${logWeekAchievement.progress} out of ${logWeekAchievement.target} consecutive days!`;
+    }
+    
+    return "Track your nutrition consistently to unlock achievements and earn points!";
   };
 
   return (
@@ -111,6 +142,7 @@ export default function NutritionScreen() {
               unit="g"
               percentage={proteinPercentage}
               color="#4A90E2"
+              achievementId={proteinGoalAchievement?.id}
             />
             
             <MacroProgress
@@ -131,6 +163,14 @@ export default function NutritionScreen() {
               color="#FFA500"
             />
           </View>
+          
+          {gamificationEnabled && (
+            <View style={styles.achievementContainer}>
+              <Text style={[styles.achievementText, { color: colors.textSecondary }]}>
+                {getAchievementProgressMessage()}
+              </Text>
+            </View>
+          )}
         </View>
         
         <View style={styles.section}>
@@ -248,6 +288,18 @@ const styles = StyleSheet.create({
   },
   macroContent: {
     gap: 16,
+  },
+  achievementContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4A90E2',
+  },
+  achievementText: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   section: {
     padding: 16,
