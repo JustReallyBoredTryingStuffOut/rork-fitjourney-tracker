@@ -9,7 +9,7 @@ import {
   Modal,
   ScrollView
 } from "react-native";
-import { Search, X, ChevronDown } from "lucide-react-native";
+import { Search, X, ChevronDown, Check } from "lucide-react-native";
 import { TextInput } from "react-native";
 import { FoodCategory, FoodItem } from "@/types";
 import { colors } from "@/constants/colors";
@@ -57,8 +57,7 @@ export default function FoodCategorySelector({
   
   const handleSelectFood = (food: FoodItem) => {
     onSelectFood(food);
-    setModalVisible(false);
-    setSearchQuery("");
+    // Keep the modal open to allow selecting multiple items
   };
   
   const closeModal = () => {
@@ -69,7 +68,9 @@ export default function FoodCategorySelector({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Food Categories</Text>
-      <Text style={styles.subtitle}>Select a category to browse foods or enter macros manually below</Text>
+      <Text style={styles.subtitle}>
+        Select a category to browse foods. You can select multiple items from different categories.
+      </Text>
       
       <View style={styles.pickerContainer}>
         <Picker
@@ -117,6 +118,10 @@ export default function FoodCategorySelector({
               />
             </View>
             
+            <Text style={styles.modalSubtitle}>
+              Tap on items to add them to your meal. You can add multiple items.
+            </Text>
+            
             <ScrollView style={styles.foodList}>
               {getFilteredItems().map((food) => (
                 <TouchableOpacity
@@ -137,9 +142,24 @@ export default function FoodCategorySelector({
                       </Text>
                     </View>
                   </View>
+                  <TouchableOpacity 
+                    style={styles.addButton}
+                    onPress={() => handleSelectFood(food)}
+                  >
+                    <Plus size={20} color={colors.white} />
+                  </TouchableOpacity>
                 </TouchableOpacity>
               ))}
             </ScrollView>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.doneButton}
+                onPress={closeModal}
+              >
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -203,6 +223,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text,
   },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    fontStyle: "italic",
+  },
   closeButton: {
     padding: 4,
   },
@@ -231,6 +257,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    alignItems: "center",
   },
   foodImage: {
     width: 70,
@@ -266,4 +293,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
+  addButton: {
+    backgroundColor: colors.primary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  modalFooter: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  doneButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  doneButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  white: "#FFFFFF",
 });
+
+// Import Plus icon
+import { Plus } from "lucide-react-native";
