@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
+    color: "#000000", // Changed from colors.text to black
   },
   infoButton: {
     marginLeft: 8,
@@ -266,20 +266,20 @@ const styles = StyleSheet.create({
   calorieConsumed: {
     fontSize: 28,
     fontWeight: "700",
-    color: colors.text,
+    color: "#000000", // Changed from colors.text to black
   },
   calorieDivider: {
     fontSize: 20,
-    color: colors.textSecondary,
+    color: "#555555", // Changed from colors.textSecondary to medium gray
     marginHorizontal: 4,
   },
   calorieGoal: {
     fontSize: 20,
-    color: colors.textSecondary,
+    color: "#555555", // Changed from colors.textSecondary to medium gray
   },
   calorieRemaining: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: "#555555", // Changed from colors.textSecondary to medium gray
     marginBottom: 12,
   },
   progressBarContainer: {
@@ -314,12 +314,13 @@ const styles = StyleSheet.create({
   },
   macroTitle: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: "#000000", // Changed from colors.textSecondary to black
+    fontWeight: "500", // Added fontWeight for better visibility
   },
   macroValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
+    color: "#333333", // Changed from colors.text to darker gray
   },
   achievementProgress: {
     flexDirection: "row",
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
   },
   motivationText: {
     fontSize: 14,
-    color: colors.text,
+    color: "#333333", // Changed from colors.text to darker gray
     fontStyle: "italic",
     textAlign: "center",
   },
@@ -374,12 +375,12 @@ const styles = StyleSheet.create({
   noGoalsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
+    color: "#000000", // Changed from colors.text to black
     marginBottom: 8,
   },
   noGoalsDescription: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: "#555555", // Changed from colors.textSecondary to medium gray
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 20,

@@ -109,6 +109,14 @@ interface AiState {
   addMessageToChat: (chatId: string, message: Omit<ChatMessage, "id" | "timestamp">) => void;
 }
 
+// Helper function to clean markdown formatting from text
+const cleanMarkdownFormatting = (text: string): string => {
+  // Remove markdown bold/italic formatting (** or __ for bold, * or _ for italic)
+  let cleaned = text.replace(/(\*\*|__)(.*?)\1/g, '$2');
+  cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2');
+  return cleaned;
+};
+
 export const useAiStore = create<AiState>()(
   persist(
     (set, get) => ({
@@ -838,24 +846,30 @@ export const useAiStore = create<AiState>()(
         chats: state.chats.filter(chat => chat.id !== chatId)
       })),
       
-      addMessageToChat: (chatId, message) => set((state) => ({
-        chats: state.chats.map(chat => {
-          if (chat.id === chatId) {
-            return {
-              ...chat,
-              messages: [
-                ...chat.messages,
-                {
-                  id: Date.now().toString(),
-                  ...message,
-                  timestamp: new Date().toISOString()
-                }
-              ]
-            };
-          }
-          return chat;
-        })
-      }))
+      addMessageToChat: (chatId, message) => {
+        // Clean any markdown formatting from the message content
+        const cleanedContent = cleanMarkdownFormatting(message.content);
+        
+        set((state) => ({
+          chats: state.chats.map(chat => {
+            if (chat.id === chatId) {
+              return {
+                ...chat,
+                messages: [
+                  ...chat.messages,
+                  {
+                    id: Date.now().toString(),
+                    ...message,
+                    content: cleanedContent, // Use cleaned content
+                    timestamp: new Date().toISOString()
+                  }
+                ]
+              };
+            }
+            return chat;
+          })
+        }));
+      }
     }),
     {
       name: "ai-storage",

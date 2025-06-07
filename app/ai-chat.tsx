@@ -54,7 +54,7 @@ export default function AiChatScreen() {
         {
           id: "system-1",
           role: "system",
-          content: "I'm your fitness assistant. I can help with workout advice, nutrition tips, and answer questions about your fitness journey.",
+          content: "I'm your fitness assistant. I can help with workout advice, nutrition tips, and answer questions about your fitness journey. Respond in a conversational, human-like manner without using markdown formatting like asterisks for emphasis.",
           timestamp: new Date().toISOString()
         },
         {
@@ -96,13 +96,21 @@ export default function AiChatScreen() {
       // Add the new user message
       apiMessages.push(userMessage);
       
+      // Add system message to instruct AI not to use markdown formatting
+      const systemMessage = {
+        role: "system" as const,
+        content: "Respond in a conversational, human-like manner. Do not use markdown formatting like asterisks for emphasis or bold text."
+      };
+      
       // Make API request
       const response = await fetch("https://toolkit.rork.com/text/llm/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ messages: apiMessages })
+        body: JSON.stringify({ 
+          messages: [systemMessage, ...apiMessages]
+        })
       });
       
       if (!response.ok) {
@@ -111,10 +119,16 @@ export default function AiChatScreen() {
       
       const data = await response.json();
       
+      // Process the response to remove any remaining markdown formatting
+      let cleanedResponse = data.completion;
+      // Remove markdown bold/italic formatting (** or __ for bold, * or _ for italic)
+      cleanedResponse = cleanedResponse.replace(/(\*\*|__)(.*?)\1/g, '$2');
+      cleanedResponse = cleanedResponse.replace(/(\*|_)(.*?)\1/g, '$2');
+      
       // Add AI response to chat
       addMessageToChat(currentChat.id, {
         role: "assistant",
-        content: data.completion
+        content: cleanedResponse
       });
       
     } catch (error) {
