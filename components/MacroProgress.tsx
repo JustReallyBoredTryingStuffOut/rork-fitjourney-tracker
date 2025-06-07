@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "@/constants/colors";
 import { Trophy } from "lucide-react-native";
 import { useGamificationStore } from "@/store/gamificationStore";
+import { useRouter } from "expo-router";
 
 type MacroProgressProps = {
   title: string;
@@ -12,6 +13,7 @@ type MacroProgressProps = {
   percentage: number;
   color: string;
   achievementId?: string;
+  hasValidGoals?: boolean;
 };
 
 export default function MacroProgress({ 
@@ -21,9 +23,28 @@ export default function MacroProgress({
   unit, 
   percentage, 
   color,
-  achievementId
+  achievementId,
+  hasValidGoals = true
 }: MacroProgressProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
+  const router = useRouter();
+  
+  // If no valid goals, show a message to set them up
+  if (!hasValidGoals) {
+    return (
+      <View style={styles.noGoalsContainer}>
+        <Text style={styles.noGoalsText}>
+          Set up your nutrition goals to track your {title.toLowerCase()} progress.
+        </Text>
+        <TouchableOpacity 
+          style={styles.setupGoalsButton}
+          onPress={() => router.push("/health-goals")}
+        >
+          <Text style={styles.setupGoalsButtonText}>Set Up Goals</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   
   // Ensure we have valid numbers to prevent NaN errors
   const safePercentage = isNaN(percentage) ? 0 : Math.min(100, percentage);
@@ -142,5 +163,29 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.primary,
     marginLeft: 4,
+  },
+  noGoalsContainer: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  noGoalsText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  setupGoalsButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  setupGoalsButtonText: {
+    color: colors.white,
+    fontWeight: "500",
+    fontSize: 12,
   },
 });

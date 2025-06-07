@@ -4,6 +4,7 @@ import { colors } from "@/constants/colors";
 import { MacroGoals } from "@/types";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { Trophy } from "lucide-react-native";
+import { useRouter } from "expo-router";
 
 interface MacroSummaryProps {
   current: {
@@ -12,11 +13,39 @@ interface MacroSummaryProps {
     carbs: number;
     fat: number;
   };
-  goals: MacroGoals;
+  goals: MacroGoals | null;
 }
 
 export default function MacroSummary({ current, goals }: MacroSummaryProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
+  const router = useRouter();
+  
+  // Check if goals are valid
+  const hasValidGoals = goals && 
+    goals.calories > 0 && 
+    goals.protein > 0 && 
+    goals.carbs > 0 && 
+    goals.fat > 0;
+  
+  // If no valid goals, show a message to set them up
+  if (!hasValidGoals) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.noGoalsCard}>
+          <Text style={styles.noGoalsTitle}>No Nutrition Goals Set</Text>
+          <Text style={styles.noGoalsDescription}>
+            Set up your daily macro goals to track your nutrition progress and get personalized recommendations.
+          </Text>
+          <TouchableOpacity 
+            style={styles.setupGoalsButton}
+            onPress={() => router.push("/health-goals")}
+          >
+            <Text style={styles.setupGoalsButtonText}>Set Up Nutrition Goals</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
   
   // Calculate remaining macros
   const remaining = {
@@ -304,5 +333,40 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginLeft: 4,
     fontWeight: "500",
+  },
+  noGoalsCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    alignItems: "center",
+  },
+  noGoalsTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 8,
+  },
+  noGoalsDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  setupGoalsButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  setupGoalsButtonText: {
+    color: colors.white,
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

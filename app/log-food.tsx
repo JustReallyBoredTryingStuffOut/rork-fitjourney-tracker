@@ -38,6 +38,13 @@ export default function LogFoodScreen() {
   // Get current daily macros
   const todayMacros = calculateDailyMacros(today);
   
+  // Check if macro goals are set up
+  const hasValidMacroGoals = macroGoals && 
+    macroGoals.calories > 0 && 
+    macroGoals.protein > 0 && 
+    macroGoals.carbs > 0 && 
+    macroGoals.fat > 0;
+  
   // Update macros when food items are selected
   useEffect(() => {
     if (selectedFoodItems.length > 0) {
@@ -229,17 +236,17 @@ export default function LogFoodScreen() {
   
   const areManualInputsEnabled = selectedFoodItems.length === 0;
   
-  // Calculate remaining macros for the day
-  const remainingCalories = Math.max(0, (macroGoals?.calories || 0) - todayMacros.calories - parseInt(calories || "0"));
-  const remainingProtein = Math.max(0, (macroGoals?.protein || 0) - todayMacros.protein - parseInt(protein || "0"));
-  const remainingCarbs = Math.max(0, (macroGoals?.carbs || 0) - todayMacros.carbs - parseInt(carbs || "0"));
-  const remainingFat = Math.max(0, (macroGoals?.fat || 0) - todayMacros.fat - parseInt(fat || "0"));
+  // Calculate remaining macros for the day (only if goals are set)
+  const remainingCalories = hasValidMacroGoals ? Math.max(0, (macroGoals?.calories || 0) - todayMacros.calories - parseInt(calories || "0")) : 0;
+  const remainingProtein = hasValidMacroGoals ? Math.max(0, (macroGoals?.protein || 0) - todayMacros.protein - parseInt(protein || "0")) : 0;
+  const remainingCarbs = hasValidMacroGoals ? Math.max(0, (macroGoals?.carbs || 0) - todayMacros.carbs - parseInt(carbs || "0")) : 0;
+  const remainingFat = hasValidMacroGoals ? Math.max(0, (macroGoals?.fat || 0) - todayMacros.fat - parseInt(fat || "0")) : 0;
   
-  // Calculate percentage of daily goals
-  const caloriePercentage = Math.min(100, (((todayMacros.calories + parseInt(calories || "0")) / (macroGoals?.calories || 1)) * 100));
-  const proteinPercentage = Math.min(100, (((todayMacros.protein + parseInt(protein || "0")) / (macroGoals?.protein || 1)) * 100));
-  const carbsPercentage = Math.min(100, (((todayMacros.carbs + parseInt(carbs || "0")) / (macroGoals?.carbs || 1)) * 100));
-  const fatPercentage = Math.min(100, (((todayMacros.fat + parseInt(fat || "0")) / (macroGoals?.fat || 1)) * 100));
+  // Calculate percentage of daily goals (only if goals are set)
+  const caloriePercentage = hasValidMacroGoals ? Math.min(100, (((todayMacros.calories + parseInt(calories || "0")) / (macroGoals?.calories || 1)) * 100)) : 0;
+  const proteinPercentage = hasValidMacroGoals ? Math.min(100, (((todayMacros.protein + parseInt(protein || "0")) / (macroGoals?.protein || 1)) * 100)) : 0;
+  const carbsPercentage = hasValidMacroGoals ? Math.min(100, (((todayMacros.carbs + parseInt(carbs || "0")) / (macroGoals?.carbs || 1)) * 100)) : 0;
+  const fatPercentage = hasValidMacroGoals ? Math.min(100, (((todayMacros.fat + parseInt(fat || "0")) / (macroGoals?.fat || 1)) * 100)) : 0;
   
   // Generate progress messages
   const getProgressMessage = (current: number, goal: number, nutrient: string) => {
@@ -260,10 +267,10 @@ export default function LogFoodScreen() {
     }
   };
   
-  const calorieMessage = getProgressMessage(todayMacros.calories + parseInt(calories || "0"), macroGoals?.calories || 0, "calorie");
-  const proteinMessage = getProgressMessage(todayMacros.protein + parseInt(protein || "0"), macroGoals?.protein || 0, "protein");
-  const carbsMessage = getProgressMessage(todayMacros.carbs + parseInt(carbs || "0"), macroGoals?.carbs || 0, "carbs");
-  const fatMessage = getProgressMessage(todayMacros.fat + parseInt(fat || "0"), macroGoals?.fat || 0, "fat");
+  const calorieMessage = hasValidMacroGoals ? getProgressMessage(todayMacros.calories + parseInt(calories || "0"), macroGoals?.calories || 0, "calorie") : "";
+  const proteinMessage = hasValidMacroGoals ? getProgressMessage(todayMacros.protein + parseInt(protein || "0"), macroGoals?.protein || 0, "protein") : "";
+  const carbsMessage = hasValidMacroGoals ? getProgressMessage(todayMacros.carbs + parseInt(carbs || "0"), macroGoals?.carbs || 0, "carbs") : "";
+  const fatMessage = hasValidMacroGoals ? getProgressMessage(todayMacros.fat + parseInt(fat || "0"), macroGoals?.fat || 0, "fat") : "";
   
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -572,105 +579,120 @@ export default function LogFoodScreen() {
             </View>
           </View>
           
-          <View style={styles.goalProgress}>
-            <Text style={styles.goalProgressTitle}>Daily Goal Progress</Text>
-            
-            <View style={styles.goalProgressItem}>
-              <View style={styles.goalProgressHeader}>
-                <Text style={styles.goalProgressLabel}>Calories</Text>
-                <Text style={styles.goalProgressValue}>
-                  {todayMacros.calories + parseInt(calories || "0")} / {macroGoals?.calories || 0} kcal
+          {/* Only show Daily Goal Progress if macro goals are set up */}
+          {hasValidMacroGoals ? (
+            <View style={styles.goalProgress}>
+              <Text style={styles.goalProgressTitle}>Daily Goal Progress</Text>
+              
+              <View style={styles.goalProgressItem}>
+                <View style={styles.goalProgressHeader}>
+                  <Text style={styles.goalProgressLabel}>Calories</Text>
+                  <Text style={styles.goalProgressValue}>
+                    {todayMacros.calories + parseInt(calories || "0")} / {macroGoals?.calories || 0} kcal
+                  </Text>
+                </View>
+                <View style={styles.goalProgressBar}>
+                  <View 
+                    style={[
+                      styles.goalProgressFill, 
+                      { width: `${caloriePercentage}%`, backgroundColor: colors.primary }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.goalProgressMessage}>
+                  {remainingCalories > 0 
+                    ? `${remainingCalories} kcal remaining` 
+                    : calorieMessage}
                 </Text>
               </View>
-              <View style={styles.goalProgressBar}>
-                <View 
-                  style={[
-                    styles.goalProgressFill, 
-                    { width: `${caloriePercentage}%`, backgroundColor: colors.primary }
-                  ]} 
-                />
+              
+              <View style={styles.goalProgressItem}>
+                <View style={styles.goalProgressHeader}>
+                  <Text style={styles.goalProgressLabel}>Protein</Text>
+                  <Text style={styles.goalProgressValue}>
+                    {todayMacros.protein + parseInt(protein || "0")} / {macroGoals?.protein || 0}g
+                  </Text>
+                </View>
+                <View style={styles.goalProgressBar}>
+                  <View 
+                    style={[
+                      styles.goalProgressFill, 
+                      { width: `${proteinPercentage}%`, backgroundColor: colors.macroProtein }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.goalProgressMessage}>
+                  {remainingProtein > 0 
+                    ? `${remainingProtein}g remaining` 
+                    : proteinMessage}
+                </Text>
               </View>
-              <Text style={styles.goalProgressMessage}>
-                {remainingCalories > 0 
-                  ? `${remainingCalories} kcal remaining` 
-                  : calorieMessage}
-              </Text>
+              
+              <View style={styles.goalProgressItem}>
+                <View style={styles.goalProgressHeader}>
+                  <Text style={styles.goalProgressLabel}>Carbs</Text>
+                  <Text style={styles.goalProgressValue}>
+                    {todayMacros.carbs + parseInt(carbs || "0")} / {macroGoals?.carbs || 0}g
+                  </Text>
+                </View>
+                <View style={styles.goalProgressBar}>
+                  <View 
+                    style={[
+                      styles.goalProgressFill, 
+                      { width: `${carbsPercentage}%`, backgroundColor: colors.macroCarbs }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.goalProgressMessage}>
+                  {remainingCarbs > 0 
+                    ? `${remainingCarbs}g remaining` 
+                    : carbsMessage}
+                </Text>
+              </View>
+              
+              <View style={styles.goalProgressItem}>
+                <View style={styles.goalProgressHeader}>
+                  <Text style={styles.goalProgressLabel}>Fat</Text>
+                  <Text style={styles.goalProgressValue}>
+                    {todayMacros.fat + parseInt(fat || "0")} / {macroGoals?.fat || 0}g
+                  </Text>
+                </View>
+                <View style={styles.goalProgressBar}>
+                  <View 
+                    style={[
+                      styles.goalProgressFill, 
+                      { width: `${fatPercentage}%`, backgroundColor: colors.macroFat }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.goalProgressMessage}>
+                  {remainingFat > 0 
+                    ? `${remainingFat}g remaining` 
+                    : fatMessage}
+                </Text>
+              </View>
+              
+              {gamificationEnabled && (
+                <View style={styles.achievementHint}>
+                  <Text style={styles.achievementHintText}>
+                    💡 Meeting your nutrition goals consistently unlocks achievements and earns you points!
+                  </Text>
+                </View>
+              )}
             </View>
-            
-            <View style={styles.goalProgressItem}>
-              <View style={styles.goalProgressHeader}>
-                <Text style={styles.goalProgressLabel}>Protein</Text>
-                <Text style={styles.goalProgressValue}>
-                  {todayMacros.protein + parseInt(protein || "0")} / {macroGoals?.protein || 0}g
-                </Text>
-              </View>
-              <View style={styles.goalProgressBar}>
-                <View 
-                  style={[
-                    styles.goalProgressFill, 
-                    { width: `${proteinPercentage}%`, backgroundColor: colors.macroProtein }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.goalProgressMessage}>
-                {remainingProtein > 0 
-                  ? `${remainingProtein}g remaining` 
-                  : proteinMessage}
+          ) : (
+            <View style={styles.noGoalsContainer}>
+              <Text style={styles.noGoalsText}>
+                Set up your daily macro goals in the nutrition settings to track your progress.
               </Text>
+              <TouchableOpacity 
+                style={styles.setupGoalsButton}
+                onPress={() => router.push("/health-goals")}
+              >
+                <Text style={styles.setupGoalsButtonText}>Set Up Nutrition Goals</Text>
+              </TouchableOpacity>
             </View>
-            
-            <View style={styles.goalProgressItem}>
-              <View style={styles.goalProgressHeader}>
-                <Text style={styles.goalProgressLabel}>Carbs</Text>
-                <Text style={styles.goalProgressValue}>
-                  {todayMacros.carbs + parseInt(carbs || "0")} / {macroGoals?.carbs || 0}g
-                </Text>
-              </View>
-              <View style={styles.goalProgressBar}>
-                <View 
-                  style={[
-                    styles.goalProgressFill, 
-                    { width: `${carbsPercentage}%`, backgroundColor: colors.macroCarbs }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.goalProgressMessage}>
-                {remainingCarbs > 0 
-                  ? `${remainingCarbs}g remaining` 
-                  : carbsMessage}
-              </Text>
-            </View>
-            
-            <View style={styles.goalProgressItem}>
-              <View style={styles.goalProgressHeader}>
-                <Text style={styles.goalProgressLabel}>Fat</Text>
-                <Text style={styles.goalProgressValue}>
-                  {todayMacros.fat + parseInt(fat || "0")} / {macroGoals?.fat || 0}g
-                </Text>
-              </View>
-              <View style={styles.goalProgressBar}>
-                <View 
-                  style={[
-                    styles.goalProgressFill, 
-                    { width: `${fatPercentage}%`, backgroundColor: colors.macroFat }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.goalProgressMessage}>
-                {remainingFat > 0 
-                  ? `${remainingFat}g remaining` 
-                  : fatMessage}
-              </Text>
-            </View>
-            
-            {gamificationEnabled && (
-              <View style={styles.achievementHint}>
-                <Text style={styles.achievementHintText}>
-                  💡 Meeting your nutrition goals consistently unlocks achievements and earns you points!
-                </Text>
-              </View>
-            )}
-          </View>
+          )}
         </View>
       </View>
       
@@ -1027,5 +1049,29 @@ const styles = StyleSheet.create({
   },
   error: {
     color: colors.error,
+  },
+  noGoalsContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  noGoalsText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  setupGoalsButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  setupGoalsButtonText: {
+    color: colors.white,
+    fontWeight: "500",
+    fontSize: 14,
   },
 });
