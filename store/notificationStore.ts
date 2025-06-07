@@ -34,6 +34,7 @@ interface WaterReminder {
   interval: number; // minutes
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
+  specificTimes: string[]; // Array of HH:MM format times for specific reminders
 }
 
 interface StepReminder {
@@ -100,6 +101,7 @@ const defaultWaterReminder: WaterReminder = {
   interval: 60, // 1 hour
   startTime: "08:00",
   endTime: "22:00",
+  specificTimes: ["10:00", "13:00", "15:00", "18:00"] // Default specific reminder times
 };
 
 const defaultStepReminder: StepReminder = {
@@ -304,63 +306,93 @@ export const useNotificationStore = create<NotificationState>()(
         }
         
         try {
-          const { interval, startTime, endTime } = get().waterReminders;
-          
-          // Parse start and end times
-          const [startHour, startMinute] = startTime.split(":").map(Number);
-          const [endHour, endMinute] = endTime.split(":").map(Number);
-          
-          // Calculate how many notifications to schedule
-          const startDate = new Date();
-          startDate.setHours(startHour, startMinute, 0, 0);
-          
-          const endDate = new Date();
-          endDate.setHours(endHour, endMinute, 0, 0);
-          
-          // If end time is earlier than start time, assume it's for the next day
-          if (endDate <= startDate) {
-            endDate.setDate(endDate.getDate() + 1);
-          }
-          
-          const now = new Date();
-          
-          // Don't schedule if current time is past end time
-          if (now >= endDate) {
-            return;
-          }
-          
-          // Adjust start time if current time is past start time
-          const actualStartTime = now > startDate ? now : startDate;
-          
-          // Calculate time difference in minutes
-          const timeDiffMinutes = (endDate.getTime() - actualStartTime.getTime()) / (1000 * 60);
-          
-          // Calculate number of notifications
-          const numNotifications = Math.floor(timeDiffMinutes / interval);
+          const { specificTimes, startTime, endTime, interval } = get().waterReminders;
           
           // Cancel existing notifications
           await Notifications.cancelAllScheduledNotificationsAsync();
           
-          // Schedule new notifications
-          for (let i = 0; i < numNotifications; i++) {
-            const notificationTime = new Date(actualStartTime);
-            notificationTime.setMinutes(notificationTime.getMinutes() + (i + 1) * interval);
+          // If specific times are provided, use those
+          if (specificTimes && specificTimes.length > 0) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             
-            const secondsFromNow = Math.floor((notificationTime.getTime() - Date.now()) / 1000);
+            for (const timeStr of specificTimes) {
+              const [hours, minutes] = timeStr.split(':').map(Number);
+              const reminderTime = new Date(today);
+              reminderTime.setHours(hours, minutes, 0, 0);
+              
+              // Skip if time has already passed today
+              if (reminderTime <= now) continue;
+              
+              const secondsFromNow = Math.floor((reminderTime.getTime() - now.getTime()) / 1000);
+              
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: "Hydration Reminder",
+                  body: "Time to drink some water! Stay hydrated.",
+                },
+                trigger: { 
+                  type: "timeInterval",
+                  seconds: secondsFromNow,
+                  repeats: false
+                },
+              });
+            }
+          } else {
+            // Use interval-based reminders
+            // Parse start and end times
+            const [startHour, startMinute] = startTime.split(":").map(Number);
+            const [endHour, endMinute] = endTime.split(":").map(Number);
             
-            if (secondsFromNow <= 0) continue;
+            // Calculate how many notifications to schedule
+            const startDate = new Date();
+            startDate.setHours(startHour, startMinute, 0, 0);
             
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: "Hydration Reminder",
-                body: "Time to drink some water! Stay hydrated.",
-              },
-              trigger: { 
-                type: "timeInterval",
-                seconds: secondsFromNow,
-                repeats: false
-              },
-            });
+            const endDate = new Date();
+            endDate.setHours(endHour, endMinute, 0, 0);
+            
+            // If end time is earlier than start time, assume it's for the next day
+            if (endDate <= startDate) {
+              endDate.setDate(endDate.getDate() + 1);
+            }
+            
+            const now = new Date();
+            
+            // Don't schedule if current time is past end time
+            if (now >= endDate) {
+              return;
+            }
+            
+            // Adjust start time if current time is past start time
+            const actualStartTime = now > startDate ? now : startDate;
+            
+            // Calculate time difference in minutes
+            const timeDiffMinutes = (endDate.getTime() - actualStartTime.getTime()) / (1000 * 60);
+            
+            // Calculate number of notifications
+            const numNotifications = Math.floor(timeDiffMinutes / interval);
+            
+            // Schedule new notifications
+            for (let i = 0; i < numNotifications; i++) {
+              const notificationTime = new Date(actualStartTime);
+              notificationTime.setMinutes(notificationTime.getMinutes() + (i + 1) * interval);
+              
+              const secondsFromNow = Math.floor((notificationTime.getTime() - Date.now()) / 1000);
+              
+              if (secondsFromNow <= 0) continue;
+              
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: "Hydration Reminder",
+                  body: "Time to drink some water! Stay hydrated.",
+                },
+                trigger: { 
+                  type: "timeInterval",
+                  seconds: secondsFromNow,
+                  repeats: false
+                },
+              });
+            }
           }
         } catch (error) {
           console.error("Failed to schedule water notifications:", error);
@@ -431,6 +463,7 @@ export const useNotificationStore = create<NotificationState>()(
           const goal = await AsyncStorage.getItem('ai-storage');
           let goalText = "your fitness goal";
           let goalCategory = "other";
+          let waterBottleSize: number | undefined;
           
           if (goal) {
             const parsedGoal = JSON.parse(goal);
@@ -438,41 +471,128 @@ export const useNotificationStore = create<NotificationState>()(
             if (goalObj) {
               goalText = goalObj.text;
               goalCategory = goalObj.category || "other";
+              waterBottleSize = goalObj.waterBottleSize;
             }
           }
           
           // Get reminder messages based on goal category
           const reminderMessages = getReminderMessages(goalCategory, goalText);
           
+          // For water goals with bottle size, add specific reminders
+          if (goalCategory === 'water' && waterBottleSize) {
+            // Extract target water amount from goal text (assuming it's in liters)
+            const matches = goalText.match(/(\d+(\.\d+)?)\s*(l|liter|liters)/i);
+            if (matches && matches[1]) {
+              const targetLiters = parseFloat(matches[1]);
+              const bottleSize = waterBottleSize;
+              const bottlesNeeded = Math.ceil(targetLiters / bottleSize);
+              
+              // Add bottle-specific messages
+              reminderMessages.push(`Remember to drink your water! You need ${bottlesNeeded} bottle${bottlesNeeded !== 1 ? 's' : ''} today.`);
+              reminderMessages.push(`Have you had a bottle of water in the last hour? Stay on track with your hydration goal!`);
+              reminderMessages.push(`Hydration check! Each ${bottleSize}L bottle gets you closer to your daily goal.`);
+            }
+          }
+          
           // Schedule based on frequency
           if (frequency === "hourly") {
-            // Schedule reminders every hour from 8am to 8pm
-            for (let hour = 8; hour <= 20; hour++) {
-              const reminderTime = new Date(today);
-              reminderTime.setHours(hour, 0, 0, 0);
+            // For water goals, use specific times for better user experience
+            if (goalCategory === 'water') {
+              // Use specific times from water reminder settings if available
+              const { specificTimes } = get().waterReminders;
               
-              // Skip if time is in the past
-              if (reminderTime <= now) continue;
-              
-              const secondsFromNow = Math.floor((reminderTime.getTime() - now.getTime()) / 1000);
-              
-              // Get a random message from the category-specific messages
-              const randomMessage = reminderMessages[Math.floor(Math.random() * reminderMessages.length)];
-              
-              const notificationId = await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: "Goal Reminder",
-                  body: randomMessage,
-                  data: { goalId, type: goalCategory },
-                },
-                trigger: {
-                  type: "timeInterval",
-                  seconds: secondsFromNow,
-                  repeats: false
-                },
-              });
-              
-              notificationIds.push(notificationId);
+              if (specificTimes && specificTimes.length > 0) {
+                // Use configured specific times
+                for (const timeStr of specificTimes) {
+                  const [hour, minute] = timeStr.split(':').map(Number);
+                  const reminderTime = new Date(today);
+                  reminderTime.setHours(hour, minute, 0, 0);
+                  
+                  // Skip if time is in the past
+                  if (reminderTime <= now) continue;
+                  
+                  const secondsFromNow = Math.floor((reminderTime.getTime() - now.getTime()) / 1000);
+                  
+                  // Get a random message from the category-specific messages
+                  const randomMessage = reminderMessages[Math.floor(Math.random() * reminderMessages.length)];
+                  
+                  const notificationId = await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: "Water Reminder",
+                      body: randomMessage,
+                      data: { goalId, type: goalCategory },
+                    },
+                    trigger: {
+                      type: "timeInterval",
+                      seconds: secondsFromNow,
+                      repeats: false
+                    },
+                  });
+                  
+                  notificationIds.push(notificationId);
+                }
+              } else {
+                // Default water reminder times if none configured
+                const waterReminderHours = [10, 12, 14, 16, 18, 20];
+                
+                for (const hour of waterReminderHours) {
+                  const reminderTime = new Date(today);
+                  reminderTime.setHours(hour, 0, 0, 0);
+                  
+                  // Skip if time is in the past
+                  if (reminderTime <= now) continue;
+                  
+                  const secondsFromNow = Math.floor((reminderTime.getTime() - now.getTime()) / 1000);
+                  
+                  // Get a random message from the category-specific messages
+                  const randomMessage = reminderMessages[Math.floor(Math.random() * reminderMessages.length)];
+                  
+                  const notificationId = await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: "Water Reminder",
+                      body: randomMessage,
+                      data: { goalId, type: goalCategory },
+                    },
+                    trigger: {
+                      type: "timeInterval",
+                      seconds: secondsFromNow,
+                      repeats: false
+                    },
+                  });
+                  
+                  notificationIds.push(notificationId);
+                }
+              }
+            } else {
+              // For non-water goals, use regular hourly reminders
+              // Schedule reminders every hour from 8am to 8pm
+              for (let hour = 8; hour <= 20; hour++) {
+                const reminderTime = new Date(today);
+                reminderTime.setHours(hour, 0, 0, 0);
+                
+                // Skip if time is in the past
+                if (reminderTime <= now) continue;
+                
+                const secondsFromNow = Math.floor((reminderTime.getTime() - now.getTime()) / 1000);
+                
+                // Get a random message from the category-specific messages
+                const randomMessage = reminderMessages[Math.floor(Math.random() * reminderMessages.length)];
+                
+                const notificationId = await Notifications.scheduleNotificationAsync({
+                  content: {
+                    title: "Goal Reminder",
+                    body: randomMessage,
+                    data: { goalId, type: goalCategory },
+                  },
+                  trigger: {
+                    type: "timeInterval",
+                    seconds: secondsFromNow,
+                    repeats: false
+                  },
+                });
+                
+                notificationIds.push(notificationId);
+              }
             }
           } else if (frequency === "daily") {
             // Schedule a reminder at 9am, 12pm, and 6pm

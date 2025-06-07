@@ -27,7 +27,7 @@ const CATEGORIES = [
 
 export default function AddGoalScreen() {
   const router = useRouter();
-  const { addGoal } = useAiStore();
+  const { addGoal, scheduleGoalReminder } = useAiStore();
   
   const [goalText, setGoalText] = useState("");
   const [category, setCategory] = useState("workout");
@@ -77,6 +77,24 @@ export default function AddGoalScreen() {
     }
     
     addGoal(newGoal);
+    
+    // Schedule reminders for water goals
+    if (category === 'water' && typeof scheduleGoalReminder === 'function') {
+      try {
+        // For water goals, schedule hourly reminders by default
+        scheduleGoalReminder(newGoal.id, 'hourly');
+      } catch (error) {
+        console.error("Error scheduling water goal reminder:", error);
+      }
+    } else if (typeof scheduleGoalReminder === 'function') {
+      try {
+        // For other goals, schedule daily reminders
+        scheduleGoalReminder(newGoal.id, 'daily');
+      } catch (error) {
+        console.error("Error scheduling daily goal reminder:", error);
+      }
+    }
+    
     router.back();
   };
   

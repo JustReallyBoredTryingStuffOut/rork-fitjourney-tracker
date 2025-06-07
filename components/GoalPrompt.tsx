@@ -90,7 +90,17 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
       }
       
       // If water bottle prompt is shown and size is entered, or it's not a water goal
-      const bottleSize = waterBottleSize ? parseFloat(waterBottleSize) : undefined;
+      let bottleSize: number | undefined = undefined;
+      
+      if (waterBottleSize) {
+        // Replace comma with dot for decimal parsing
+        const normalizedSize = waterBottleSize.replace(',', '.');
+        const parsedSize = parseFloat(normalizedSize);
+        if (!isNaN(parsedSize) && parsedSize > 0) {
+          bottleSize = parsedSize;
+        }
+      }
+      
       onSubmit(goalText, timeframe, targetDate?.toISOString(), bottleSize);
       
       // Reset water bottle prompt
@@ -137,14 +147,21 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
   
   // Handle water bottle size input
   const handleWaterBottleSizeChange = (text: string) => {
-    // Only allow numbers and decimal point
-    const filteredText = text.replace(/[^0-9.]/g, '');
-    setWaterBottleSize(filteredText);
+    // Allow only numbers and a single decimal separator (comma or dot)
+    const sanitizedText = text.replace(/[^0-9.,]/g, '');
+    
+    // Ensure only one decimal separator
+    const commaCount = (sanitizedText.match(/,/g) || []).length;
+    const dotCount = (sanitizedText.match(/\./g) || []).length;
+    
+    if (commaCount + dotCount <= 1) {
+      setWaterBottleSize(sanitizedText);
+    }
   };
   
   // Calculate number of bottles needed
   const calculateBottlesNeeded = () => {
-    if (!waterBottleSize || isNaN(parseFloat(waterBottleSize)) || parseFloat(waterBottleSize) <= 0) {
+    if (!waterBottleSize || (isNaN(parseFloat(waterBottleSize.replace(',', '.'))) || parseFloat(waterBottleSize.replace(',', '.')) <= 0)) {
       return null;
     }
     
@@ -153,7 +170,7 @@ const GoalPrompt: React.FC<GoalPromptProps> = ({
     if (!matches || !matches[1]) return null;
     
     const targetLiters = parseFloat(matches[1]);
-    const bottleSize = parseFloat(waterBottleSize);
+    const bottleSize = parseFloat(waterBottleSize.replace(',', '.'));
     
     // Calculate bottles needed
     const bottlesNeeded = Math.ceil(targetLiters / bottleSize);
