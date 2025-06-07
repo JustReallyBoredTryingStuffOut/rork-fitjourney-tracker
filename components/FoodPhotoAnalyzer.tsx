@@ -139,16 +139,16 @@ export default function FoodPhotoAnalyzer({ onPhotoTaken, onCancel }: FoodPhotoA
       // Convert the image to base64
       const base64Image = await convertImageToBase64(photo);
       
-      // Create a prompt for the AI
+      // Create a prompt for the AI that emphasizes accurate food identification
       const messages = [
         {
           role: "system",
-          content: "You are a nutrition expert that can identify foods from images and provide accurate nutritional information. Analyze the image and provide the food name, calories, protein (g), carbs (g), and fat (g) for a standard serving. Format your response as a JSON object with these fields: name, calories, protein, carbs, fat. Only respond with the JSON object, no additional text."
+          content: "You are a nutrition expert specializing in food identification and nutritional analysis. Your task is to accurately identify foods from images and provide precise nutritional information. Analyze the image carefully, considering visual cues like texture, color, and presentation. If you recognize a specific dish (like lasagna, pizza, salad, etc.), name it specifically rather than using generic terms. Provide the food name, calories, protein (g), carbs (g), and fat (g) for a standard serving. Format your response as a JSON object with these fields: name, calories, protein, carbs, fat. Only respond with the JSON object, no additional text."
         },
         {
           role: "user",
           content: [
-            { type: "text", text: "What food is this and what are its nutritional values?" },
+            { type: "text", text: "What specific food is shown in this image and what are its nutritional values?" },
             { type: "image", image: base64Image }
           ]
         }

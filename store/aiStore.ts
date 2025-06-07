@@ -22,6 +22,7 @@ export interface Goal {
   timePeriod?: string; // "daily", "weekly", "monthly"
   reminderSchedule?: "hourly" | "daily" | "custom"; // How often to send reminders
   currentValue?: number; // Current progress value
+  dailyProgress?: Record<string, boolean>; // For tracking daily completion of weekly goals
 }
 
 export interface GoalMilestone {
@@ -392,26 +393,90 @@ export const useAiStore = create<AiState>()(
             if (matches) {
               const targetWater = parseFloat(matches[1]);
               
-              // Calculate water intake since goal was created
-              const goalDate = new Date(goal.date);
-              
-              // Add null check and default value for waterIntake
-              const todayWaterIntake = waterIntake && waterIntake.length > 0
-                ? waterIntake
-                    .filter(entry => new Date(entry.date).toDateString() === new Date().toDateString())
-                    .reduce((total, entry) => total + entry.amount, 0)
-                : 0;
-              
-              // Update current value
-              set(state => ({
-                goals: state.goals.map(g => 
-                  g.id === goalId ? { ...g, currentValue: todayWaterIntake } : g
-                )
-              }));
-              
-              // Calculate progress
-              progress = Math.min(100, Math.round((todayWaterIntake / targetWater) * 100));
-              completed = todayWaterIntake >= targetWater;
+              // Handle different timeframes for water goals
+              if (goal.timeframe === "weekly" && goal.text.toLowerCase().includes("daily")) {
+                // For goals like "drink 2L of water daily for a week"
+                // We need to check each day of the current week
+                
+                // Initialize daily progress tracking if not exists
+                if (!goal.dailyProgress) {
+                  set(state => ({
+                    goals: state.goals.map(g => 
+                      g.id === goalId ? { ...g, dailyProgress: {} } : g
+                    )
+                  }));
+                }
+                
+                // Get the start of the current week (Sunday)
+                const today = new Date();
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay()); // Go to Sunday
+                startOfWeek.setHours(0, 0, 0, 0);
+                
+                // Check water intake for each day of the current week
+                const dailyProgress: Record<string, boolean> = { ...goal.dailyProgress } || {};
+                let daysCompleted = 0;
+                
+                for (let i = 0; i < 7; i++) {
+                  const currentDate = new Date(startOfWeek);
+                  currentDate.setDate(startOfWeek.getDate() + i);
+                  const dateString = currentDate.toISOString().split('T')[0];
+                  
+                  // Skip future days
+                  if (currentDate > today) continue;
+                  
+                  // Calculate water intake for this day
+                  const dayWaterIntake = waterIntake
+                    .filter(entry => new Date(entry.date).toISOString().split('T')[0] === dateString)
+                    .reduce((total, entry) => total + entry.amount, 0);
+                  
+                  // Check if target was met for this day
+                  const targetMet = dayWaterIntake >= targetWater;
+                  dailyProgress[dateString] = targetMet;
+                  
+                  if (targetMet) {
+                    daysCompleted++;
+                  }
+                }
+                
+                // Update daily progress tracking
+                set(state => ({
+                  goals: state.goals.map(g => 
+                    g.id === goalId ? { ...g, dailyProgress } : g
+                  )
+                }));
+                
+                // Calculate overall progress (percentage of days completed)
+                const daysPassed = Math.min(7, today.getDay() + 1); // Number of days passed in current week
+                progress = Math.round((daysCompleted / 7) * 100);
+                
+                // Goal is completed if all 7 days met the target
+                completed = daysCompleted === 7;
+                
+                // Update current value to show days completed
+                set(state => ({
+                  goals: state.goals.map(g => 
+                    g.id === goalId ? { ...g, currentValue: daysCompleted } : g
+                  )
+                }));
+              } else {
+                // For regular daily water goals
+                // Calculate water intake for today
+                const todayWaterIntake = waterIntake
+                  .filter(entry => new Date(entry.date).toDateString() === new Date().toDateString())
+                  .reduce((total, entry) => total + entry.amount, 0);
+                
+                // Update current value
+                set(state => ({
+                  goals: state.goals.map(g => 
+                    g.id === goalId ? { ...g, currentValue: todayWaterIntake } : g
+                  )
+                }));
+                
+                // Calculate progress
+                progress = Math.min(100, Math.round((todayWaterIntake / targetWater) * 100));
+                completed = todayWaterIntake >= targetWater;
+              }
             }
             break;
           }
@@ -477,6 +542,24 @@ export const useAiStore = create<AiState>()(
       getGoalProgressMessage: (goal) => {
         if (goal.completed) {
           return "Congratulations! You've completed this goal.";
+        }
+        
+        // Special message for weekly water goals
+        if (goal.category === "water" && goal.timeframe === "weekly" && goal.text.toLowerCase().includes("daily")) {
+          const daysCompleted = goal.currentValue || 0;
+          const daysRemaining = 7 - daysCompleted;
+          
+          if (daysCompleted === 0) {
+            return "Start tracking your daily water intake to make progress on this goal.";
+          } else if (daysCompleted < 3) {
+            return `You've met your water goal for ${daysCompleted} day${daysCompleted > 1 ? 's' : ''} this week. Keep going!`;
+          } else if (daysCompleted < 6) {
+            return `Great progress! You've met your water goal for ${daysCompleted} days this week. Just ${daysRemaining} more to go!`;
+          } else if (daysCompleted === 6) {
+            return "Almost there! You've met your water goal for 6 days this week. Just one more day to complete your goal!";
+          } else {
+            return "You've met your water goal every day this week! Great job staying hydrated!";
+          }
         }
         
         if (!goal.progress || goal.progress === 0) {
