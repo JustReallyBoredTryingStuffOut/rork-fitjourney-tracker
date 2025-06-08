@@ -21,6 +21,7 @@ export default function AddWorkoutScheduleScreen() {
   const [reminder, setReminder] = useState(true);
   const [reminderTime, setReminderTime] = useState(15); // 15 minutes before
   const [showWorkoutSelector, setShowWorkoutSelector] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Days of the week
   const days = [
@@ -54,15 +55,20 @@ export default function AddWorkoutScheduleScreen() {
   };
   
   const handleSave = () => {
+    if (isSubmitting) return; // Prevent multiple submissions
+    
     if (!selectedWorkoutId) {
       Alert.alert("Error", "Please select a workout");
       return;
     }
     
+    setIsSubmitting(true);
+    
     // Find the selected workout to include its name in the scheduled workout
     const selectedWorkout = workouts.find(w => w.id === selectedWorkoutId);
     if (!selectedWorkout) {
       Alert.alert("Error", "Selected workout not found");
+      setIsSubmitting(false);
       return;
     }
     
@@ -78,15 +84,32 @@ export default function AddWorkoutScheduleScreen() {
       createdAt: new Date().toISOString(), // Add creation timestamp
     };
     
-    // Schedule the workout
-    scheduleWorkout(newScheduledWorkout);
-    
-    // Show success message and navigate back
-    Alert.alert(
-      "Success", 
-      "Workout scheduled successfully", 
-      [{ text: "OK", onPress: () => router.back() }]
-    );
+    try {
+      // Schedule the workout
+      scheduleWorkout(newScheduledWorkout);
+      
+      // Show success message and navigate back
+      Alert.alert(
+        "Success", 
+        `Workout "${selectedWorkout.name}" scheduled successfully for ${days[selectedDay].name} at ${formatTime(selectedTime)}`, 
+        [{ 
+          text: "OK", 
+          onPress: () => {
+            // Use setTimeout to ensure the alert is dismissed before navigation
+            setTimeout(() => {
+              router.back();
+            }, 100);
+          } 
+        }]
+      );
+    } catch (error) {
+      console.error("Error scheduling workout:", error);
+      Alert.alert(
+        "Error", 
+        "There was a problem scheduling your workout. Please try again."
+      );
+      setIsSubmitting(false);
+    }
   };
   
   const handleGoBack = () => {
@@ -270,9 +293,10 @@ export default function AddWorkoutScheduleScreen() {
         </View>
         
         <Button
-          title="Add to Schedule"
+          title={isSubmitting ? "Adding to Schedule..." : "Add to Schedule"}
           onPress={handleSave}
           style={styles.saveButton}
+          disabled={isSubmitting || !selectedWorkoutId}
         />
         
         {/* Added back button at the bottom */}
@@ -281,6 +305,7 @@ export default function AddWorkoutScheduleScreen() {
           onPress={handleGoBack}
           variant="outline"
           style={styles.bottomBackButton}
+          disabled={isSubmitting}
         />
       </ScrollView>
       
