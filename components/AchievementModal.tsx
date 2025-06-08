@@ -49,6 +49,11 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
     }
   };
   
+  // Only show modal for completed achievements
+  if (!achievement.completed) {
+    return null;
+  }
+  
   useEffect(() => {
     if (visible) {
       // Reset animations
@@ -89,8 +94,6 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg']
   });
-  
-  if (!achievement) return null;
   
   return (
     <Modal

@@ -464,12 +464,20 @@ export default function ScheduleScreen() {
                   {hasContent && (
                     <View style={styles.workoutCountContainer}>
                       {showCompletedWorkouts && hasCompletedWorkout && (
-                        <Text style={[styles.workoutCount, { color: colors.primary }]} numberOfLines={1} ellipsizeMode="tail">
+                        <Text 
+                          style={[styles.workoutCount, { color: colors.primary }]} 
+                          numberOfLines={1} 
+                          ellipsizeMode="tail"
+                        >
                           {completedWorkouts.length} done
                         </Text>
                       )}
                       {showScheduledWorkouts && hasScheduledWorkout && (
-                        <Text style={[styles.workoutCount, { color: colors.secondary }]} numberOfLines={1} ellipsizeMode="tail">
+                        <Text 
+                          style={[styles.workoutCount, { color: colors.secondary }]} 
+                          numberOfLines={1} 
+                          ellipsizeMode="tail"
+                        >
                           {scheduledWorkoutsForDay.length} planned
                         </Text>
                       )}

@@ -47,6 +47,10 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
     ? Math.min(100, Math.floor((achievement.progress / achievement.target) * 100))
     : 0;
   
+  // Determine if the badge is interactive
+  const isInteractive = !!onPress && achievement.completed;
+  
+  // Render the badge with appropriate styling
   return (
     <TouchableOpacity 
       style={[
@@ -56,10 +60,11 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           height: badgeSize,
           backgroundColor: achievement.completed ? colors.card : colors.background,
           borderColor: achievement.completed ? tierColor : colors.border,
+          opacity: achievement.completed ? 1 : 0.7,
         }
       ]}
       onPress={onPress}
-      disabled={!onPress}
+      disabled={!isInteractive}
     >
       {showProgress && !achievement.completed && (
         <View 
@@ -89,6 +94,13 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       {achievement.completed && (
         <View style={[styles.completedBadge, { backgroundColor: colors.primary }]}>
           <Text style={styles.completedIcon}>✓</Text>
+        </View>
+      )}
+      
+      {/* Add a lock icon for locked achievements */}
+      {!achievement.completed && (
+        <View style={[styles.lockOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]}>
+          <Text style={styles.lockIcon}>🔒</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -145,6 +157,19 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  lockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockIcon: {
+    fontSize: 20,
   }
 });
 

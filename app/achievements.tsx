@@ -49,10 +49,13 @@ export default function AchievementsScreen() {
     ? Math.floor((unlockedAchievements.length / achievements.length) * 100)
     : 0;
   
-  // Handle achievement press
+  // Handle achievement press - only allow interaction with unlocked achievements
   const handleAchievementPress = (achievement: Achievement) => {
-    setSelectedAchievement(achievement);
-    setShowModal(true);
+    // Only show modal for completed/unlocked achievements
+    if (achievement.completed) {
+      setSelectedAchievement(achievement);
+      setShowModal(true);
+    }
   };
   
   // Get icon for category
@@ -227,11 +230,17 @@ export default function AchievementsScreen() {
               <View style={styles.achievementItem}>
                 <AchievementBadge 
                   achievement={item}
-                  onPress={() => handleAchievementPress(item)}
+                  onPress={item.completed ? () => handleAchievementPress(item) : undefined}
                   showProgress
                 />
                 <Text 
-                  style={[styles.achievementName, { color: colors.text }]}
+                  style={[
+                    styles.achievementName, 
+                    { 
+                      color: item.completed ? colors.text : colors.textSecondary,
+                      opacity: item.completed ? 1 : 0.7
+                    }
+                  ]}
                   numberOfLines={1}
                 >
                   {item.title}
