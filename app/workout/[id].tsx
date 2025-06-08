@@ -60,6 +60,10 @@ export default function WorkoutDetailScreen() {
     router.push("/active-workout");
   };
   
+  const handleScheduleWorkout = () => {
+    router.push("/add-workout-schedule");
+  };
+  
   const handleAnalyzeWorkouts = () => {
     // Analyze workout logs for this specific workout
     const relevantLogs = workoutLogs.filter(log => log.workoutId === workout.id);
@@ -202,6 +206,12 @@ export default function WorkoutDetailScreen() {
           onPress={handleStartWorkout}
           size="large"
           style={styles.startButton}
+        />
+        <Button
+          title="Add to Schedule"
+          onPress={handleScheduleWorkout}
+          variant="outline"
+          style={styles.scheduleButton}
         />
         <TouchableOpacity 
           style={styles.backToWorkoutsButton}
@@ -348,6 +358,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   startButton: {
+    width: "100%",
+    marginBottom: 8,
+  },
+  scheduleButton: {
     width: "100%",
     marginBottom: 8,
   },
