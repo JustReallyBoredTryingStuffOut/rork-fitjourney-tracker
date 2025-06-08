@@ -59,20 +59,34 @@ export default function AddWorkoutScheduleScreen() {
       return;
     }
     
+    // Find the selected workout to include its name in the scheduled workout
+    const selectedWorkout = workouts.find(w => w.id === selectedWorkoutId);
+    if (!selectedWorkout) {
+      Alert.alert("Error", "Selected workout not found");
+      return;
+    }
+    
     const newScheduledWorkout = {
       id: Date.now().toString(),
       workoutId: selectedWorkoutId,
+      workoutName: selectedWorkout.name, // Add workout name for easier display
       dayOfWeek: selectedDay,
       time: formatTime(selectedTime),
       notes: "",
       reminder,
       reminderTime,
+      createdAt: new Date().toISOString(), // Add creation timestamp
     };
     
+    // Schedule the workout
     scheduleWorkout(newScheduledWorkout);
-    Alert.alert("Success", "Workout scheduled successfully", [
-      { text: "OK", onPress: () => router.back() }
-    ]);
+    
+    // Show success message and navigate back
+    Alert.alert(
+      "Success", 
+      "Workout scheduled successfully", 
+      [{ text: "OK", onPress: () => router.back() }]
+    );
   };
   
   const handleGoBack = () => {
