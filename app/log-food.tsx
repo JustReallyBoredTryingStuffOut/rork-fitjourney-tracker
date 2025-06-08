@@ -296,6 +296,17 @@ export default function LogFoodScreen() {
         <Text style={styles.subtitle}>Track your macros and calories</Text>
       </View>
       
+      {/* Back button below subtitle */}
+      <TouchableOpacity 
+        onPress={handleGoBack} 
+        style={styles.belowSubtitleBackButton}
+        accessibilityLabel="Go back"
+        accessibilityHint="Returns to the previous screen"
+      >
+        <ArrowLeft size={24} color={colors.text} />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+      
       <View style={styles.formContainer}>
         <View style={styles.mealInfoContainer}>
           <View style={styles.inputGroup}>
@@ -724,7 +735,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 8, // Reduced from 24 to make room for back button
   },
   title: {
     fontSize: 24,
@@ -735,6 +746,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  // New back button style below subtitle
+  belowSubtitleBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
   },
   formContainer: {
     backgroundColor: colors.card,

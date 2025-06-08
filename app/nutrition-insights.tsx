@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
   timeframeButtonTextActive: {
     color: '#FFFFFF',
   },
-  // New back button style
+  // Back button style
   belowTimeframeBackButton: {
     flexDirection: 'row',
     alignItems: 'center',
