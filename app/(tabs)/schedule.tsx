@@ -208,15 +208,28 @@ export default function ScheduleScreen() {
           text: "Delete", 
           style: "destructive",
           onPress: () => {
-            removeScheduledWorkout(id);
-            setSelectedScheduledWorkout(null);
-            
-            // Check if there are other scheduled workouts for this day
-            const otherScheduled = scheduledWorkouts
-              .filter(sw => sw.id !== id && sw.dayOfWeek === selectedDate.getDay());
-            
-            if (otherScheduled.length > 0) {
-              setSelectedScheduledWorkout(otherScheduled[0].id);
+            try {
+              // Call the removeScheduledWorkout function from the store
+              removeScheduledWorkout(id);
+              
+              // Clear the selected scheduled workout if it was the one deleted
+              if (selectedScheduledWorkout === id) {
+                setSelectedScheduledWorkout(null);
+              }
+              
+              // Check if there are other scheduled workouts for this day
+              const otherScheduled = scheduledWorkouts
+                .filter(sw => sw.id !== id && sw.dayOfWeek === selectedDate.getDay());
+              
+              if (otherScheduled.length > 0) {
+                setSelectedScheduledWorkout(otherScheduled[0].id);
+              }
+              
+              // Show success message
+              Alert.alert("Success", "Workout removed from schedule");
+            } catch (error) {
+              console.error("Error removing scheduled workout:", error);
+              Alert.alert("Error", "Failed to remove workout from schedule");
             }
           }
         }
@@ -235,22 +248,35 @@ export default function ScheduleScreen() {
           text: "Delete", 
           style: "destructive",
           onPress: () => {
-            deleteWorkoutLog(id);
-            setSelectedWorkout(null);
-            
-            // Check if there are other completed workouts for this date
-            const otherCompleted = workoutLogs
-              .filter(log => {
-                const logDate = new Date(log.date);
-                return log.id !== id && 
-                  logDate.getDate() === selectedDate.getDate() &&
-                  logDate.getMonth() === selectedDate.getMonth() &&
-                  logDate.getFullYear() === selectedDate.getFullYear() &&
-                  log.completed;
-              });
-            
-            if (otherCompleted.length > 0) {
-              setSelectedWorkout(otherCompleted[0].id);
+            try {
+              // Call the deleteWorkoutLog function from the store
+              deleteWorkoutLog(id);
+              
+              // Clear the selected workout if it was the one deleted
+              if (selectedWorkout === id) {
+                setSelectedWorkout(null);
+              }
+              
+              // Check if there are other completed workouts for this date
+              const otherCompleted = workoutLogs
+                .filter(log => {
+                  const logDate = new Date(log.date);
+                  return log.id !== id && 
+                    logDate.getDate() === selectedDate.getDate() &&
+                    logDate.getMonth() === selectedDate.getMonth() &&
+                    logDate.getFullYear() === selectedDate.getFullYear() &&
+                    log.completed;
+                });
+              
+              if (otherCompleted.length > 0) {
+                setSelectedWorkout(otherCompleted[0].id);
+              }
+              
+              // Show success message
+              Alert.alert("Success", "Workout log deleted successfully");
+            } catch (error) {
+              console.error("Error deleting workout log:", error);
+              Alert.alert("Error", "Failed to delete workout log");
             }
           }
         }
@@ -547,7 +573,11 @@ export default function ScheduleScreen() {
                 <View style={styles.actionButtons}>
                   <TouchableOpacity 
                     style={[styles.actionButton, { backgroundColor: colors.error }]}
-                    onPress={() => handleDeleteScheduledWorkout(getSelectedScheduledWorkoutDetails()?.scheduled.id || "")}
+                    onPress={() => {
+                      if (getSelectedScheduledWorkoutDetails()?.scheduled.id) {
+                        handleDeleteScheduledWorkout(getSelectedScheduledWorkoutDetails()?.scheduled.id || "");
+                      }
+                    }}
                   >
                     <Trash2 size={16} color={colors.white} />
                     <Text style={[styles.actionButtonText, { color: colors.white }]}>
@@ -651,7 +681,11 @@ export default function ScheduleScreen() {
                 <View style={styles.actionButtons}>
                   <TouchableOpacity 
                     style={[styles.actionButton, { backgroundColor: colors.error }]}
-                    onPress={() => handleDeleteCompletedWorkout(getSelectedWorkoutDetails()?.log.id || "")}
+                    onPress={() => {
+                      if (getSelectedWorkoutDetails()?.log.id) {
+                        handleDeleteCompletedWorkout(getSelectedWorkoutDetails()?.log.id || "");
+                      }
+                    }}
                   >
                     <Trash2 size={16} color={colors.white} />
                     <Text style={[styles.actionButtonText, { color: colors.white }]}>

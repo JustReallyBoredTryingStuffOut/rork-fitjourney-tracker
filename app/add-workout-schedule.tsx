@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pre
 import { Stack, useRouter } from "expo-router";
 import { Calendar, Clock, ChevronDown, Check, ArrowLeft, X } from "lucide-react-native";
 import { useWorkoutStore } from "@/store/workoutStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import Button from "@/components/Button";
 import WorkoutCard from "@/components/WorkoutCard";
 import { Picker } from "@react-native-picker/picker";
@@ -13,6 +14,7 @@ export default function AddWorkoutScheduleScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { workouts, scheduleWorkout } = useWorkoutStore();
+  const { scheduleWorkoutNotification } = useNotificationStore();
   
   const [selectedWorkoutId, setSelectedWorkoutId] = useState("");
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
@@ -54,7 +56,7 @@ export default function AddWorkoutScheduleScreen() {
     setSelectedTime(currentDate);
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
     if (isSubmitting) return; // Prevent multiple submissions
     
     if (!selectedWorkoutId) {
@@ -88,6 +90,35 @@ export default function AddWorkoutScheduleScreen() {
       // Schedule the workout
       scheduleWorkout(newScheduledWorkout);
       
+      // Schedule notification if reminders are enabled
+      if (reminder && Platform.OS !== "web") {
+        // Create a date for the next occurrence of the selected day
+        const today = new Date();
+        const todayDay = today.getDay();
+        const daysUntilNext = (selectedDay - todayDay + 7) % 7;
+        
+        const nextOccurrence = new Date(today);
+        nextOccurrence.setDate(today.getDate() + daysUntilNext);
+        
+        // Set the time from selectedTime
+        nextOccurrence.setHours(selectedTime.getHours());
+        nextOccurrence.setMinutes(selectedTime.getMinutes());
+        nextOccurrence.setSeconds(0);
+        nextOccurrence.setMilliseconds(0);
+        
+        // If today is the selected day and the time has passed, move to next week
+        if (daysUntilNext === 0 && nextOccurrence < today) {
+          nextOccurrence.setDate(nextOccurrence.getDate() + 7);
+        }
+        
+        // Schedule the notification
+        await scheduleWorkoutNotification(
+          newScheduledWorkout.id,
+          selectedWorkout.name,
+          nextOccurrence
+        );
+      }
+      
       // Show success message and navigate back
       Alert.alert(
         "Success", 
@@ -98,7 +129,7 @@ export default function AddWorkoutScheduleScreen() {
             // Use setTimeout to ensure the alert is dismissed before navigation
             setTimeout(() => {
               router.back();
-            }, 100);
+            }, 300);
           } 
         }]
       );
