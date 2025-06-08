@@ -440,6 +440,17 @@ export default function NutritionInsightsScreen() {
         </TouchableOpacity>
       </View>
       
+      {/* Back button below timeframe selector */}
+      <TouchableOpacity 
+        onPress={handleGoBack} 
+        style={styles.belowTimeframeBackButton}
+        accessibilityLabel="Go back"
+        accessibilityHint="Returns to the previous screen"
+      >
+        <ArrowLeft size={24} color={colors.text} />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+      
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -685,6 +696,21 @@ const styles = StyleSheet.create({
   },
   timeframeButtonTextActive: {
     color: '#FFFFFF',
+  },
+  // New back button style
+  belowTimeframeBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
