@@ -103,6 +103,9 @@ interface WorkoutState {
   getMuscleGroupsForDate: (date: Date) => string[];
   copyWorkoutToCustom: (workoutLogId: string) => string; // Returns new workout ID
   getWorkoutsByMuscleGroup: (muscleGroup: string) => Workout[];
+  
+  // New action for deleting workout logs
+  deleteWorkoutLog: (id: string) => void;
 }
 
 // List of major lifts for special PR celebrations
@@ -460,6 +463,11 @@ export const useWorkoutStore = create<WorkoutState>()(
       
       removeScheduledWorkout: (id) => set((state) => ({
         scheduledWorkouts: state.scheduledWorkouts.filter(sw => sw.id !== id)
+      })),
+      
+      // New function to delete workout logs
+      deleteWorkoutLog: (id) => set((state) => ({
+        workoutLogs: state.workoutLogs.filter(log => log.id !== id)
       })),
       
       startTimer: () => set((state) => ({

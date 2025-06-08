@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from "react-native";
 import { Calendar, Clock, Dumbbell, Plus, Copy, Save, ArrowLeft, ArrowRight, ChevronDown, Edit, Trash2 } from "lucide-react-native";
 import { useRouter, Stack } from "expo-router";
 import { useWorkoutStore } from "@/store/workoutStore";
 import Button from "@/components/Button";
 import { useTheme } from "@/context/ThemeContext";
-import { Alert } from "react-native";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const screenWidth = Dimensions.get("window").width;
@@ -19,7 +18,8 @@ export default function ScheduleScreen() {
     workouts, 
     exercises, 
     copyWorkoutToCustom,
-    removeScheduledWorkout 
+    removeScheduledWorkout,
+    deleteWorkoutLog
   } = useWorkoutStore();
   
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
@@ -224,6 +224,40 @@ export default function ScheduleScreen() {
     );
   };
   
+  // Delete completed workout log
+  const handleDeleteCompletedWorkout = (id: string) => {
+    Alert.alert(
+      "Delete Workout Log",
+      "Are you sure you want to delete this completed workout? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: () => {
+            deleteWorkoutLog(id);
+            setSelectedWorkout(null);
+            
+            // Check if there are other completed workouts for this date
+            const otherCompleted = workoutLogs
+              .filter(log => {
+                const logDate = new Date(log.date);
+                return log.id !== id && 
+                  logDate.getDate() === selectedDate.getDate() &&
+                  logDate.getMonth() === selectedDate.getMonth() &&
+                  logDate.getFullYear() === selectedDate.getFullYear() &&
+                  log.completed;
+              });
+            
+            if (otherCompleted.length > 0) {
+              setSelectedWorkout(otherCompleted[0].id);
+            }
+          }
+        }
+      ]
+    );
+  };
+  
   // Get the selected workout details
   const getSelectedWorkoutDetails = () => {
     if (!selectedWorkout) return null;
@@ -378,36 +412,38 @@ export default function ScheduleScreen() {
                   ]}
                   onPress={() => handleDateSelect(date)}
                 >
-                  <Text style={[
-                    styles.dateText,
-                    !isCurrentMonth && viewMode === "month" && { color: colors.textLight },
-                    isToday && { fontWeight: "700", color: colors.primary },
-                    isSelected && { color: colors.primary },
-                    { color: colors.text }
-                  ]}>
-                    {date.getDate()}
-                  </Text>
-                  
-                  {/* Indicators for scheduled and completed workouts */}
-                  <View style={styles.workoutIndicators}>
-                    {hasScheduledWorkout && showScheduledWorkouts && (
-                      <View style={[styles.indicatorDot, { backgroundColor: colors.secondary }]} />
-                    )}
-                    {hasCompletedWorkout && showCompletedWorkouts && (
-                      <View style={[styles.indicatorDot, { backgroundColor: colors.primary }]} />
-                    )}
+                  <View style={styles.dateContainer}>
+                    <Text style={[
+                      styles.dateText,
+                      !isCurrentMonth && viewMode === "month" && { color: colors.textLight },
+                      isToday && { fontWeight: "700", color: colors.primary },
+                      isSelected && { color: colors.primary },
+                      { color: colors.text }
+                    ]}>
+                      {date.getDate()}
+                    </Text>
+                    
+                    {/* Indicators for scheduled and completed workouts */}
+                    <View style={styles.workoutIndicators}>
+                      {hasScheduledWorkout && showScheduledWorkouts && (
+                        <View style={[styles.indicatorDot, { backgroundColor: colors.secondary }]} />
+                      )}
+                      {hasCompletedWorkout && showCompletedWorkouts && (
+                        <View style={[styles.indicatorDot, { backgroundColor: colors.primary }]} />
+                      )}
+                    </View>
                   </View>
                   
                   {/* Show workout count if there are any */}
                   {hasContent && (
                     <View style={styles.workoutCountContainer}>
                       {showCompletedWorkouts && hasCompletedWorkout && (
-                        <Text style={[styles.workoutCount, { color: colors.primary }]}>
+                        <Text style={[styles.workoutCount, { color: colors.primary }]} numberOfLines={1} ellipsizeMode="tail">
                           {completedWorkouts.length} done
                         </Text>
                       )}
                       {showScheduledWorkouts && hasScheduledWorkout && (
-                        <Text style={[styles.workoutCount, { color: colors.secondary }]}>
+                        <Text style={[styles.workoutCount, { color: colors.secondary }]} numberOfLines={1} ellipsizeMode="tail">
                           {scheduledWorkoutsForDay.length} planned
                         </Text>
                       )}
@@ -418,12 +454,20 @@ export default function ScheduleScreen() {
                   {showCompletedWorkouts && muscleGroups.length > 0 && (
                     <View style={styles.muscleGroupContainer}>
                       {muscleGroups.slice(0, 2).map((group, idx) => (
-                        <Text key={idx} style={[styles.muscleGroupText, { color: colors.textSecondary }]}>
+                        <Text 
+                          key={idx} 
+                          style={[styles.muscleGroupText, { color: colors.textSecondary }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
                           {group.substring(0, 3)}
                         </Text>
                       ))}
                       {muscleGroups.length > 2 && (
-                        <Text style={[styles.muscleGroupText, { color: colors.textSecondary }]}>
+                        <Text 
+                          style={[styles.muscleGroupText, { color: colors.textSecondary }]}
+                          numberOfLines={1}
+                        >
                           +{muscleGroups.length - 2}
                         </Text>
                       )}
@@ -606,8 +650,18 @@ export default function ScheduleScreen() {
                 
                 <View style={styles.actionButtons}>
                   <TouchableOpacity 
+                    style={[styles.actionButton, { backgroundColor: colors.error }]}
+                    onPress={() => handleDeleteCompletedWorkout(getSelectedWorkoutDetails()?.log.id || "")}
+                  >
+                    <Trash2 size={16} color={colors.white} />
+                    <Text style={[styles.actionButtonText, { color: colors.white }]}>
+                      Delete Log
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
                     style={[styles.actionButton, { backgroundColor: colors.highlight }]}
-                    onPress={() => handleCopyWorkout(getSelectedWorkoutDetails()?.log.id || "")}
+                    onPress={() => handleCopyWorkout(getSelectedWorkoutDetails()?.log.workoutId || "")}
                   >
                     <Copy size={16} color={colors.primary} />
                     <Text style={[styles.actionButtonText, { color: colors.primary }]}>
@@ -752,6 +806,11 @@ const styles = StyleSheet.create({
     padding: 4,
     justifyContent: "flex-start",
   },
+  dateContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   otherMonthCell: {
     opacity: 0.5,
   },
@@ -766,7 +825,6 @@ const styles = StyleSheet.create({
   },
   workoutIndicators: {
     flexDirection: "row",
-    marginTop: 4,
     gap: 4,
   },
   indicatorDot: {
@@ -775,14 +833,15 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   workoutCountContainer: {
-    marginTop: 2,
+    marginTop: 4,
   },
   workoutCount: {
     fontSize: 10,
     fontWeight: "500",
+    marginBottom: 2,
   },
   muscleGroupContainer: {
-    marginTop: 4,
+    marginTop: 2,
   },
   muscleGroupText: {
     fontSize: 10,
@@ -895,7 +954,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
     flex: 1,
   },
