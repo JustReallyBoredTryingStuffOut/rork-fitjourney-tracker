@@ -245,29 +245,36 @@ export default function RootLayout() {
     if (currentOnboardingStep < onboardingSteps.length - 1) {
       setCurrentOnboardingStep(currentOnboardingStep + 1);
     } else {
-      // Onboarding complete - save user profile
-      const age = birthYear ? new Date().getFullYear() - parseInt(birthYear) : userProfile.age;
-      
-      updateUserProfile({
-        name: name.trim() || "Fitness Enthusiast", // Default name if empty
-        weight: weight ? parseFloat(weight) : userProfile.weight,
-        height: height ? parseFloat(height) : userProfile.height,
-        age: age || 30,
-        gender,
-        fitnessGoal,
-        activityLevel,
-        fitnessLevel,
-        dateOfBirth: null, // We're only collecting year, not full date
-      });
-      
-      // Complete onboarding
-      setOnboardingCompleted(true);
-      setShowWelcome(false);
-      
-      // Show loading screen for first launch
-      if (isFirstLaunch) {
-        setShowLoadingScreen(true);
-      }
+      // We're on the last step (Health & Safety Disclaimer)
+      // Complete onboarding and show loading screen
+      completeOnboarding();
+    }
+  };
+  
+  // Function to complete onboarding and transition to loading screen
+  const completeOnboarding = () => {
+    // Save user profile
+    const age = birthYear ? new Date().getFullYear() - parseInt(birthYear) : userProfile.age;
+    
+    updateUserProfile({
+      name: name.trim() || "Fitness Enthusiast", // Default name if empty
+      weight: weight ? parseFloat(weight) : userProfile.weight,
+      height: height ? parseFloat(height) : userProfile.height,
+      age: age || 30,
+      gender,
+      fitnessGoal,
+      activityLevel,
+      fitnessLevel,
+      dateOfBirth: null, // We're only collecting year, not full date
+    });
+    
+    // Complete onboarding
+    setOnboardingCompleted(true);
+    setShowWelcome(false);
+    
+    // Show loading screen for first launch
+    if (isFirstLaunch) {
+      setShowLoadingScreen(true);
     }
   };
   
@@ -285,29 +292,8 @@ export default function RootLayout() {
         }
       }
       
-      // Save whatever data we have
-      const age = birthYear ? new Date().getFullYear() - parseInt(birthYear) : userProfile.age;
-      
-      updateUserProfile({
-        name: name.trim() || "Fitness Enthusiast", // Default name if empty
-        weight: weight ? parseFloat(weight) : userProfile.weight,
-        height: height ? parseFloat(height) : userProfile.height,
-        age: age || 30,
-        gender,
-        fitnessGoal,
-        activityLevel,
-        fitnessLevel,
-        dateOfBirth: null,
-      });
-      
       // Complete onboarding
-      setOnboardingCompleted(true);
-      setShowWelcome(false);
-      
-      // Show loading screen for first launch
-      if (isFirstLaunch) {
-        setShowLoadingScreen(true);
-      }
+      completeOnboarding();
       return;
     }
     
