@@ -119,6 +119,9 @@ export default function AddWorkoutScheduleScreen() {
         );
       }
       
+      // Always set isSubmitting to false before showing the alert
+      setIsSubmitting(false);
+      
       // Show success message and navigate back
       Alert.alert(
         "Success", 
