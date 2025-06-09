@@ -93,6 +93,21 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               </View>
             </View>
             
+            <View style={styles.macroCaloriesExplanation}>
+              <Text style={styles.macroCaloriesTitle}>Why We Show Calories per Gram</Text>
+              <Text style={styles.macroCaloriesText}>
+                The calorie values (4 cal/g for protein and carbs, 9 cal/g for fat) represent how much energy each macronutrient provides when metabolized by your body. This helps you understand why balancing your macros is important:
+              </Text>
+              <View style={styles.macroCaloriesList}>
+                <Text style={styles.macroCaloriesItem}>• Protein (4 cal/g): Building blocks for muscle and tissue repair</Text>
+                <Text style={styles.macroCaloriesItem}>• Carbs (4 cal/g): Primary energy source for daily activities and workouts</Text>
+                <Text style={styles.macroCaloriesItem}>• Fat (9 cal/g): Energy-dense nutrient essential for hormone production</Text>
+              </View>
+              <Text style={styles.macroCaloriesText}>
+                Understanding these values helps you make informed choices about your diet composition based on your specific fitness goals.
+              </Text>
+            </View>
+            
             <View style={styles.disclaimer}>
               <Text style={styles.disclaimerTitle}>Important Note</Text>
               <Text style={styles.disclaimerText}>
@@ -201,6 +216,34 @@ const styles = StyleSheet.create({
   macroDescription: {
     fontSize: 14,
     color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  macroCaloriesExplanation: {
+    backgroundColor: colors.highlight,
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  macroCaloriesTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 8,
+  },
+  macroCaloriesText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  macroCaloriesList: {
+    marginVertical: 8,
+    paddingLeft: 8,
+  },
+  macroCaloriesItem: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
     lineHeight: 20,
   },
   disclaimer: {
