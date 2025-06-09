@@ -92,31 +92,36 @@ export default function AddWorkoutScheduleScreen() {
       
       // Schedule notification if reminders are enabled
       if (reminder && Platform.OS !== "web") {
-        // Create a date for the next occurrence of the selected day
-        const today = new Date();
-        const todayDay = today.getDay();
-        const daysUntilNext = (selectedDay - todayDay + 7) % 7;
-        
-        const nextOccurrence = new Date(today);
-        nextOccurrence.setDate(today.getDate() + daysUntilNext);
-        
-        // Set the time from selectedTime
-        nextOccurrence.setHours(selectedTime.getHours());
-        nextOccurrence.setMinutes(selectedTime.getMinutes());
-        nextOccurrence.setSeconds(0);
-        nextOccurrence.setMilliseconds(0);
-        
-        // If today is the selected day and the time has passed, move to next week
-        if (daysUntilNext === 0 && nextOccurrence < today) {
-          nextOccurrence.setDate(nextOccurrence.getDate() + 7);
+        try {
+          // Create a date for the next occurrence of the selected day
+          const today = new Date();
+          const todayDay = today.getDay();
+          const daysUntilNext = (selectedDay - todayDay + 7) % 7;
+          
+          const nextOccurrence = new Date(today);
+          nextOccurrence.setDate(today.getDate() + daysUntilNext);
+          
+          // Set the time from selectedTime
+          nextOccurrence.setHours(selectedTime.getHours());
+          nextOccurrence.setMinutes(selectedTime.getMinutes());
+          nextOccurrence.setSeconds(0);
+          nextOccurrence.setMilliseconds(0);
+          
+          // If today is the selected day and the time has passed, move to next week
+          if (daysUntilNext === 0 && nextOccurrence < today) {
+            nextOccurrence.setDate(nextOccurrence.getDate() + 7);
+          }
+          
+          // Schedule the notification
+          await scheduleWorkoutNotification(
+            newScheduledWorkout.id,
+            selectedWorkout.name,
+            nextOccurrence
+          );
+        } catch (notificationError) {
+          console.error("Error scheduling notification:", notificationError);
+          // Continue even if notification scheduling fails
         }
-        
-        // Schedule the notification
-        await scheduleWorkoutNotification(
-          newScheduledWorkout.id,
-          selectedWorkout.name,
-          nextOccurrence
-        );
       }
       
       // Show success message and navigate back
