@@ -43,7 +43,7 @@ export const colors = {
   backgroundLight: "#E9ECEF",
 };
 
-// Extend with theme-specific colors
+// Base theme colors
 export const lightTheme = {
   ...colors,
   background: "#F8F9FA",
@@ -64,12 +64,95 @@ export const darkTheme = {
   secondary: "#60D888",
 };
 
+// Color scheme definitions
+const colorSchemes = {
+  blue: {
+    light: {
+      primary: "#4A90E2",
+      secondary: "#5FB0E5",
+      gradientStart: "#4A90E2",
+      gradientEnd: "#5FB0E5",
+    },
+    dark: {
+      primary: "#5C9CE6",
+      secondary: "#6FBAE9",
+      gradientStart: "#5C9CE6",
+      gradientEnd: "#6FBAE9",
+    }
+  },
+  green: {
+    light: {
+      primary: "#50C878",
+      secondary: "#4CD964",
+      gradientStart: "#50C878",
+      gradientEnd: "#4CD964",
+    },
+    dark: {
+      primary: "#60D888",
+      secondary: "#5CE974",
+      gradientStart: "#60D888",
+      gradientEnd: "#5CE974",
+    }
+  },
+  purple: {
+    light: {
+      primary: "#8A2BE2",
+      secondary: "#9B59B6",
+      gradientStart: "#8A2BE2",
+      gradientEnd: "#9B59B6",
+    },
+    dark: {
+      primary: "#9A3BF2",
+      secondary: "#AB69C6",
+      gradientStart: "#9A3BF2",
+      gradientEnd: "#AB69C6",
+    }
+  },
+  orange: {
+    light: {
+      primary: "#FF9500",
+      secondary: "#FF7F50",
+      gradientStart: "#FF9500",
+      gradientEnd: "#FF7F50",
+    },
+    dark: {
+      primary: "#FFA520",
+      secondary: "#FF8F60",
+      gradientStart: "#FFA520",
+      gradientEnd: "#FF8F60",
+    }
+  },
+  pink: {
+    light: {
+      primary: "#FF6B6B",
+      secondary: "#FF8787",
+      gradientStart: "#FF6B6B",
+      gradientEnd: "#FF8787",
+    },
+    dark: {
+      primary: "#FF7B7B",
+      secondary: "#FF9797",
+      gradientStart: "#FF7B7B",
+      gradientEnd: "#FF9797",
+    }
+  }
+};
+
 // Function to get colors based on theme and color scheme
-export const getColors = (theme: "light" | "dark", colorScheme?: string) => {
-  // Return the appropriate theme colors
-  const baseTheme = theme === "dark" ? darkTheme : lightTheme;
+export const getColors = (theme: "light" | "dark", colorScheme = "blue") => {
+  // Get the base theme
+  const baseTheme = theme === "dark" ? { ...darkTheme } : { ...lightTheme };
   
-  // If a specific color scheme is provided, we could modify colors here
-  // For now, just return the base theme
+  // Apply color scheme if it exists
+  if (colorSchemes[colorScheme]) {
+    const schemeColors = colorSchemes[colorScheme][theme];
+    return {
+      ...baseTheme,
+      ...schemeColors,
+      // Update macro colors based on color scheme
+      macroProtein: schemeColors.primary, // Use primary color for protein
+    };
+  }
+  
   return baseTheme;
 };

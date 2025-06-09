@@ -1,19 +1,24 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Moon, Sun, Smartphone, Check, ArrowLeft, X } from "lucide-react-native";
-import { colors } from "@/constants/colors";
+import { Moon, Sun, Smartphone, Check, ArrowLeft } from "lucide-react-native";
 import { useThemeStore, ColorScheme } from "@/store/themeStore";
 import { useTheme } from "@/context/ThemeContext";
 import Button from "@/components/Button";
 
 export default function ThemeSettingsScreen() {
   const { theme, colorScheme, setTheme, setColorScheme } = useThemeStore();
-  const { colors } = useTheme();
+  const { colors, currentColorScheme } = useTheme();
   const router = useRouter();
   const [selectedTheme, setSelectedTheme] = useState(theme);
   const [selectedColorScheme, setSelectedColorScheme] = useState(colorScheme);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Update local state when store values change
+  useEffect(() => {
+    setSelectedTheme(theme);
+    setSelectedColorScheme(colorScheme);
+  }, [theme, colorScheme]);
   
   const colorSchemes: { name: string; value: ColorScheme; color: string }[] = [
     { name: "Blue", value: "blue", color: "#4A90E2" },
@@ -125,24 +130,29 @@ export default function ThemeSettingsScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Color Scheme</Text>
         
         <View style={styles.colorSchemes}>
-          {colorSchemes.map((scheme) => (
-            <TouchableOpacity 
-              key={scheme.value}
-              style={[
-                styles.colorScheme,
-                selectedColorScheme === scheme.value && [styles.selectedColorScheme, { borderColor: scheme.color }]
-              ]}
-              onPress={() => setSelectedColorScheme(scheme.value)}
-            >
-              <View style={[styles.colorCircle, { backgroundColor: scheme.color }]} />
-              <Text style={[styles.colorText, { color: colors.text }]}>{scheme.name}</Text>
-              {selectedColorScheme === scheme.value && (
-                <View style={[styles.colorCheckmark, { backgroundColor: scheme.color }]}>
-                  <Check size={12} color="#FFFFFF" />
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+          {colorSchemes.map((scheme) => {
+            // Get the actual color from the current theme for this scheme
+            const schemeColor = scheme.color;
+            
+            return (
+              <TouchableOpacity 
+                key={scheme.value}
+                style={[
+                  styles.colorScheme,
+                  selectedColorScheme === scheme.value && [styles.selectedColorScheme, { borderColor: schemeColor }]
+                ]}
+                onPress={() => setSelectedColorScheme(scheme.value)}
+              >
+                <View style={[styles.colorCircle, { backgroundColor: schemeColor }]} />
+                <Text style={[styles.colorText, { color: colors.text }]}>{scheme.name}</Text>
+                {selectedColorScheme === scheme.value && (
+                  <View style={[styles.colorCheckmark, { backgroundColor: schemeColor }]}>
+                    <Check size={12} color="#FFFFFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
       
@@ -168,10 +178,16 @@ export default function ThemeSettingsScreen() {
         </View>
       </View>
       
+      <View style={styles.currentSettingsContainer}>
+        <Text style={[styles.currentSettingsText, { color: colors.textSecondary }]}>
+          Current settings: {theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"} theme, {currentColorScheme.charAt(0).toUpperCase() + currentColorScheme.slice(1)} color scheme
+        </Text>
+      </View>
+      
       <Button
         title="Save and Apply Theme"
         onPress={handleSaveTheme}
-        style={styles.saveButton}
+        style={[styles.saveButton, { backgroundColor: colors.primary }]}
       />
       
       {/* Success Modal */}
@@ -185,11 +201,11 @@ export default function ThemeSettingsScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowSuccessModal(false)}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.successIconContainer}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={[styles.successIconContainer, { backgroundColor: colors.primary }]}>
               <Check size={32} color="#FFFFFF" />
             </View>
-            <Text style={styles.successText}>Theme Updated</Text>
+            <Text style={[styles.successText, { color: colors.text }]}>Theme Updated</Text>
           </View>
         </Pressable>
       </Modal>
@@ -371,7 +387,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
@@ -381,7 +396,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
@@ -389,6 +403,13 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
+  },
+  currentSettingsContainer: {
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  currentSettingsText: {
+    fontSize: 14,
+    fontStyle: "italic",
   },
 });

@@ -5,10 +5,11 @@ import { getColors } from "@/constants/colors";
 
 // Create context
 interface ThemeContextType {
-  colors: typeof import("@/constants/colors").colors;
+  colors: ReturnType<typeof getColors>;
   isDark: boolean;
   toggleTheme: () => void;
   setColorScheme: (scheme: import("@/store/themeStore").ColorScheme) => void;
+  currentColorScheme: import("@/store/themeStore").ColorScheme;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -46,7 +47,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [theme, deviceTheme]);
   
-  // Get colors based on current theme
+  // Get colors based on current theme and color scheme
   const colors = getColors(currentTheme, colorScheme);
   
   // Toggle between light and dark themes
@@ -66,6 +67,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     isDark: currentTheme === "dark",
     toggleTheme,
     setColorScheme,
+    currentColorScheme: colorScheme,
   };
   
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
