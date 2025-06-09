@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGamificationStore } from '@/store/gamificationStore';
 import { useMacroStore } from '@/store/macroStore';
 import { useWorkoutStore } from '@/store/workoutStore';
-import { Zap, Award, Trophy, X, User, Weight, Ruler, Calendar, Activity, ArrowRight, ChevronRight, Brain, Sparkles, AlertTriangle } from 'lucide-react-native';
+import { Zap, Award, Trophy, X, User, Weight, Ruler, Calendar, Activity, ArrowRight, ChevronRight, Brain, Sparkles } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { Picker } from '@react-native-picker/picker';
 import Button from '@/components/Button';
@@ -245,7 +245,7 @@ export default function RootLayout() {
     if (currentOnboardingStep < onboardingSteps.length - 1) {
       setCurrentOnboardingStep(currentOnboardingStep + 1);
     } else {
-      // We're on the last step (Health & Safety Disclaimer)
+      // We're on the last step
       // Complete onboarding and show loading screen
       completeOnboarding();
     }
@@ -581,38 +581,6 @@ export default function RootLayout() {
           </TouchableOpacity>
         </View>
       ),
-    },
-    // Health disclaimer step
-    {
-      title: "Health & Safety Disclaimer",
-      description: "Before you begin your fitness journey with us, please read this important information.",
-      icon: <AlertTriangle size={80} color="#FFC107" />,
-      content: (
-        <View style={styles.disclaimerContainer}>
-          <Text style={styles.disclaimerText}>
-            {APP_NAME} is designed to help you track and improve your fitness, but it is not a substitute for professional medical advice, diagnosis, or treatment.
-          </Text>
-          
-          <Text style={styles.disclaimerText}>
-            Always consult with a qualified healthcare provider before beginning any new exercise program, especially if you have any pre-existing health conditions or concerns.
-          </Text>
-          
-          <Text style={styles.disclaimerText}>
-            Listen to your body and exercise within your capabilities. Stop any activity that causes pain or discomfort and seek medical advice if needed.
-          </Text>
-          
-          <Text style={styles.disclaimerText}>
-            The nutritional information and workout recommendations provided are general guidelines and may not be suitable for everyone's specific needs.
-          </Text>
-          
-          <Text style={styles.disclaimerBold}>
-            By continuing, you acknowledge that you are using this app at your own risk and take full responsibility for your health and safety during your fitness journey.
-          </Text>
-        </View>
-      ),
-      action: () => handleContinue(),
-      actionText: "I Understand",
-      showSkip: false,
     },
   ];
   
@@ -1033,28 +1001,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 8,
-  },
-  // Health disclaimer styles
-  disclaimerContainer: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFC107',
-  },
-  disclaimerText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  disclaimerBold: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 8,
-    lineHeight: 20,
   },
 });
