@@ -66,27 +66,27 @@ export default function AddWorkoutScheduleScreen() {
     
     setIsSubmitting(true);
     
-    // Find the selected workout to include its name in the scheduled workout
-    const selectedWorkout = workouts.find(w => w.id === selectedWorkoutId);
-    if (!selectedWorkout) {
-      Alert.alert("Error", "Selected workout not found");
-      setIsSubmitting(false);
-      return;
-    }
-    
-    const newScheduledWorkout = {
-      id: Date.now().toString(),
-      workoutId: selectedWorkoutId,
-      workoutName: selectedWorkout.name, // Add workout name for easier display
-      dayOfWeek: selectedDay,
-      time: formatTime(selectedTime),
-      notes: "",
-      reminder,
-      reminderTime,
-      createdAt: new Date().toISOString(), // Add creation timestamp
-    };
-    
     try {
+      // Find the selected workout to include its name in the scheduled workout
+      const selectedWorkout = workouts.find(w => w.id === selectedWorkoutId);
+      if (!selectedWorkout) {
+        Alert.alert("Error", "Selected workout not found");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const newScheduledWorkout = {
+        id: Date.now().toString(),
+        workoutId: selectedWorkoutId,
+        workoutName: selectedWorkout.name, // Add workout name for easier display
+        dayOfWeek: selectedDay,
+        time: formatTime(selectedTime),
+        notes: "",
+        reminder,
+        reminderTime,
+        createdAt: new Date().toISOString(), // Add creation timestamp
+      };
+      
       // Schedule the workout
       scheduleWorkout(newScheduledWorkout);
       
@@ -119,21 +119,14 @@ export default function AddWorkoutScheduleScreen() {
         );
       }
       
-      // Always set isSubmitting to false before showing the alert
-      setIsSubmitting(false);
-      
       // Show success message and navigate back
+      setIsSubmitting(false);
       Alert.alert(
         "Success", 
         `Workout "${selectedWorkout.name}" scheduled successfully for ${days[selectedDay].name} at ${formatTime(selectedTime)}`, 
         [{ 
           text: "OK", 
-          onPress: () => {
-            // Use setTimeout to ensure the alert is dismissed before navigation
-            setTimeout(() => {
-              router.back();
-            }, 300);
-          } 
+          onPress: () => router.back()
         }]
       );
     } catch (error) {
