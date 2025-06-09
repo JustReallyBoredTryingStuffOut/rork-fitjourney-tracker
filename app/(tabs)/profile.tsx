@@ -1,19 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
-import { getColors } from '@/constants/colors';
 import { useMacroStore } from '@/store/macroStore';
 import { useGamificationStore } from '@/store/gamificationStore';
 import { useRouter } from 'expo-router';
-import { User, Settings, Camera, Weight, Bell, Moon, Shield, Activity, LogOut, Award, Trophy, Target, Zap } from 'lucide-react-native';
+import { User, Settings, Camera, Weight, Bell, Moon, Shield, Activity, Award, Trophy, Target, Zap } from 'lucide-react-native';
 import AchievementBadge from '@/components/AchievementBadge';
 import { APP_NAME } from '@/app/_layout';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { theme, colorScheme } = useThemeStore();
-  const currentTheme = theme === "system" ? "light" : theme;
-  const colors = getColors(currentTheme, colorScheme);
+  const { colors } = useTheme();
   
   const { userProfile } = useMacroStore();
   const { 

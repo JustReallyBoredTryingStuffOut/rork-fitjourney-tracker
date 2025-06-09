@@ -6,6 +6,7 @@ import { useGamificationStore } from "@/store/gamificationStore";
 import { Trophy, Info } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import MacroInfoModal from "./MacroInfoModal";
+import { useTheme } from "@/context/ThemeContext";
 
 interface MacroSummaryProps {
   current: {
@@ -21,6 +22,7 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
   const router = useRouter();
   const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const { colors } = useTheme();
   
   // Check if goals are valid
   const hasValidGoals = goals && 
@@ -33,16 +35,16 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
   if (!hasValidGoals) {
     return (
       <View style={styles.container}>
-        <View style={styles.noGoalsCard}>
-          <Text style={styles.noGoalsTitle}>No Nutrition Goals Set</Text>
-          <Text style={styles.noGoalsDescription}>
+        <View style={[styles.noGoalsCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.noGoalsTitle, { color: colors.text }]}>No Nutrition Goals Set</Text>
+          <Text style={[styles.noGoalsDescription, { color: colors.textSecondary }]}>
             Set up your daily macro goals to track your nutrition progress and get personalized recommendations.
           </Text>
           <TouchableOpacity 
-            style={styles.setupGoalsButton}
+            style={[styles.setupGoalsButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push("/health-goals")}
           >
-            <Text style={styles.setupGoalsButtonText}>Set Up Nutrition Goals</Text>
+            <Text style={[styles.setupGoalsButtonText, { color: colors.white }]}>Set Up Nutrition Goals</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -120,10 +122,10 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.summaryCard}>
-        <View style={styles.calorieSection}>
+      <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
+        <View style={[styles.calorieSection, { borderBottomColor: colors.border }]}>
           <View style={styles.titleContainer}>
-            <Text style={styles.calorieTitle}>Calories</Text>
+            <Text style={[styles.calorieTitle, { color: colors.text }]}>Calories</Text>
             <TouchableOpacity 
               onPress={() => setInfoModalVisible(true)}
               style={styles.infoButton}
@@ -135,15 +137,15 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
           </View>
           
           <View style={styles.calorieNumbers}>
-            <Text style={styles.calorieConsumed}>{current.calories}</Text>
-            <Text style={styles.calorieDivider}>/</Text>
-            <Text style={styles.calorieGoal}>{goals.calories}</Text>
+            <Text style={[styles.calorieConsumed, { color: colors.text }]}>{current.calories}</Text>
+            <Text style={[styles.calorieDivider, { color: colors.textSecondary }]}>/</Text>
+            <Text style={[styles.calorieGoal, { color: colors.textSecondary }]}>{goals.calories}</Text>
           </View>
-          <Text style={styles.calorieRemaining}>
+          <Text style={[styles.calorieRemaining, { color: colors.textSecondary }]}>
             {remaining.calories} kcal remaining
           </Text>
 
-          <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
             <View
               style={[
                 styles.progressBar,
@@ -159,15 +161,15 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
               <View
                 style={[styles.macroIndicator, { backgroundColor: colors.macroProtein }]}
               />
-              <Text style={styles.macroTitle}>Protein</Text>
+              <Text style={[styles.macroTitle, { color: colors.text }]}>Protein</Text>
             </View>
-            <Text style={styles.macroValue}>
+            <Text style={[styles.macroValue, { color: colors.text }]}>
               {current.protein}g / {goals.protein}g
             </Text>
             {proteinGoalAchievement && gamificationEnabled && (
               <View style={styles.achievementProgress}>
                 <Trophy size={12} color={colors.primary} />
-                <Text style={styles.achievementText}>
+                <Text style={[styles.achievementText, { color: colors.primary }]}>
                   {proteinGoalAchievement.progress}/{proteinGoalAchievement.target} days
                 </Text>
               </View>
@@ -179,9 +181,9 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
               <View
                 style={[styles.macroIndicator, { backgroundColor: colors.macroCarbs }]}
               />
-              <Text style={styles.macroTitle}>Carbs</Text>
+              <Text style={[styles.macroTitle, { color: colors.text }]}>Carbs</Text>
             </View>
-            <Text style={styles.macroValue}>
+            <Text style={[styles.macroValue, { color: colors.text }]}>
               {current.carbs}g / {goals.carbs}g
             </Text>
           </View>
@@ -191,22 +193,22 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
               <View
                 style={[styles.macroIndicator, { backgroundColor: colors.macroFat }]}
               />
-              <Text style={styles.macroTitle}>Fat</Text>
+              <Text style={[styles.macroTitle, { color: colors.text }]}>Fat</Text>
             </View>
-            <Text style={styles.macroValue}>
+            <Text style={[styles.macroValue, { color: colors.text }]}>
               {current.fat}g / {goals.fat}g
             </Text>
           </View>
         </View>
         
         {gamificationEnabled && (
-          <View style={styles.motivationContainer}>
-            <Text style={styles.motivationText}>{getMotivationalMessage()}</Text>
+          <View style={[styles.motivationContainer, { backgroundColor: colors.backgroundLight }]}>
+            <Text style={[styles.motivationText, { color: colors.text }]}>{getMotivationalMessage()}</Text>
             
             {balancedMacrosAchievement && (
-              <TouchableOpacity style={styles.achievementButton}>
+              <TouchableOpacity style={[styles.achievementButton, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}>
                 <Trophy size={14} color={colors.primary} />
-                <Text style={styles.achievementButtonText}>
+                <Text style={[styles.achievementButtonText, { color: colors.primary }]}>
                   {balancedMacrosAchievement.progress}/{balancedMacrosAchievement.target} balanced days
                 </Text>
               </TouchableOpacity>
@@ -229,7 +231,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   summaryCard: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
@@ -242,7 +243,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   titleContainer: {
     flexDirection: "row",
@@ -252,7 +252,6 @@ const styles = StyleSheet.create({
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000",
   },
   infoButton: {
     marginLeft: 8,
@@ -266,25 +265,20 @@ const styles = StyleSheet.create({
   calorieConsumed: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#000000",
   },
   calorieDivider: {
     fontSize: 20,
-    color: "#666666",
     marginHorizontal: 4,
   },
   calorieGoal: {
     fontSize: 20,
-    color: "#666666",
   },
   calorieRemaining: {
     fontSize: 14,
-    color: "#666666",
     marginBottom: 12,
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: colors.border,
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -313,13 +307,11 @@ const styles = StyleSheet.create({
   },
   macroTitle: {
     fontSize: 14,
-    color: "#000000",
     fontWeight: "500",
   },
   macroValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000",
   },
   achievementProgress: {
     flexDirection: "row",
@@ -328,18 +320,15 @@ const styles = StyleSheet.create({
   },
   achievementText: {
     fontSize: 12,
-    color: colors.primary,
     marginLeft: 4,
   },
   motivationContainer: {
-    backgroundColor: colors.backgroundLight,
     borderRadius: 8,
     padding: 12,
     marginTop: 4,
   },
   motivationText: {
     fontSize: 14,
-    color: "#FFFFFF",
     fontStyle: "italic",
     textAlign: "center",
   },
@@ -349,19 +338,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 8,
     padding: 6,
-    backgroundColor: colors.backgroundLight,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   achievementButtonText: {
     fontSize: 12,
-    color: colors.primary,
     marginLeft: 4,
     fontWeight: "500",
   },
   noGoalsCard: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
@@ -374,24 +359,20 @@ const styles = StyleSheet.create({
   noGoalsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000",
     marginBottom: 8,
   },
   noGoalsDescription: {
     fontSize: 14,
-    color: "#666666",
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 20,
   },
   setupGoalsButton: {
-    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
   setupGoalsButtonText: {
-    color: colors.white,
     fontWeight: "600",
     fontSize: 14,
   },

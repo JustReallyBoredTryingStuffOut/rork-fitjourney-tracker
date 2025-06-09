@@ -2,17 +2,18 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, ScrollView, Alert, TouchableOpacity, Platform } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { ArrowLeft, Calendar, Info } from "lucide-react-native";
-import { colors } from "@/constants/colors";
 import { useMacroStore } from "@/store/macroStore";
 import { UserProfile } from "@/types";
 import Button from "@/components/Button";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import MacroInfoModal from "@/components/MacroInfoModal";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { userProfile, updateUserProfile } = useMacroStore();
+  const { colors } = useTheme();
   
   const [name, setName] = useState(userProfile.name);
   const [weight, setWeight] = useState(userProfile.weight.toString());
@@ -72,7 +73,7 @@ export default function EditProfileScreen() {
   };
   
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Stack.Screen 
         options={{
           title: "Edit Profile",
@@ -86,50 +87,53 @@ export default function EditProfileScreen() {
       />
       
       <View style={styles.header}>
-        <Text style={styles.title}>Edit Your Profile</Text>
-        <Text style={styles.subtitle}>Update your personal information</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Edit Your Profile</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Update your personal information</Text>
       </View>
       
-      <View style={styles.formContainer}>
+      <View style={[styles.formContainer, { backgroundColor: colors.card }]}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Name</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Name</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
             value={name}
             onChangeText={setName}
             placeholder="Your name"
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Weight (kg)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Weight (kg)</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
             value={weight}
             onChangeText={setWeight}
             keyboardType="numeric"
             placeholder="Your weight in kg"
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Height (cm)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Height (cm)</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
             value={height}
             onChangeText={setHeight}
             keyboardType="numeric"
             placeholder="Your height in cm"
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Date of Birth</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Date of Birth</Text>
           <TouchableOpacity 
-            style={styles.datePickerButton}
+            style={[styles.datePickerButton, { borderColor: colors.border }]}
             onPress={() => setShowDatePicker(true)}
           >
-            <Text style={styles.datePickerText}>
+            <Text style={[styles.datePickerText, { color: colors.text }]}>
               {formatDate(dateOfBirth)}
             </Text>
             <Calendar size={20} color={colors.primary} />
@@ -147,35 +151,37 @@ export default function EditProfileScreen() {
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Age</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Age</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
             value={age}
             onChangeText={setAge}
             keyboardType="numeric"
             placeholder="Your age"
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Gender</Text>
-          <View style={styles.pickerContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>Gender</Text>
+          <View style={[styles.pickerContainer, { borderColor: colors.border }]}>
             <Picker
               selectedValue={gender}
               onValueChange={(itemValue) => setGender(itemValue)}
               style={styles.picker}
+              dropdownIconColor={colors.text}
             >
-              <Picker.Item label="Male" value="male" />
-              <Picker.Item label="Female" value="female" />
-              <Picker.Item label="Other" value="other" />
-              <Picker.Item label="Prefer not to say" value="prefer-not-to-say" />
+              <Picker.Item label="Male" value="male" color={colors.text} />
+              <Picker.Item label="Female" value="female" color={colors.text} />
+              <Picker.Item label="Other" value="other" color={colors.text} />
+              <Picker.Item label="Prefer not to say" value="prefer-not-to-say" color={colors.text} />
             </Picker>
           </View>
         </View>
         
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Fitness Goal</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Fitness Goal</Text>
             <TouchableOpacity 
               onPress={() => setInfoModalVisible(true)}
               style={styles.infoButton}
@@ -185,38 +191,40 @@ export default function EditProfileScreen() {
               <Info size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
-          <View style={styles.pickerContainer}>
+          <View style={[styles.pickerContainer, { borderColor: colors.border }]}>
             <Picker
               selectedValue={fitnessGoal}
               onValueChange={(itemValue) => setFitnessGoal(itemValue)}
               style={styles.picker}
+              dropdownIconColor={colors.text}
             >
-              <Picker.Item label="Lose Weight" value="lose" />
-              <Picker.Item label="Maintain Weight" value="maintain" />
-              <Picker.Item label="Gain Muscle" value="gain" />
+              <Picker.Item label="Lose Weight" value="lose" color={colors.text} />
+              <Picker.Item label="Maintain Weight" value="maintain" color={colors.text} />
+              <Picker.Item label="Gain Muscle" value="gain" color={colors.text} />
             </Picker>
           </View>
         </View>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Activity Level</Text>
-          <View style={styles.pickerContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>Activity Level</Text>
+          <View style={[styles.pickerContainer, { borderColor: colors.border }]}>
             <Picker
               selectedValue={activityLevel}
               onValueChange={(itemValue) => setActivityLevel(itemValue)}
               style={styles.picker}
+              dropdownIconColor={colors.text}
             >
-              <Picker.Item label="Sedentary (little or no exercise)" value="sedentary" />
-              <Picker.Item label="Lightly active (light exercise 1-3 days/week)" value="light" />
-              <Picker.Item label="Moderately active (moderate exercise 3-5 days/week)" value="moderate" />
-              <Picker.Item label="Very active (hard exercise 6-7 days/week)" value="active" />
-              <Picker.Item label="Extra active (very hard exercise & physical job)" value="very_active" />
+              <Picker.Item label="Sedentary (little or no exercise)" value="sedentary" color={colors.text} />
+              <Picker.Item label="Lightly active (light exercise 1-3 days/week)" value="light" color={colors.text} />
+              <Picker.Item label="Moderately active (moderate exercise 3-5 days/week)" value="moderate" color={colors.text} />
+              <Picker.Item label="Very active (hard exercise 6-7 days/week)" value="active" color={colors.text} />
+              <Picker.Item label="Extra active (very hard exercise & physical job)" value="very_active" color={colors.text} />
             </Picker>
           </View>
         </View>
         
-        <View style={styles.disclaimerContainer}>
-          <Text style={styles.disclaimerText}>
+        <View style={[styles.disclaimerContainer, { backgroundColor: colors.backgroundLight }]}>
+          <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
             Your profile information is used to calculate personalized nutrition recommendations. 
             These are estimates only - for precise guidance, consult a healthcare professional.
           </Text>
@@ -226,7 +234,7 @@ export default function EditProfileScreen() {
       <Button
         title="Save Profile"
         onPress={handleSave}
-        style={styles.saveButton}
+        style={[styles.saveButton, { backgroundColor: colors.primary }]}
       />
       
       <MacroInfoModal 
@@ -240,7 +248,6 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     padding: 16,
@@ -252,15 +259,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.text,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginTop: 4,
   },
   formContainer: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -281,7 +285,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "500",
-    color: colors.text,
     marginBottom: 8,
   },
   infoButton: {
@@ -290,16 +293,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: colors.text,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -318,24 +318,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   datePickerText: {
     fontSize: 16,
-    color: colors.text,
   },
   disclaimerContainer: {
-    backgroundColor: colors.backgroundLight,
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
   },
   disclaimerText: {
     fontSize: 12,
-    color: colors.textSecondary,
     fontStyle: "italic",
     textAlign: "center",
     lineHeight: 18,

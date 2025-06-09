@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { colors } from "@/constants/colors";
 import { Trophy } from "lucide-react-native";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/context/ThemeContext";
 
 type MacroProgressProps = {
   title: string;
@@ -28,19 +28,20 @@ export default function MacroProgress({
 }: MacroProgressProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
   const router = useRouter();
+  const { colors } = useTheme();
   
   // If no valid goals, show a message to set them up
   if (!hasValidGoals) {
     return (
-      <View style={styles.noGoalsContainer}>
-        <Text style={styles.noGoalsText}>
+      <View style={[styles.noGoalsContainer, { backgroundColor: colors.backgroundLight }]}>
+        <Text style={[styles.noGoalsText, { color: colors.textSecondary }]}>
           Set up your nutrition goals to track your {title.toLowerCase()} progress.
         </Text>
         <TouchableOpacity 
-          style={styles.setupGoalsButton}
+          style={[styles.setupGoalsButton, { backgroundColor: colors.primary }]}
           onPress={() => router.push("/health-goals")}
         >
-          <Text style={styles.setupGoalsButtonText}>Set Up Goals</Text>
+          <Text style={[styles.setupGoalsButtonText, { color: colors.white }]}>Set Up Goals</Text>
         </TouchableOpacity>
       </View>
     );
@@ -76,13 +77,13 @@ export default function MacroProgress({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.value}>
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.value, { color: colors.text }]}>
           {safeCurrent} / {safeGoal} {unit}
         </Text>
       </View>
       
-      <View style={styles.progressBar}>
+      <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
         <View 
           style={[
             styles.progressFill, 
@@ -92,12 +93,12 @@ export default function MacroProgress({
       </View>
       
       <View style={styles.messageContainer}>
-        <Text style={styles.progressMessage}>{getProgressMessage()}</Text>
+        <Text style={[styles.progressMessage, { color: colors.textSecondary }]}>{getProgressMessage()}</Text>
         
         {achievement && !achievement.completed && (
-          <TouchableOpacity style={styles.achievementButton}>
+          <TouchableOpacity style={[styles.achievementButton, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}>
             <Trophy size={12} color={colors.primary} />
-            <Text style={styles.achievementText}>
+            <Text style={[styles.achievementText, { color: colors.primary }]}>
               {achievement.progress}/{achievement.target} days
             </Text>
           </TouchableOpacity>
@@ -120,16 +121,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#FFFFFF",
   },
   value: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
   progressBar: {
     height: 8,
-    backgroundColor: colors.border,
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -145,7 +143,6 @@ const styles = StyleSheet.create({
   },
   progressMessage: {
     fontSize: 12,
-    color: "#CCCCCC",
     fontStyle: "italic",
     flex: 1,
   },
@@ -154,18 +151,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 2,
     paddingHorizontal: 6,
-    backgroundColor: colors.backgroundLight,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   achievementText: {
     fontSize: 10,
-    color: colors.primary,
     marginLeft: 4,
   },
   noGoalsContainer: {
-    backgroundColor: colors.backgroundLight,
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
@@ -173,18 +166,15 @@ const styles = StyleSheet.create({
   },
   noGoalsText: {
     fontSize: 14,
-    color: "#CCCCCC",
     textAlign: "center",
     marginBottom: 8,
   },
   setupGoalsButton: {
-    backgroundColor: colors.primary,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
   },
   setupGoalsButtonText: {
-    color: colors.white,
     fontWeight: "500",
     fontSize: 12,
   },
