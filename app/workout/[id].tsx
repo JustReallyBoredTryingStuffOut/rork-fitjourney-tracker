@@ -61,7 +61,11 @@ export default function WorkoutDetailScreen() {
   };
   
   const handleScheduleWorkout = () => {
-    router.push("/add-workout-schedule");
+    // Pass the workout ID to the scheduling screen
+    router.push({
+      pathname: "/add-workout-schedule",
+      params: { workoutId: workout.id }
+    });
   };
   
   const handleAnalyzeWorkouts = () => {

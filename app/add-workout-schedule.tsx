@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pressable, Keyboard, Platform, Switch } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { Calendar, Clock, ChevronDown, Check, ArrowLeft, X, Repeat, CalendarDays } from "lucide-react-native";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { useNotificationStore } from "@/store/notificationStore";
@@ -12,6 +12,7 @@ import { useTheme } from "@/context/ThemeContext";
 
 export default function AddWorkoutScheduleScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors } = useTheme();
   const { workouts, scheduleWorkout } = useWorkoutStore();
   const { scheduleWorkoutNotification } = useNotificationStore();
@@ -33,6 +34,13 @@ export default function AddWorkoutScheduleScreen() {
   const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [hasEndDate, setHasEndDate] = useState(false);
+  
+  // Set the workout ID from params if available
+  useEffect(() => {
+    if (params.workoutId) {
+      setSelectedWorkoutId(params.workoutId as string);
+    }
+  }, [params.workoutId]);
   
   // Days of the week
   const days = [
