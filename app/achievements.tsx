@@ -176,17 +176,6 @@ export default function AchievementsScreen() {
           
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>
-              {achievements.length - unlockedAchievements.length}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Locked
-            </Text>
-          </View>
-          
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>
               {completionPercentage}%
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
