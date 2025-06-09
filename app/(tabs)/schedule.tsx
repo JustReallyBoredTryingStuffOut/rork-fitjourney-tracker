@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from "react-native";
-import { Calendar, Clock, Dumbbell, Plus, Copy, Save, ArrowLeft, ArrowRight, ChevronDown, Edit, Trash2 } from "lucide-react-native";
+import { Calendar, Clock, Dumbbell, Plus, Copy, Save, ArrowLeft, ArrowRight, ChevronDown, Edit, Trash2, Repeat } from "lucide-react-native";
 import { useRouter, Stack } from "expo-router";
 import { useWorkoutStore } from "@/store/workoutStore";
 import Button from "@/components/Button";
@@ -19,7 +19,9 @@ export default function ScheduleScreen() {
     exercises, 
     copyWorkoutToCustom,
     removeScheduledWorkout,
-    deleteWorkoutLog
+    deleteWorkoutLog,
+    getScheduledWorkoutsForDate,
+    getRecurringWorkoutsForDay
   } = useWorkoutStore();
   
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
@@ -83,11 +85,6 @@ export default function ScheduleScreen() {
         log.completed
       );
     });
-  };
-  
-  // Get scheduled workouts for a specific day of the week
-  const getScheduledWorkoutsForDay = (dayOfWeek: number) => {
-    return scheduledWorkouts.filter(sw => sw.dayOfWeek === dayOfWeek);
   };
   
   // Get muscle groups worked on a specific date
@@ -158,10 +155,10 @@ export default function ScheduleScreen() {
       setSelectedWorkout(logs[0].id);
     }
     
-    // Check for scheduled workouts on this day of the week
-    const scheduledForDay = getScheduledWorkoutsForDay(date.getDay());
-    if (scheduledForDay.length > 0 && showScheduledWorkouts) {
-      setSelectedScheduledWorkout(scheduledForDay[0].id);
+    // Check for scheduled workouts on this date
+    const scheduledForDate = getScheduledWorkoutsForDate(date);
+    if (scheduledForDate.length > 0 && showScheduledWorkouts) {
+      setSelectedScheduledWorkout(scheduledForDate[0].id);
     }
   };
   
@@ -183,6 +180,17 @@ export default function ScheduleScreen() {
     } else {
       return new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
     }
+  };
+  
+  // Format date for display
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
   
   // Copy workout to custom workouts
@@ -217,9 +225,9 @@ export default function ScheduleScreen() {
                 setSelectedScheduledWorkout(null);
               }
               
-              // Check if there are other scheduled workouts for this day
-              const otherScheduled = scheduledWorkouts
-                .filter(sw => sw.id !== id && sw.dayOfWeek === selectedDate.getDay());
+              // Check if there are other scheduled workouts for this date
+              const otherScheduled = getScheduledWorkoutsForDate(selectedDate)
+                .filter(sw => sw.id !== id);
               
               if (otherScheduled.length > 0) {
                 setSelectedScheduledWorkout(otherScheduled[0].id);
@@ -418,8 +426,11 @@ export default function ScheduleScreen() {
               const isSelected = date.toDateString() === selectedDate.toDateString();
               const completedWorkouts = getWorkoutsForDate(date);
               const hasCompletedWorkout = completedWorkouts.length > 0;
-              const scheduledWorkoutsForDay = getScheduledWorkoutsForDay(date.getDay());
-              const hasScheduledWorkout = scheduledWorkoutsForDay.length > 0;
+              
+              // Get both one-time and recurring workouts for this date
+              const scheduledWorkoutsForDate = getScheduledWorkoutsForDate(date);
+              const hasScheduledWorkout = scheduledWorkoutsForDate.length > 0;
+              
               const muscleGroups = getMuscleGroupsForDate(date);
               
               // Determine if this cell has any content to show based on filters
@@ -478,7 +489,7 @@ export default function ScheduleScreen() {
                           numberOfLines={1} 
                           ellipsizeMode="tail"
                         >
-                          {scheduledWorkoutsForDay.length} planned
+                          {scheduledWorkoutsForDate.length} planned
                         </Text>
                       )}
                     </View>
@@ -525,9 +536,28 @@ export default function ScheduleScreen() {
                       {getSelectedScheduledWorkoutDetails()?.workout.name}
                     </Text>
                   </View>
-                  <Text style={[styles.workoutDate, { color: colors.textSecondary }]}>
-                    {DAYS[getSelectedScheduledWorkoutDetails()?.scheduled.dayOfWeek || 0]} at {getSelectedScheduledWorkoutDetails()?.scheduled.time}
-                  </Text>
+                  
+                  {/* Show different date/time info based on schedule type */}
+                  {getSelectedScheduledWorkoutDetails()?.scheduled.scheduleType === 'one-time' ? (
+                    <Text style={[styles.workoutDate, { color: colors.textSecondary }]}>
+                      {getSelectedScheduledWorkoutDetails()?.scheduled.scheduledDate && 
+                        formatDate(getSelectedScheduledWorkoutDetails()?.scheduled.scheduledDate || "")} at {getSelectedScheduledWorkoutDetails()?.scheduled.time}
+                    </Text>
+                  ) : (
+                    <View style={styles.recurringInfoContainer}>
+                      <View style={styles.recurringBadge}>
+                        <Repeat size={12} color={colors.white} />
+                        <Text style={styles.recurringBadgeText}>
+                          {getSelectedScheduledWorkoutDetails()?.scheduled.recurrenceFrequency || "Weekly"}
+                        </Text>
+                      </View>
+                      <Text style={[styles.workoutDate, { color: colors.textSecondary }]}>
+                        {DAYS[getSelectedScheduledWorkoutDetails()?.scheduled.dayOfWeek || 0]} at {getSelectedScheduledWorkoutDetails()?.scheduled.time}
+                        {getSelectedScheduledWorkoutDetails()?.scheduled.recurrenceEndDate && 
+                          ` until ${formatDate(getSelectedScheduledWorkoutDetails()?.scheduled.recurrenceEndDate || "")}`}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 
                 <View style={styles.workoutStats}>
@@ -919,6 +949,26 @@ const styles = StyleSheet.create({
   },
   workoutDate: {
     fontSize: 14,
+  },
+  // Recurring workout styles
+  recurringInfoContainer: {
+    marginTop: 4,
+  },
+  recurringBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#6366F1",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+  },
+  recurringBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600",
+    marginLeft: 4,
   },
   workoutStats: {
     flexDirection: "row",

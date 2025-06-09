@@ -106,6 +106,10 @@ interface WorkoutState {
   
   // New action for deleting workout logs
   deleteWorkoutLog: (id: string) => void;
+  
+  // New actions for one-time vs recurring workouts
+  getScheduledWorkoutsForDate: (date: Date) => ScheduledWorkout[];
+  getRecurringWorkoutsForDay: (dayOfWeek: number) => ScheduledWorkout[];
 }
 
 // List of major lifts for special PR celebrations
@@ -1358,6 +1362,49 @@ export const useWorkoutStore = create<WorkoutState>()(
             return exercise && exercise.muscleGroups.includes(muscleGroup);
           });
         });
+      },
+      
+      // New functions for one-time vs recurring workouts
+      getScheduledWorkoutsForDate: (date: Date) => {
+        const { scheduledWorkouts } = get();
+        
+        return scheduledWorkouts.filter(sw => {
+          // Check one-time workouts for exact date match
+          if (sw.scheduleType === 'one-time' && sw.scheduledDate) {
+            const scheduledDate = new Date(sw.scheduledDate);
+            return (
+              scheduledDate.getDate() === date.getDate() &&
+              scheduledDate.getMonth() === date.getMonth() &&
+              scheduledDate.getFullYear() === date.getFullYear()
+            );
+          }
+          
+          // Check recurring workouts for day of week match
+          if (sw.scheduleType === 'recurring' && sw.dayOfWeek !== undefined) {
+            // Check if this recurring workout has an end date
+            if (sw.recurrenceEndDate) {
+              const endDate = new Date(sw.recurrenceEndDate);
+              // If the current date is after the end date, don't include this workout
+              if (date > endDate) return false;
+            }
+            
+            // Check if the day of week matches
+            return sw.dayOfWeek === date.getDay();
+          }
+          
+          return false;
+        });
+      },
+      
+      getRecurringWorkoutsForDay: (dayOfWeek: number) => {
+        const { scheduledWorkouts } = get();
+        
+        return scheduledWorkouts.filter(sw => 
+          sw.scheduleType === 'recurring' && 
+          sw.dayOfWeek === dayOfWeek &&
+          // Check if the recurring workout is still valid (hasn't ended)
+          (!sw.recurrenceEndDate || new Date(sw.recurrenceEndDate) >= new Date())
+        );
       },
     }),
     {

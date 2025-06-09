@@ -118,12 +118,25 @@ export interface ScheduledWorkout {
   id: string;
   workoutId: string;
   workoutName?: string; // Added for easier display
-  dayOfWeek: number; // 0-6, where 0 is Sunday
+  
+  // Scheduling type
+  scheduleType: 'recurring' | 'one-time';
+  
+  // For recurring workouts
+  dayOfWeek?: number; // 0-6, where 0 is Sunday
+  
+  // For one-time workouts
+  scheduledDate?: string; // ISO string for specific date
+  
   time: string; // formatted time string like "8:30 AM"
   notes: string;
   reminder: boolean;
   reminderTime: number; // minutes before workout
   createdAt?: string; // Added timestamp
+  
+  // For recurring workouts
+  recurrenceEndDate?: string; // Optional end date for recurring workouts
+  recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly'; // Default is weekly
 }
 
 export interface TimerSettings {

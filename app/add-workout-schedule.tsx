@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pressable, Keyboard, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pressable, Keyboard, Platform, Switch } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Calendar, Clock, ChevronDown, Check, ArrowLeft, X } from "lucide-react-native";
+import { Calendar, Clock, ChevronDown, Check, ArrowLeft, X, Repeat, CalendarDays } from "lucide-react-native";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import Button from "@/components/Button";
@@ -18,12 +18,21 @@ export default function AddWorkoutScheduleScreen() {
   
   const [selectedWorkoutId, setSelectedWorkoutId] = useState("");
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [reminder, setReminder] = useState(true);
   const [reminderTime, setReminderTime] = useState(15); // 15 minutes before
   const [showWorkoutSelector, setShowWorkoutSelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // New state for schedule type
+  const [scheduleType, setScheduleType] = useState<'recurring' | 'one-time'>('recurring');
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('weekly');
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [hasEndDate, setHasEndDate] = useState(false);
   
   // Days of the week
   const days = [
@@ -50,10 +59,36 @@ export default function AddWorkoutScheduleScreen() {
     return `${hours}:${formattedMinutes} ${ampm}`;
   };
   
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  
   const handleTimeChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const currentDate = selectedDate || selectedTime;
     setShowTimePicker(Platform.OS === "ios");
     setSelectedTime(currentDate);
+  };
+  
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (date) {
+      setShowDatePicker(Platform.OS === "ios");
+      setSelectedDate(date);
+      // Also update the day of week based on the selected date
+      setSelectedDay(date.getDay());
+    }
+  };
+  
+  const handleEndDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (date) {
+      setShowEndDatePicker(Platform.OS === "ios");
+      setRecurrenceEndDate(date);
+    }
   };
   
   const handleSave = async () => {
@@ -79,7 +114,7 @@ export default function AddWorkoutScheduleScreen() {
         id: Date.now().toString(),
         workoutId: selectedWorkoutId,
         workoutName: selectedWorkout.name, // Add workout name for easier display
-        dayOfWeek: selectedDay,
+        scheduleType,
         time: formatTime(selectedTime),
         notes: "",
         reminder,
@@ -87,36 +122,59 @@ export default function AddWorkoutScheduleScreen() {
         createdAt: new Date().toISOString(), // Add creation timestamp
       };
       
+      // Add schedule-type specific fields
+      if (scheduleType === 'recurring') {
+        Object.assign(newScheduledWorkout, {
+          dayOfWeek: selectedDay,
+          recurrenceFrequency,
+          ...(hasEndDate && recurrenceEndDate ? { recurrenceEndDate: recurrenceEndDate.toISOString() } : {})
+        });
+      } else {
+        // One-time workout
+        Object.assign(newScheduledWorkout, {
+          scheduledDate: selectedDate.toISOString()
+        });
+      }
+      
       // Schedule the workout
       scheduleWorkout(newScheduledWorkout);
       
       // Schedule notification if reminders are enabled
       if (reminder && Platform.OS !== "web") {
         try {
-          // Create a date for the next occurrence of the selected day
-          const today = new Date();
-          const todayDay = today.getDay();
-          const daysUntilNext = (selectedDay - todayDay + 7) % 7;
+          let notificationDate;
           
-          const nextOccurrence = new Date(today);
-          nextOccurrence.setDate(today.getDate() + daysUntilNext);
-          
-          // Set the time from selectedTime
-          nextOccurrence.setHours(selectedTime.getHours());
-          nextOccurrence.setMinutes(selectedTime.getMinutes());
-          nextOccurrence.setSeconds(0);
-          nextOccurrence.setMilliseconds(0);
-          
-          // If today is the selected day and the time has passed, move to next week
-          if (daysUntilNext === 0 && nextOccurrence < today) {
-            nextOccurrence.setDate(nextOccurrence.getDate() + 7);
+          if (scheduleType === 'one-time') {
+            // For one-time workouts, use the exact date
+            notificationDate = new Date(selectedDate);
+            notificationDate.setHours(selectedTime.getHours());
+            notificationDate.setMinutes(selectedTime.getMinutes());
+            notificationDate.setSeconds(0);
+            notificationDate.setMilliseconds(0);
+          } else {
+            // For recurring workouts, calculate the next occurrence
+            const today = new Date();
+            const todayDay = today.getDay();
+            const daysUntilNext = (selectedDay - todayDay + 7) % 7;
+            
+            notificationDate = new Date(today);
+            notificationDate.setDate(today.getDate() + daysUntilNext);
+            notificationDate.setHours(selectedTime.getHours());
+            notificationDate.setMinutes(selectedTime.getMinutes());
+            notificationDate.setSeconds(0);
+            notificationDate.setMilliseconds(0);
+            
+            // If today is the selected day and the time has passed, move to next week
+            if (daysUntilNext === 0 && notificationDate < today) {
+              notificationDate.setDate(notificationDate.getDate() + 7);
+            }
           }
           
           // Schedule the notification
           await scheduleWorkoutNotification(
             newScheduledWorkout.id,
             selectedWorkout.name,
-            nextOccurrence
+            notificationDate
           );
         } catch (notificationError) {
           console.error("Error scheduling notification:", notificationError);
@@ -126,9 +184,23 @@ export default function AddWorkoutScheduleScreen() {
       
       // Show success message and navigate back
       setIsSubmitting(false);
+      
+      let successMessage = "";
+      if (scheduleType === 'one-time') {
+        successMessage = `Workout "${selectedWorkout.name}" scheduled for ${formatDate(selectedDate)} at ${formatTime(selectedTime)}`;
+      } else {
+        successMessage = `Workout "${selectedWorkout.name}" scheduled for ${days[selectedDay].name} at ${formatTime(selectedTime)}`;
+        if (recurrenceFrequency !== 'weekly') {
+          successMessage += ` (${recurrenceFrequency})`;
+        }
+        if (hasEndDate && recurrenceEndDate) {
+          successMessage += ` until ${formatDate(recurrenceEndDate)}`;
+        }
+      }
+      
       Alert.alert(
         "Success", 
-        `Workout "${selectedWorkout.name}" scheduled successfully for ${days[selectedDay].name} at ${formatTime(selectedTime)}`, 
+        successMessage, 
         [{ 
           text: "OK", 
           onPress: () => router.back()
@@ -195,33 +267,242 @@ export default function AddWorkoutScheduleScreen() {
           </View>
         </View>
         
+        {/* Schedule Type Selection */}
         <View style={[styles.section, { backgroundColor: colors.card, shadowColor: "#000" }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Day</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Schedule Type</Text>
           
-          <View style={styles.daysContainer}>
-            {days.map((day) => (
-              <TouchableOpacity
-                key={day.id}
+          <View style={styles.scheduleTypeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.scheduleTypeButton,
+                { backgroundColor: colors.background },
+                scheduleType === 'recurring' && [styles.selectedScheduleType, { backgroundColor: colors.primary }]
+              ]}
+              onPress={() => setScheduleType('recurring')}
+            >
+              <Repeat 
+                size={20} 
+                color={scheduleType === 'recurring' ? colors.white : colors.textSecondary} 
+                style={styles.scheduleTypeIcon}
+              />
+              <Text
                 style={[
-                  styles.dayButton,
-                  { backgroundColor: colors.background },
-                  selectedDay === day.id && [styles.selectedDayButton, { backgroundColor: colors.primary }],
+                  styles.scheduleTypeText,
+                  { color: scheduleType === 'recurring' ? colors.white : colors.text }
                 ]}
-                onPress={() => setSelectedDay(day.id)}
               >
-                <Text
-                  style={[
-                    styles.dayText,
-                    { color: colors.text },
-                    selectedDay === day.id && [styles.selectedDayText, { color: "#FFFFFF" }],
-                  ]}
-                >
-                  {day.name.substring(0, 3)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                Recurring
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.scheduleTypeButton,
+                { backgroundColor: colors.background },
+                scheduleType === 'one-time' && [styles.selectedScheduleType, { backgroundColor: colors.primary }]
+              ]}
+              onPress={() => setScheduleType('one-time')}
+            >
+              <Calendar 
+                size={20} 
+                color={scheduleType === 'one-time' ? colors.white : colors.textSecondary} 
+                style={styles.scheduleTypeIcon}
+              />
+              <Text
+                style={[
+                  styles.scheduleTypeText,
+                  { color: scheduleType === 'one-time' ? colors.white : colors.text }
+                ]}
+              >
+                One-time
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
+        
+        {/* Day/Date Selection based on schedule type */}
+        {scheduleType === 'recurring' ? (
+          <View style={[styles.section, { backgroundColor: colors.card, shadowColor: "#000" }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Day</Text>
+            
+            <View style={styles.daysContainer}>
+              {days.map((day) => (
+                <TouchableOpacity
+                  key={day.id}
+                  style={[
+                    styles.dayButton,
+                    { backgroundColor: colors.background },
+                    selectedDay === day.id && [styles.selectedDayButton, { backgroundColor: colors.primary }],
+                  ]}
+                  onPress={() => setSelectedDay(day.id)}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      { color: colors.text },
+                      selectedDay === day.id && [styles.selectedDayText, { color: "#FFFFFF" }],
+                    ]}
+                  >
+                    {day.name.substring(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Recurrence Frequency */}
+            <View style={styles.recurrenceContainer}>
+              <Text style={[styles.recurrenceLabel, { color: colors.text }]}>Repeat</Text>
+              <View style={[styles.pickerContainer, { backgroundColor: colors.background }]}>
+                <Picker
+                  selectedValue={recurrenceFrequency}
+                  onValueChange={(itemValue) => setRecurrenceFrequency(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Weekly" value="weekly" />
+                  <Picker.Item label="Every 2 weeks" value="biweekly" />
+                  <Picker.Item label="Monthly" value="monthly" />
+                </Picker>
+              </View>
+            </View>
+            
+            {/* End Date Option */}
+            <View style={styles.endDateContainer}>
+              <View style={styles.endDateToggleRow}>
+                <Text style={[styles.endDateLabel, { color: colors.text }]}>Set end date</Text>
+                <Switch
+                  value={hasEndDate}
+                  onValueChange={setHasEndDate}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={hasEndDate ? colors.white : colors.background}
+                />
+              </View>
+              
+              {hasEndDate && (
+                <TouchableOpacity 
+                  style={[styles.dateSelector, { backgroundColor: colors.background }]}
+                  onPress={() => setShowEndDatePicker(true)}
+                >
+                  <CalendarDays size={20} color={colors.primary} />
+                  <Text style={[styles.dateText, { color: colors.text }]}>
+                    {recurrenceEndDate ? formatDate(recurrenceEndDate) : "Select end date"}
+                  </Text>
+                  <ChevronDown size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+              
+              {Platform.OS === 'ios' && showEndDatePicker && (
+                <View style={[styles.iosDatePickerContainer, { backgroundColor: colors.card }]}>
+                  <DateTimePicker
+                    value={recurrenceEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)} // Default to 30 days from now
+                    mode="date"
+                    display="spinner"
+                    minimumDate={new Date()}
+                    onChange={handleEndDateChange}
+                  />
+                  <Button 
+                    title="Done" 
+                    onPress={() => setShowEndDatePicker(false)}
+                    style={styles.doneButton}
+                  />
+                </View>
+              )}
+              
+              {Platform.OS === 'android' && showEndDatePicker && (
+                <DateTimePicker
+                  value={recurrenceEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                  mode="date"
+                  display="default"
+                  minimumDate={new Date()}
+                  onChange={handleEndDateChange}
+                />
+              )}
+              
+              {Platform.OS === 'web' && showEndDatePicker && (
+                <View style={[styles.webDatePickerContainer, { backgroundColor: colors.card }]}>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split('T')[0]}
+                    value={recurrenceEndDate ? recurrenceEndDate.toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setRecurrenceEndDate(new Date(e.target.value));
+                      }
+                    }}
+                    style={webInputStyle}
+                  />
+                  <Button 
+                    title="Done" 
+                    onPress={() => setShowEndDatePicker(false)}
+                    style={styles.doneButton}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.section, { backgroundColor: colors.card, shadowColor: "#000" }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Date</Text>
+            
+            <TouchableOpacity 
+              style={[styles.dateSelector, { backgroundColor: colors.background }]}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Calendar size={20} color={colors.primary} />
+              <Text style={[styles.dateText, { color: colors.text }]}>{formatDate(selectedDate)}</Text>
+              <ChevronDown size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            
+            {Platform.OS === 'ios' && showDatePicker && (
+              <View style={[styles.iosDatePickerContainer, { backgroundColor: colors.card }]}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="spinner"
+                  minimumDate={new Date()}
+                  onChange={handleDateChange}
+                />
+                <Button 
+                  title="Done" 
+                  onPress={() => setShowDatePicker(false)}
+                  style={styles.doneButton}
+                />
+              </View>
+            )}
+            
+            {Platform.OS === 'android' && showDatePicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="default"
+                minimumDate={new Date()}
+                onChange={handleDateChange}
+              />
+            )}
+            
+            {Platform.OS === 'web' && showDatePicker && (
+              <View style={[styles.webDatePickerContainer, { backgroundColor: colors.card }]}>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newDate = new Date(e.target.value);
+                      setSelectedDate(newDate);
+                      setSelectedDay(newDate.getDay());
+                    }
+                  }}
+                  style={webInputStyle}
+                />
+                <Button 
+                  title="Done" 
+                  onPress={() => setShowDatePicker(false)}
+                  style={styles.doneButton}
+                />
+              </View>
+            )}
+          </View>
+        )}
         
         <View style={[styles.section, { backgroundColor: colors.card, shadowColor: "#000" }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Time</Text>
@@ -512,6 +793,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
+  // Schedule Type Styles
+  scheduleTypeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  scheduleTypeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  selectedScheduleType: {
+  },
+  scheduleTypeIcon: {
+    marginRight: 8,
+  },
+  scheduleTypeText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  // Day Selection Styles
   daysContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -532,6 +837,57 @@ const styles = StyleSheet.create({
   },
   selectedDayText: {
   },
+  // Recurrence Styles
+  recurrenceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  recurrenceLabel: {
+    fontSize: 16,
+    marginRight: 12,
+    width: 80,
+  },
+  // End Date Styles
+  endDateContainer: {
+    marginTop: 16,
+  },
+  endDateToggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  endDateLabel: {
+    fontSize: 16,
+  },
+  // Date Selector Styles
+  dateSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  dateText: {
+    flex: 1,
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  iosDatePickerContainer: {
+    borderRadius: 12,
+    marginTop: 8,
+    padding: 16,
+    alignItems: "center",
+  },
+  webDatePickerContainer: {
+    borderRadius: 12,
+    marginTop: 8,
+    padding: 16,
+    alignItems: "center",
+  },
+  // Time Selector Styles
   timeSelector: {
     flexDirection: "row",
     alignItems: "center",
@@ -561,6 +917,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: 120,
   },
+  // Reminder Styles
   reminderHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -603,6 +960,7 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
   },
+  // Button Styles
   saveButton: {
     marginTop: 16,
   },
@@ -612,6 +970,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
