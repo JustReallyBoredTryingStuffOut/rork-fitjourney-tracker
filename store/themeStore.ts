@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ColorSchemeName, useColorScheme } from "react-native";
 
 export type ThemeType = "light" | "dark" | "system";
-export type ColorScheme = "blue" | "green" | "purple" | "orange" | "pink";
+export type ColorScheme = "blue" | "green" | "purple" | "orange" | "pink" | "pastel" | "monochrome" | "nature" | "vibrant" | "minimal";
 
 interface ThemeState {
   theme: ThemeType;

@@ -135,6 +135,127 @@ const colorSchemes = {
       gradientStart: "#FF7B7B",
       gradientEnd: "#FF9797",
     }
+  },
+  // New modern themes
+  pastel: {
+    light: {
+      primary: "#B5D8EB",
+      secondary: "#F8C8DC",
+      gradientStart: "#B5D8EB",
+      gradientEnd: "#F8C8DC",
+      background: "#F9F7F7",
+      card: "#FFFFFF",
+      text: "#5D5C61",
+      textSecondary: "#7D7C84",
+      border: "#E6E6EA",
+    },
+    dark: {
+      primary: "#A5C8DB",
+      secondary: "#E8B8CC",
+      gradientStart: "#A5C8DB",
+      gradientEnd: "#E8B8CC",
+      background: "#2D2D34",
+      card: "#3E3E46",
+      text: "#E6E6EA",
+      textSecondary: "#C5C5D0",
+      border: "#4D4D56",
+    }
+  },
+  monochrome: {
+    light: {
+      primary: "#555555",
+      secondary: "#888888",
+      gradientStart: "#555555",
+      gradientEnd: "#888888",
+      background: "#F5F5F5",
+      card: "#FFFFFF",
+      text: "#333333",
+      textSecondary: "#666666",
+      border: "#DDDDDD",
+    },
+    dark: {
+      primary: "#AAAAAA",
+      secondary: "#CCCCCC",
+      gradientStart: "#AAAAAA",
+      gradientEnd: "#CCCCCC",
+      background: "#222222",
+      card: "#333333",
+      text: "#EEEEEE",
+      textSecondary: "#BBBBBB",
+      border: "#444444",
+    }
+  },
+  nature: {
+    light: {
+      primary: "#7D9D9C",
+      secondary: "#E4D1B9",
+      gradientStart: "#7D9D9C",
+      gradientEnd: "#E4D1B9",
+      background: "#F8F4EA",
+      card: "#FFFFFF",
+      text: "#576F72",
+      textSecondary: "#7D9D9C",
+      border: "#E4D1B9",
+    },
+    dark: {
+      primary: "#8DAD9C",
+      secondary: "#F4E1C9",
+      gradientStart: "#8DAD9C",
+      gradientEnd: "#F4E1C9",
+      background: "#2C3639",
+      card: "#3F4E4F",
+      text: "#F8F4EA",
+      textSecondary: "#E4D1B9",
+      border: "#576F72",
+    }
+  },
+  vibrant: {
+    light: {
+      primary: "#FF3366",
+      secondary: "#33CCFF",
+      gradientStart: "#FF3366",
+      gradientEnd: "#33CCFF",
+      background: "#FFFFFF",
+      card: "#F9F9F9",
+      text: "#222222",
+      textSecondary: "#555555",
+      border: "#EEEEEE",
+    },
+    dark: {
+      primary: "#FF5588",
+      secondary: "#55DDFF",
+      gradientStart: "#FF5588",
+      gradientEnd: "#55DDFF",
+      background: "#111111",
+      card: "#222222",
+      text: "#FFFFFF",
+      textSecondary: "#CCCCCC",
+      border: "#333333",
+    }
+  },
+  minimal: {
+    light: {
+      primary: "#007AFF",
+      secondary: "#5AC8FA",
+      gradientStart: "#007AFF",
+      gradientEnd: "#5AC8FA",
+      background: "#FFFFFF",
+      card: "#F9F9F9",
+      text: "#000000",
+      textSecondary: "#8E8E93",
+      border: "#E5E5EA",
+    },
+    dark: {
+      primary: "#0A84FF",
+      secondary: "#64D2FF",
+      gradientStart: "#0A84FF",
+      gradientEnd: "#64D2FF",
+      background: "#000000",
+      card: "#1C1C1E",
+      text: "#FFFFFF",
+      textSecondary: "#8E8E93",
+      border: "#38383A",
+    }
   }
 };
 

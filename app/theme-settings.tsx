@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable, Platform } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Moon, Sun, Smartphone, Check, ArrowLeft } from "lucide-react-native";
 import { useThemeStore, ColorScheme } from "@/store/themeStore";
@@ -20,12 +20,18 @@ export default function ThemeSettingsScreen() {
     setSelectedColorScheme(colorScheme);
   }, [theme, colorScheme]);
   
-  const colorSchemes: { name: string; value: ColorScheme; color: string }[] = [
-    { name: "Blue", value: "blue", color: "#4A90E2" },
-    { name: "Green", value: "green", color: "#50C878" },
-    { name: "Purple", value: "purple", color: "#8A2BE2" },
-    { name: "Orange", value: "orange", color: "#FF9500" },
-    { name: "Pink", value: "pink", color: "#FF6B6B" },
+  const colorSchemes: { name: string; value: ColorScheme; color: string; description: string }[] = [
+    { name: "Blue", value: "blue", color: "#4A90E2", description: "Classic blue theme" },
+    { name: "Green", value: "green", color: "#50C878", description: "Fresh green theme" },
+    { name: "Purple", value: "purple", color: "#8A2BE2", description: "Rich purple theme" },
+    { name: "Orange", value: "orange", color: "#FF9500", description: "Warm orange theme" },
+    { name: "Pink", value: "pink", color: "#FF6B6B", description: "Soft pink theme" },
+    // New modern themes
+    { name: "Pastel", value: "pastel", color: "#B5D8EB", description: "Soft pastel colors" },
+    { name: "Monochrome", value: "monochrome", color: "#555555", description: "Elegant grayscale" },
+    { name: "Nature", value: "nature", color: "#7D9D9C", description: "Earthy natural tones" },
+    { name: "Vibrant", value: "vibrant", color: "#FF3366", description: "Bold vibrant colors" },
+    { name: "Minimal", value: "minimal", color: "#007AFF", description: "Clean minimal design" },
   ];
   
   const handleSaveTheme = () => {
@@ -128,31 +134,58 @@ export default function ThemeSettingsScreen() {
       
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Color Scheme</Text>
+        <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>Choose from classic or modern themes</Text>
         
-        <View style={styles.colorSchemes}>
-          {colorSchemes.map((scheme) => {
-            // Get the actual color from the current theme for this scheme
-            const schemeColor = scheme.color;
-            
-            return (
+        <View style={styles.colorSchemesContainer}>
+          <Text style={[styles.categoryTitle, { color: colors.text }]}>Classic</Text>
+          <View style={styles.colorSchemes}>
+            {colorSchemes.slice(0, 5).map((scheme) => (
               <TouchableOpacity 
                 key={scheme.value}
                 style={[
                   styles.colorScheme,
-                  selectedColorScheme === scheme.value && [styles.selectedColorScheme, { borderColor: schemeColor }]
+                  selectedColorScheme === scheme.value && [styles.selectedColorScheme, { borderColor: scheme.color }]
                 ]}
                 onPress={() => setSelectedColorScheme(scheme.value)}
               >
-                <View style={[styles.colorCircle, { backgroundColor: schemeColor }]} />
-                <Text style={[styles.colorText, { color: colors.text }]}>{scheme.name}</Text>
+                <View style={[styles.colorCircle, { backgroundColor: scheme.color }]} />
+                <View style={styles.colorSchemeTextContainer}>
+                  <Text style={[styles.colorText, { color: colors.text }]}>{scheme.name}</Text>
+                  <Text style={[styles.colorDescription, { color: colors.textSecondary }]}>{scheme.description}</Text>
+                </View>
                 {selectedColorScheme === scheme.value && (
-                  <View style={[styles.colorCheckmark, { backgroundColor: schemeColor }]}>
+                  <View style={[styles.colorCheckmark, { backgroundColor: scheme.color }]}>
                     <Check size={12} color="#FFFFFF" />
                   </View>
                 )}
               </TouchableOpacity>
-            );
-          })}
+            ))}
+          </View>
+          
+          <Text style={[styles.categoryTitle, { color: colors.text, marginTop: 16 }]}>Modern</Text>
+          <View style={styles.colorSchemes}>
+            {colorSchemes.slice(5).map((scheme) => (
+              <TouchableOpacity 
+                key={scheme.value}
+                style={[
+                  styles.colorScheme,
+                  selectedColorScheme === scheme.value && [styles.selectedColorScheme, { borderColor: scheme.color }]
+                ]}
+                onPress={() => setSelectedColorScheme(scheme.value)}
+              >
+                <View style={[styles.colorCircle, { backgroundColor: scheme.color }]} />
+                <View style={styles.colorSchemeTextContainer}>
+                  <Text style={[styles.colorText, { color: colors.text }]}>{scheme.name}</Text>
+                  <Text style={[styles.colorDescription, { color: colors.textSecondary }]}>{scheme.description}</Text>
+                </View>
+                {selectedColorScheme === scheme.value && (
+                  <View style={[styles.colorCheckmark, { backgroundColor: scheme.color }]}>
+                    <Check size={12} color="#FFFFFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
       
@@ -249,6 +282,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
+    marginBottom: 8,
+  },
+  sectionDescription: {
+    fontSize: 14,
     marginBottom: 16,
   },
   themeOptions: {
@@ -288,13 +325,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  colorSchemesContainer: {
+    marginTop: 8,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
   colorSchemes: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    flexDirection: "column",
   },
   colorScheme: {
-    width: "48%",
+    width: "100%",
     borderRadius: 12,
     borderWidth: 2,
     borderColor: "transparent",
@@ -307,22 +350,26 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   colorCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     marginRight: 12,
   },
+  colorSchemeTextContainer: {
+    flex: 1,
+  },
   colorText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "500",
   },
+  colorDescription: {
+    fontSize: 12,
+    marginTop: 2,
+  },
   colorCheckmark: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -339,6 +386,7 @@ const styles = StyleSheet.create({
   previewContainer: {
     borderRadius: 12,
     overflow: "hidden",
+    marginTop: 8,
   },
   previewHeader: {
     padding: 16,
