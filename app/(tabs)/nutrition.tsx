@@ -139,7 +139,7 @@ export default function NutritionScreen() {
               goal={macroGoals?.calories || 0}
               unit="kcal"
               percentage={caloriePercentage}
-              color="#FF6B6B"
+              color={colors.calorieColor}
             />
             
             <MacroProgress
@@ -148,7 +148,7 @@ export default function NutritionScreen() {
               goal={macroGoals?.protein || 0}
               unit="g"
               percentage={proteinPercentage}
-              color="#4A90E2"
+              color={colors.macroProtein}
               achievementId={proteinGoalAchievement?.id}
             />
             
@@ -158,7 +158,7 @@ export default function NutritionScreen() {
               goal={macroGoals?.carbs || 0}
               unit="g"
               percentage={carbsPercentage}
-              color="#50C878"
+              color={colors.macroCarbs}
             />
             
             <MacroProgress
@@ -167,7 +167,7 @@ export default function NutritionScreen() {
               goal={macroGoals?.fat || 0}
               unit="g"
               percentage={fatPercentage}
-              color="#FFA500"
+              color={colors.macroFat}
             />
           </View>
           

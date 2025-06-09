@@ -54,7 +54,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
             <Text style={styles.sectionTitle}>Understanding Your Macros</Text>
             
             <View style={styles.macroExplanation}>
-              <View style={[styles.macroIndicator, { backgroundColor: colors.primary }]} />
+              <View style={[styles.macroIndicator, { backgroundColor: colors.calorieColor }]} />
               <View style={styles.macroInfo}>
                 <Text style={styles.macroTitle}>Calories</Text>
                 <Text style={styles.macroDescription}>
@@ -68,7 +68,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               <View style={styles.macroInfo}>
                 <Text style={styles.macroTitle}>Protein (4 calories/gram)</Text>
                 <Text style={styles.macroDescription}>
-                  Essential for muscle repair and growth. We recommend 1.6-2.2g per kg of body weight for active individuals.
+                  Essential for muscle repair and growth. We recommend 1.6-2.2g per kg of body weight for active individuals. Each gram of protein provides 4 calories of energy.
                 </Text>
               </View>
             </View>
@@ -78,7 +78,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               <View style={styles.macroInfo}>
                 <Text style={styles.macroTitle}>Carbs (4 calories/gram)</Text>
                 <Text style={styles.macroDescription}>
-                  Your body's primary energy source, especially important for high-intensity activities.
+                  Your body's primary energy source, especially important for high-intensity activities. Like protein, each gram of carbohydrates provides 4 calories of energy.
                 </Text>
               </View>
             </View>
@@ -88,7 +88,7 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               <View style={styles.macroInfo}>
                 <Text style={styles.macroTitle}>Fat (9 calories/gram)</Text>
                 <Text style={styles.macroDescription}>
-                  Essential for hormone production and vitamin absorption. Healthy fats are an important part of your diet.
+                  Essential for hormone production and vitamin absorption. Healthy fats are an important part of your diet. Fat is more energy-dense, providing 9 calories per gram.
                 </Text>
               </View>
             </View>

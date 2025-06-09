@@ -13,6 +13,7 @@ export const colors = {
   info: "#17A2B8",
   
   // Macro colors
+  calorieColor: "#FF6B6B", // Red for calories
   macroProtein: "#4A90E2", // Blue
   macroCarbs: "#50C878",   // Green
   macroFat: "#FFA500",     // Orange
@@ -32,6 +33,14 @@ export const colors = {
   // Gradients
   gradientStart: "#4A90E2",
   gradientEnd: "#50C878",
+  
+  // UI colors
+  highlight: "#F0F7FF",
+  white: "#FFFFFF",
+  black: "#000000",
+  
+  // Background variants
+  backgroundLight: "#E9ECEF",
 };
 
 // Extend with theme-specific colors

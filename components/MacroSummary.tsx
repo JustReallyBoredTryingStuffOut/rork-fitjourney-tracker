@@ -147,7 +147,7 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
             <View
               style={[
                 styles.progressBar,
-                { width: `${percentages.calories}%` },
+                { width: `${percentages.calories}%`, backgroundColor: colors.calorieColor },
               ]}
             />
           </View>
@@ -290,7 +290,6 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#000000",
     borderRadius: 4,
   },
   macroSection: {
