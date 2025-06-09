@@ -47,8 +47,8 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
     ? Math.min(100, Math.floor((achievement.progress / achievement.target) * 100))
     : 0;
   
-  // Determine if the badge is interactive - ONLY if completed and onPress is provided
-  const isInteractive = !!onPress && achievement.completed;
+  // Determine if the badge is interactive - Allow interaction for all achievements
+  const isInteractive = !!onPress;
   
   // Render the badge with appropriate styling
   return (

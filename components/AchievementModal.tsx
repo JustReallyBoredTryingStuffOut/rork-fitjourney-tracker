@@ -49,11 +49,6 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
     }
   };
   
-  // Only show modal for completed achievements
-  if (!achievement.completed) {
-    return null;
-  }
-  
   useEffect(() => {
     if (visible) {
       // Reset animations
@@ -83,17 +78,20 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
       ]).start();
       
       // Play lottie animation if available and not on web
-      if (Platform.OS !== 'web' && lottieRef.current) {
+      if (Platform.OS !== 'web' && lottieRef.current && achievement.completed) {
         lottieRef.current.play();
       }
     }
-  }, [visible, scaleAnim, opacityAnim, rotateAnim]);
+  }, [visible, scaleAnim, opacityAnim, rotateAnim, achievement.completed]);
   
   // Calculate rotation for the badge
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg']
   });
+  
+  // Determine if this is a locked or unlocked achievement view
+  const isUnlocked = achievement.completed;
   
   return (
     <Modal
@@ -121,10 +119,10 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
           </TouchableOpacity>
           
           <Text style={[styles.congratsText, { color: colors.text }]}>
-            Achievement Unlocked!
+            {isUnlocked ? "Achievement Unlocked!" : "Locked Achievement"}
           </Text>
           
-          {Platform.OS !== 'web' ? (
+          {isUnlocked && Platform.OS !== 'web' ? (
             <View style={styles.lottieContainer}>
               <LottieView
                 ref={lottieRef}
@@ -140,11 +138,18 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
                 styles.badgeContainer,
                 { 
                   borderColor: getTierColor(achievement.tier),
-                  transform: [{ rotate: spin }]
+                  transform: isUnlocked ? [{ rotate: spin }] : [],
+                  opacity: isUnlocked ? 1 : 0.7,
+                  backgroundColor: isUnlocked ? 'white' : colors.background
                 }
               ]}
             >
               <Text style={styles.badgeIcon}>{achievement.icon}</Text>
+              {!isUnlocked && (
+                <View style={styles.lockIconContainer}>
+                  <Text style={styles.lockIconLarge}>🔒</Text>
+                </View>
+              )}
             </Animated.View>
           )}
           
@@ -163,33 +168,57 @@ const AchievementModal: React.FC<AchievementModalProps> = ({
               {achievement.description}
             </Text>
             
-            <Text style={[styles.pointsText, { color: colors.primary }]}>
-              +{achievement.points} XP
-            </Text>
+            {isUnlocked ? (
+              <Text style={[styles.pointsText, { color: colors.primary }]}>
+                +{achievement.points} XP
+              </Text>
+            ) : (
+              <View style={styles.progressContainer}>
+                <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+                  Progress: {achievement.progress} / {achievement.target}
+                </Text>
+                <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { 
+                        backgroundColor: colors.primary,
+                        width: `${Math.min(100, (achievement.progress / achievement.target) * 100)}%`
+                      }
+                    ]} 
+                  />
+                </View>
+                <Text style={[styles.rewardText, { color: colors.primary }]}>
+                  Reward: {achievement.points} XP
+                </Text>
+              </View>
+            )}
           </View>
           
-          <View style={styles.confetti}>
-            {Array.from({ length: 30 }).map((_, i) => (
-              <View 
-                key={i}
-                style={[
-                  styles.confettiPiece,
-                  {
-                    backgroundColor: [colors.primary, colors.secondary, getTierColor(achievement.tier)][i % 3],
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    transform: [
-                      { rotate: `${Math.random() * 360}deg` },
-                      { scale: Math.random() * 0.5 + 0.5 }
-                    ]
-                  }
-                ]}
-              />
-            ))}
-          </View>
+          {isUnlocked && (
+            <View style={styles.confetti}>
+              {Array.from({ length: 30 }).map((_, i) => (
+                <View 
+                  key={i}
+                  style={[
+                    styles.confettiPiece,
+                    {
+                      backgroundColor: [colors.primary, colors.secondary, getTierColor(achievement.tier)][i % 3],
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      transform: [
+                        { rotate: `${Math.random() * 360}deg` },
+                        { scale: Math.random() * 0.5 + 0.5 }
+                      ]
+                    }
+                  ]}
+                />
+              ))}
+            </View>
+          )}
           
           <Button
-            title="Awesome!"
+            title={isUnlocked ? "Awesome!" : "Got It"}
             onPress={onClose}
             style={styles.button}
           />
@@ -242,9 +271,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+    position: 'relative',
   },
   badgeIcon: {
     fontSize: 60,
+  },
+  lockIconContainer: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 60,
+  },
+  lockIconLarge: {
+    fontSize: 40,
   },
   lottieContainer: {
     width: 150,
@@ -286,6 +328,30 @@ const styles = StyleSheet.create({
   pointsText: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  progressContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  progressText: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  rewardText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 4,
   },
   button: {
     minWidth: 150,

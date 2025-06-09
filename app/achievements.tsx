@@ -6,7 +6,8 @@ import {
   ScrollView, 
   TouchableOpacity,
   FlatList,
-  Image
+  Image,
+  TextInput
 } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useGamificationStore, Achievement, AchievementCategory } from '@/store/gamificationStore';
@@ -14,7 +15,7 @@ import { Stack, useRouter } from 'expo-router';
 import AchievementBadge from '@/components/AchievementBadge';
 import AchievementModal from '@/components/AchievementModal';
 import LevelProgress from '@/components/LevelProgress';
-import { Award, Zap, Clock, Weight, Target, Star, ArrowLeft, Lock } from 'lucide-react-native';
+import { Award, Zap, Clock, Weight, Target, Star, ArrowLeft, Lock, Search, Filter } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { APP_NAME } from '@/app/_layout';
 
@@ -33,6 +34,9 @@ export default function AchievementsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<AchievementCategory>('workout');
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCompleted, setShowCompleted] = useState(true);
+  const [showLocked, setShowLocked] = useState(true);
   
   // Initialize achievements when screen loads
   useEffect(() => {
@@ -44,18 +48,29 @@ export default function AchievementsScreen() {
   // Get achievements for selected category
   const categoryAchievements = getAchievementsByCategory(selectedCategory);
   
+  // Filter achievements based on search query and filters
+  const filteredAchievements = categoryAchievements.filter(achievement => {
+    const matchesSearch = 
+      searchQuery === '' || 
+      achievement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      achievement.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCompletionFilter = 
+      (showCompleted && achievement.completed) || 
+      (showLocked && !achievement.completed);
+    
+    return matchesSearch && matchesCompletionFilter;
+  });
+  
   // Calculate completion percentage
   const completionPercentage = achievements.length > 0
     ? Math.floor((unlockedAchievements.length / achievements.length) * 100)
     : 0;
   
-  // Handle achievement press - only allow interaction with unlocked achievements
+  // Handle achievement press - allow interaction with all achievements
   const handleAchievementPress = (achievement: Achievement) => {
-    // Only show modal for completed/unlocked achievements
-    if (achievement.completed) {
-      setSelectedAchievement(achievement);
-      setShowModal(true);
-    }
+    setSelectedAchievement(achievement);
+    setShowModal(true);
   };
   
   // Get icon for category
@@ -81,6 +96,10 @@ export default function AchievementsScreen() {
   const handleGoBack = () => {
     router.back();
   };
+  
+  // Toggle filter functions
+  const toggleCompletedFilter = () => setShowCompleted(!showCompleted);
+  const toggleLockedFilter = () => setShowLocked(!showLocked);
   
   // If gamification is disabled, show a message
   if (!gamificationEnabled) {
@@ -176,6 +195,51 @@ export default function AchievementsScreen() {
           </View>
         </View>
         
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchInputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Search size={20} color={colors.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Search achievements..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          
+          <View style={styles.filterContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.filterButton, 
+                { 
+                  backgroundColor: showCompleted ? colors.primary + '20' : colors.card,
+                  borderColor: showCompleted ? colors.primary : colors.border
+                }
+              ]}
+              onPress={toggleCompletedFilter}
+            >
+              <Text style={[styles.filterText, { color: showCompleted ? colors.primary : colors.textSecondary }]}>
+                Completed
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.filterButton, 
+                { 
+                  backgroundColor: showLocked ? colors.primary + '20' : colors.card,
+                  borderColor: showLocked ? colors.primary : colors.border
+                }
+              ]}
+              onPress={toggleLockedFilter}
+            >
+              <Text style={[styles.filterText, { color: showLocked ? colors.primary : colors.textSecondary }]}>
+                Locked
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
         <View style={styles.categoryTabs}>
           <ScrollView 
             horizontal 
@@ -219,36 +283,45 @@ export default function AchievementsScreen() {
         <View style={styles.achievementsContainer}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Achievements
+            {searchQuery ? ` - Search Results` : ''}
           </Text>
           
-          <FlatList
-            data={categoryAchievements}
-            keyExtractor={(item) => item.id}
-            numColumns={3}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View style={styles.achievementItem}>
-                <AchievementBadge 
-                  achievement={item}
-                  onPress={item.completed ? () => handleAchievementPress(item) : undefined}
-                  showProgress
-                />
-                <Text 
-                  style={[
-                    styles.achievementName, 
-                    { 
-                      color: item.completed ? colors.text : colors.textSecondary,
-                      opacity: item.completed ? 1 : 0.7
-                    }
-                  ]}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
-              </View>
-            )}
-            contentContainerStyle={styles.achievementsList}
-          />
+          {filteredAchievements.length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+                No achievements found. Try adjusting your filters or search query.
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredAchievements}
+              keyExtractor={(item) => item.id}
+              numColumns={3}
+              scrollEnabled={false}
+              renderItem={({ item }) => (
+                <View style={styles.achievementItem}>
+                  <AchievementBadge 
+                    achievement={item}
+                    onPress={() => handleAchievementPress(item)}
+                    showProgress
+                  />
+                  <Text 
+                    style={[
+                      styles.achievementName, 
+                      { 
+                        color: item.completed ? colors.text : colors.textSecondary,
+                        opacity: item.completed ? 1 : 0.7
+                      }
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+                </View>
+              )}
+              contentContainerStyle={styles.achievementsList}
+            />
+          )}
         </View>
         
         <Button
@@ -303,6 +376,41 @@ const styles = StyleSheet.create({
     width: 1,
     height: '80%',
     alignSelf: 'center',
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    paddingVertical: 4,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   categoryTabs: {
     marginBottom: 16,
@@ -381,5 +489,15 @@ const styles = StyleSheet.create({
   enableButton: {
     width: '100%',
     marginBottom: 16,
+  },
+  emptyStateContainer: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

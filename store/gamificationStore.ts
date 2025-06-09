@@ -1150,6 +1150,1374 @@ const defaultAchievements: Achievement[] = [
     target: 365,
     completed: false,
     points: 500
+  },
+  
+  // Additional Workout Achievements
+  {
+    id: "workout-strength-100",
+    title: "Strength Virtuoso",
+    description: "Complete 100 strength workouts",
+    category: "workout",
+    icon: "💪",
+    tier: "diamond",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "workout-cardio-100",
+    title: "Cardio Virtuoso",
+    description: "Complete 100 cardio workouts",
+    category: "workout",
+    icon: "🏃‍♀️",
+    tier: "diamond",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "workout-flexibility-50",
+    title: "Flexibility Virtuoso",
+    description: "Complete 50 flexibility workouts",
+    category: "workout",
+    icon: "🧘‍♀️",
+    tier: "diamond",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "workout-duration-120",
+    title: "Marathon Trainer",
+    description: "Complete a workout lasting at least 120 minutes",
+    category: "workout",
+    icon: "⏱️",
+    tier: "platinum",
+    progress: 0,
+    target: 1,
+    completed: false,
+    points: 100
+  },
+  {
+    id: "workout-variety-15",
+    title: "Fitness Explorer",
+    description: "Complete 15 different types of workouts",
+    category: "workout",
+    icon: "🔄",
+    tier: "platinum",
+    progress: 0,
+    target: 15,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "workout-variety-20",
+    title: "Fitness Connoisseur",
+    description: "Complete 20 different types of workouts",
+    category: "workout",
+    icon: "🔄",
+    tier: "diamond",
+    progress: 0,
+    target: 20,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "workout-early-bird-20",
+    title: "Dawn Warrior",
+    description: "Complete 20 workouts before 8 AM",
+    category: "workout",
+    icon: "🌅",
+    tier: "gold",
+    progress: 0,
+    target: 20,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "workout-night-owl-20",
+    title: "Midnight Athlete",
+    description: "Complete 20 workouts after 8 PM",
+    category: "workout",
+    icon: "🌙",
+    tier: "gold",
+    progress: 0,
+    target: 20,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "workout-weekend-warrior-25",
+    title: "Weekend Champion",
+    description: "Complete 25 workouts on weekends",
+    category: "workout",
+    icon: "📅",
+    tier: "gold",
+    progress: 0,
+    target: 25,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "workout-weekend-warrior-50",
+    title: "Weekend Legend",
+    description: "Complete 50 workouts on weekends",
+    category: "workout",
+    icon: "📅",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "workout-consecutive-days-5",
+    title: "5-Day Challenge",
+    description: "Work out for 5 consecutive days",
+    category: "workout",
+    icon: "📆",
+    tier: "silver",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 100
+  },
+  {
+    id: "workout-consecutive-days-10",
+    title: "10-Day Challenge",
+    description: "Work out for 10 consecutive days",
+    category: "workout",
+    icon: "📆",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "workout-consecutive-days-21",
+    title: "21-Day Habit",
+    description: "Work out for 21 consecutive days",
+    category: "workout",
+    icon: "📆",
+    tier: "platinum",
+    progress: 0,
+    target: 21,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "workout-consecutive-days-30",
+    title: "30-Day Challenge Master",
+    description: "Work out for 30 consecutive days",
+    category: "workout",
+    icon: "📆",
+    tier: "diamond",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 600
+  },
+  {
+    id: "workout-same-time-7",
+    title: "Clockwork",
+    description: "Work out at the same time for 7 consecutive days",
+    category: "workout",
+    icon: "⏰",
+    tier: "silver",
+    progress: 0,
+    target: 7,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "workout-same-time-14",
+    title: "Routine Master",
+    description: "Work out at the same time for 14 consecutive days",
+    category: "workout",
+    icon: "⏰",
+    tier: "gold",
+    progress: 0,
+    target: 14,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "workout-intensity-high",
+    title: "High Intensity",
+    description: "Complete 10 high-intensity workouts",
+    category: "workout",
+    icon: "🔥",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "workout-intensity-high-25",
+    title: "HIIT Enthusiast",
+    description: "Complete 25 high-intensity workouts",
+    category: "workout",
+    icon: "🔥",
+    tier: "platinum",
+    progress: 0,
+    target: 25,
+    completed: false,
+    points: 350
+  },
+  {
+    id: "workout-intensity-high-50",
+    title: "HIIT Master",
+    description: "Complete 50 high-intensity workouts",
+    category: "workout",
+    icon: "🔥",
+    tier: "diamond",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "workout-full-body-10",
+    title: "Full Body Focus",
+    description: "Complete 10 full-body workouts",
+    category: "workout",
+    icon: "👤",
+    tier: "silver",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "workout-full-body-25",
+    title: "Full Body Expert",
+    description: "Complete 25 full-body workouts",
+    category: "workout",
+    icon: "👤",
+    tier: "gold",
+    progress: 0,
+    target: 25,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "workout-full-body-50",
+    title: "Full Body Master",
+    description: "Complete 50 full-body workouts",
+    category: "workout",
+    icon: "👤",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "workout-upper-body-10",
+    title: "Upper Body Builder",
+    description: "Complete 10 upper-body workouts",
+    category: "workout",
+    icon: "💪",
+    tier: "silver",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "workout-upper-body-25",
+    title: "Upper Body Expert",
+    description: "Complete 25 upper-body workouts",
+    category: "workout",
+    icon: "💪",
+    tier: "gold",
+    progress: 0,
+    target: 25,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "workout-upper-body-50",
+    title: "Upper Body Master",
+    description: "Complete 50 upper-body workouts",
+    category: "workout",
+    icon: "💪",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "workout-lower-body-10",
+    title: "Lower Body Builder",
+    description: "Complete 10 lower-body workouts",
+    category: "workout",
+    icon: "🦵",
+    tier: "silver",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "workout-lower-body-25",
+    title: "Lower Body Expert",
+    description: "Complete 25 lower-body workouts",
+    category: "workout",
+    icon: "🦵",
+    tier: "gold",
+    progress: 0,
+    target: 25,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "workout-lower-body-50",
+    title: "Lower Body Master",
+    description: "Complete 50 lower-body workouts",
+    category: "workout",
+    icon: "🦵",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "workout-core-10",
+    title: "Core Builder",
+    description: "Complete 10 core workouts",
+    category: "workout",
+    icon: "🧠",
+    tier: "silver",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "workout-core-25",
+    title: "Core Expert",
+    description: "Complete 25 core workouts",
+    category: "workout",
+    icon: "🧠",
+    tier: "gold",
+    progress: 0,
+    target: 25,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "workout-core-50",
+    title: "Core Master",
+    description: "Complete 50 core workouts",
+    category: "workout",
+    icon: "🧠",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 400
+  },
+  
+  // Additional Streak Achievements
+  {
+    id: "streak-weekly-4",
+    title: "Weekly Commitment",
+    description: "Work out at least 4 times a week for 4 consecutive weeks",
+    category: "streak",
+    icon: "📊",
+    tier: "platinum",
+    progress: 0,
+    target: 4,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "streak-weekly-5",
+    title: "Dedicated Weekly",
+    description: "Work out at least 5 times a week for 4 consecutive weeks",
+    category: "streak",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 4,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "streak-monthly-12",
+    title: "Year-Round Athlete",
+    description: "Work out at least 12 times a month for 12 consecutive months",
+    category: "streak",
+    icon: "📅",
+    tier: "diamond",
+    progress: 0,
+    target: 12,
+    completed: false,
+    points: 1200
+  },
+  {
+    id: "streak-recovery-balance",
+    title: "Balanced Recovery",
+    description: "Maintain a workout-rest pattern for 30 days",
+    category: "streak",
+    icon: "⚖️",
+    tier: "gold",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "streak-comeback-major",
+    title: "Major Comeback",
+    description: "Resume working out after a 30+ day break",
+    category: "streak",
+    icon: "🔄",
+    tier: "gold",
+    progress: 0,
+    target: 1,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "streak-holiday-warrior",
+    title: "Holiday Warrior",
+    description: "Work out on 5 major holidays",
+    category: "streak",
+    icon: "🎄",
+    tier: "gold",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "streak-birthday-workout",
+    title: "Birthday Gains",
+    description: "Work out on your birthday",
+    category: "streak",
+    icon: "🎂",
+    tier: "silver",
+    progress: 0,
+    target: 1,
+    completed: false,
+    points: 100
+  },
+  {
+    id: "streak-new-year",
+    title: "New Year, Same Dedication",
+    description: "Work out on New Year's Day",
+    category: "streak",
+    icon: "🎆",
+    tier: "silver",
+    progress: 0,
+    target: 1,
+    completed: false,
+    points: 100
+  },
+  {
+    id: "streak-monday-10",
+    title: "Monday Motivation",
+    description: "Work out on 10 consecutive Mondays",
+    category: "streak",
+    icon: "📅",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "streak-friday-10",
+    title: "Friday Finisher",
+    description: "Work out on 10 consecutive Fridays",
+    category: "streak",
+    icon: "📅",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 200
+  },
+  
+  // Additional Weight Achievements
+  {
+    id: "weight-gain-muscle-1",
+    title: "Muscle Builder",
+    description: "Gain 1 kg of muscle mass",
+    category: "weight",
+    icon: "📈",
+    tier: "bronze",
+    progress: 0,
+    target: 1,
+    completed: false,
+    points: 50
+  },
+  {
+    id: "weight-gain-muscle-5",
+    title: "Muscle Gainer",
+    description: "Gain 5 kg of muscle mass",
+    category: "weight",
+    icon: "📈",
+    tier: "silver",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "weight-gain-muscle-10",
+    title: "Serious Muscle",
+    description: "Gain 10 kg of muscle mass",
+    category: "weight",
+    icon: "📈",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "weight-body-fat-reduction-5",
+    title: "Fat Loss Beginner",
+    description: "Reduce body fat percentage by 5%",
+    category: "weight",
+    icon: "📉",
+    tier: "silver",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "weight-body-fat-reduction-10",
+    title: "Fat Loss Expert",
+    description: "Reduce body fat percentage by 10%",
+    category: "weight",
+    icon: "📉",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "weight-body-fat-reduction-15",
+    title: "Fat Loss Master",
+    description: "Reduce body fat percentage by 15%",
+    category: "weight",
+    icon: "📉",
+    tier: "platinum",
+    progress: 0,
+    target: 15,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "weight-maintain-180",
+    title: "Maintenance Expert",
+    description: "Maintain your goal weight for 180 days",
+    category: "weight",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 180,
+    completed: false,
+    points: 1000
+  },
+  {
+    id: "weight-maintain-365",
+    title: "Maintenance Master",
+    description: "Maintain your goal weight for 365 days",
+    category: "weight",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 365,
+    completed: false,
+    points: 2000
+  },
+  {
+    id: "weight-track-180",
+    title: "Weight Tracking Expert",
+    description: "Track your weight for 180 consecutive days",
+    category: "weight",
+    icon: "⚖️",
+    tier: "diamond",
+    progress: 0,
+    target: 180,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "weight-track-365",
+    title: "Weight Tracking Master",
+    description: "Track your weight for 365 consecutive days",
+    category: "weight",
+    icon: "⚖️",
+    tier: "diamond",
+    progress: 0,
+    target: 365,
+    completed: false,
+    points: 1000
+  },
+  {
+    id: "weight-waist-reduction-5",
+    title: "Waist Reducer",
+    description: "Reduce your waist circumference by 5 cm",
+    category: "weight",
+    icon: "📏",
+    tier: "silver",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "weight-waist-reduction-10",
+    title: "Significant Waist Reduction",
+    description: "Reduce your waist circumference by 10 cm",
+    category: "weight",
+    icon: "📏",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 300
+  },
+  
+  // Additional Steps Achievements
+  {
+    id: "steps-35000",
+    title: "Ultra Walker",
+    description: "Walk 35,000 steps in a day",
+    category: "steps",
+    icon: "👣",
+    tier: "diamond",
+    progress: 0,
+    target: 35000,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "steps-40000",
+    title: "Step Phenomenon",
+    description: "Walk 40,000 steps in a day",
+    category: "steps",
+    icon: "👣",
+    tier: "diamond",
+    progress: 0,
+    target: 40000,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "steps-50000",
+    title: "Step Superhuman",
+    description: "Walk 50,000 steps in a day",
+    category: "steps",
+    icon: "👣",
+    tier: "diamond",
+    progress: 0,
+    target: 50000,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "steps-750k",
+    title: "Step Titan",
+    description: "Walk 750,000 steps in a month",
+    category: "steps",
+    icon: "👣",
+    tier: "diamond",
+    progress: 0,
+    target: 750000,
+    completed: false,
+    points: 750
+  },
+  {
+    id: "steps-2m",
+    title: "Two Million Step Club",
+    description: "Walk 2,000,000 steps total",
+    category: "steps",
+    icon: "👣",
+    tier: "diamond",
+    progress: 0,
+    target: 2000000,
+    completed: false,
+    points: 2000
+  },
+  {
+    id: "steps-5m",
+    title: "Five Million Step Club",
+    description: "Walk 5,000,000 steps total",
+    category: "steps",
+    icon: "👣",
+    tier: "diamond",
+    progress: 0,
+    target: 5000000,
+    completed: false,
+    points: 5000
+  },
+  {
+    id: "steps-streak-60",
+    title: "Step Dedication",
+    description: "Walk at least 8,000 steps for 60 consecutive days",
+    category: "steps",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 60,
+    completed: false,
+    points: 600
+  },
+  {
+    id: "steps-streak-90",
+    title: "Step Obsession",
+    description: "Walk at least 8,000 steps for 90 consecutive days",
+    category: "steps",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 90,
+    completed: false,
+    points: 900
+  },
+  {
+    id: "steps-streak-180",
+    title: "Step Lifestyle",
+    description: "Walk at least 8,000 steps for 180 consecutive days",
+    category: "steps",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 180,
+    completed: false,
+    points: 1800
+  },
+  {
+    id: "steps-streak-365",
+    title: "Step Devotion",
+    description: "Walk at least 8,000 steps for 365 consecutive days",
+    category: "steps",
+    icon: "📊",
+    tier: "diamond",
+    progress: 0,
+    target: 365,
+    completed: false,
+    points: 3650
+  },
+  {
+    id: "steps-weekend-100k",
+    title: "Weekend Step Champion",
+    description: "Walk 100,000 steps in a single weekend",
+    category: "steps",
+    icon: "🏞️",
+    tier: "platinum",
+    progress: 0,
+    target: 100000,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "steps-distance-10km",
+    title: "10K Walker",
+    description: "Walk 10 kilometers in a day",
+    category: "steps",
+    icon: "🗺️",
+    tier: "silver",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 100
+  },
+  {
+    id: "steps-distance-21km",
+    title: "Half-Marathon Walker",
+    description: "Walk 21 kilometers in a day",
+    category: "steps",
+    icon: "🗺️",
+    tier: "gold",
+    progress: 0,
+    target: 21,
+    completed: false,
+    points: 210
+  },
+  {
+    id: "steps-distance-42km",
+    title: "Marathon Walker",
+    description: "Walk 42 kilometers in a day",
+    category: "steps",
+    icon: "🗺️",
+    tier: "platinum",
+    progress: 0,
+    target: 42,
+    completed: false,
+    points: 420
+  },
+  
+  // Additional Nutrition Achievements
+  {
+    id: "nutrition-log-90",
+    title: "Nutrition Master",
+    description: "Log all meals for 90 consecutive days",
+    category: "nutrition",
+    icon: "🍎",
+    tier: "diamond",
+    progress: 0,
+    target: 90,
+    completed: false,
+    points: 900
+  },
+  {
+    id: "nutrition-log-180",
+    title: "Nutrition Guru",
+    description: "Log all meals for 180 consecutive days",
+    category: "nutrition",
+    icon: "🍎",
+    tier: "diamond",
+    progress: 0,
+    target: 180,
+    completed: false,
+    points: 1800
+  },
+  {
+    id: "nutrition-log-365",
+    title: "Nutrition Devotee",
+    description: "Log all meals for 365 consecutive days",
+    category: "nutrition",
+    icon: "🍎",
+    tier: "diamond",
+    progress: 0,
+    target: 365,
+    completed: false,
+    points: 3650
+  },
+  {
+    id: "nutrition-protein-goal-30",
+    title: "Protein Champion",
+    description: "Meet your protein goal for 30 consecutive days",
+    category: "nutrition",
+    icon: "🥩",
+    tier: "platinum",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "nutrition-protein-goal-90",
+    title: "Protein Master",
+    description: "Meet your protein goal for 90 consecutive days",
+    category: "nutrition",
+    icon: "🥩",
+    tier: "diamond",
+    progress: 0,
+    target: 90,
+    completed: false,
+    points: 900
+  },
+  {
+    id: "nutrition-balanced-30",
+    title: "Macro Master",
+    description: "Maintain balanced macros for 30 days",
+    category: "nutrition",
+    icon: "⚖️",
+    tier: "platinum",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "nutrition-balanced-90",
+    title: "Macro Guru",
+    description: "Maintain balanced macros for 90 days",
+    category: "nutrition",
+    icon: "⚖️",
+    tier: "diamond",
+    progress: 0,
+    target: 90,
+    completed: false,
+    points: 900
+  },
+  {
+    id: "nutrition-water-4l",
+    title: "Hydration Master",
+    description: "Drink 4L of water daily for 7 days",
+    category: "nutrition",
+    icon: "💧",
+    tier: "platinum",
+    progress: 0,
+    target: 7,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "nutrition-water-30-days",
+    title: "Hydration Habit",
+    description: "Meet your water goal for 30 consecutive days",
+    category: "nutrition",
+    icon: "💧",
+    tier: "platinum",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "nutrition-water-90-days",
+    title: "Hydration Lifestyle",
+    description: "Meet your water goal for 90 consecutive days",
+    category: "nutrition",
+    icon: "💧",
+    tier: "diamond",
+    progress: 0,
+    target: 90,
+    completed: false,
+    points: 900
+  },
+  {
+    id: "nutrition-calorie-goal-30",
+    title: "Calorie Master",
+    description: "Stay within your calorie goal for 30 days",
+    category: "nutrition",
+    icon: "🔢",
+    tier: "diamond",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "nutrition-calorie-goal-90",
+    title: "Calorie Guru",
+    description: "Stay within your calorie goal for 90 days",
+    category: "nutrition",
+    icon: "🔢",
+    tier: "diamond",
+    progress: 0,
+    target: 90,
+    completed: false,
+    points: 900
+  },
+  {
+    id: "nutrition-variety-50",
+    title: "Nutrition Diversity",
+    description: "Log 50 different foods in a month",
+    category: "nutrition",
+    icon: "🥗",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "nutrition-variety-100",
+    title: "Nutrition Explorer",
+    description: "Log 100 different foods in a month",
+    category: "nutrition",
+    icon: "🥗",
+    tier: "diamond",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "nutrition-photo-50",
+    title: "Food Photography Expert",
+    description: "Take 50 food photos",
+    category: "nutrition",
+    icon: "📸",
+    tier: "gold",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "nutrition-photo-100",
+    title: "Food Photography Master",
+    description: "Take 100 food photos",
+    category: "nutrition",
+    icon: "📸",
+    tier: "platinum",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "nutrition-vegetable-servings",
+    title: "Vegetable Enthusiast",
+    description: "Log 5 servings of vegetables daily for 7 days",
+    category: "nutrition",
+    icon: "🥦",
+    tier: "gold",
+    progress: 0,
+    target: 7,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "nutrition-fruit-servings",
+    title: "Fruit Lover",
+    description: "Log 3 servings of fruit daily for 7 days",
+    category: "nutrition",
+    icon: "🍎",
+    tier: "gold",
+    progress: 0,
+    target: 7,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "nutrition-whole-grains",
+    title: "Whole Grain Champion",
+    description: "Choose whole grains over refined grains for 14 days",
+    category: "nutrition",
+    icon: "🌾",
+    tier: "gold",
+    progress: 0,
+    target: 14,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "nutrition-meal-prep-4",
+    title: "Meal Prep Beginner",
+    description: "Prepare meals in advance for 4 consecutive weeks",
+    category: "nutrition",
+    icon: "🍱",
+    tier: "silver",
+    progress: 0,
+    target: 4,
+    completed: false,
+    points: 100
+  },
+  {
+    id: "nutrition-meal-prep-12",
+    title: "Meal Prep Master",
+    description: "Prepare meals in advance for 12 consecutive weeks",
+    category: "nutrition",
+    icon: "🍱",
+    tier: "gold",
+    progress: 0,
+    target: 12,
+    completed: false,
+    points: 300
+  },
+  
+  // Additional Special Achievements
+  {
+    id: "special-photo-series-12",
+    title: "Transformation Chronicler",
+    description: "Take progress photos for 12 consecutive months",
+    category: "special",
+    icon: "📸",
+    tier: "platinum",
+    progress: 0,
+    target: 12,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "special-20-pr",
+    title: "Record Master",
+    description: "Set 20 personal records",
+    category: "special",
+    icon: "🏅",
+    tier: "diamond",
+    progress: 0,
+    target: 20,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "special-50-pr",
+    title: "Record Legend",
+    description: "Set 50 personal records",
+    category: "special",
+    icon: "🏅",
+    tier: "diamond",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 1000
+  },
+  {
+    id: "special-ai-10",
+    title: "AI Enthusiast",
+    description: "Use the AI assistant 10 times",
+    category: "special",
+    icon: "🤖",
+    tier: "silver",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 50
+  },
+  {
+    id: "special-ai-50",
+    title: "AI Partner",
+    description: "Use the AI assistant 50 times",
+    category: "special",
+    icon: "🤖",
+    tier: "gold",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "special-ai-100",
+    title: "AI Symbiosis",
+    description: "Use the AI assistant 100 times",
+    category: "special",
+    icon: "🤖",
+    tier: "platinum",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "special-share-progress-10",
+    title: "Social Fitness Influencer",
+    description: "Share your progress on social media 10 times",
+    category: "special",
+    icon: "📱",
+    tier: "gold",
+    progress: 0,
+    target: 10,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "special-share-progress-50",
+    title: "Fitness Inspiration",
+    description: "Share your progress on social media 50 times",
+    category: "special",
+    icon: "📱",
+    tier: "platinum",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "special-app-usage-100",
+    title: "App Enthusiast",
+    description: "Use the app for 100 days",
+    category: "special",
+    icon: "📱",
+    tier: "gold",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 200
+  },
+  {
+    id: "special-app-usage-200",
+    title: "App Devotee",
+    description: "Use the app for 200 days",
+    category: "special",
+    icon: "📱",
+    tier: "platinum",
+    progress: 0,
+    target: 200,
+    completed: false,
+    points: 400
+  },
+  {
+    id: "special-app-2-year",
+    title: "Two-Year Anniversary",
+    description: "Use the app for 730 days",
+    category: "special",
+    icon: "🎂",
+    tier: "diamond",
+    progress: 0,
+    target: 730,
+    completed: false,
+    points: 1000
+  },
+  {
+    id: "special-challenge-5",
+    title: "Challenge Taker",
+    description: "Complete 5 challenges",
+    category: "special",
+    icon: "🏆",
+    tier: "silver",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "special-challenge-15",
+    title: "Challenge Master",
+    description: "Complete 15 challenges",
+    category: "special",
+    icon: "🏆",
+    tier: "gold",
+    progress: 0,
+    target: 15,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "special-challenge-30",
+    title: "Challenge Champion",
+    description: "Complete 30 challenges",
+    category: "special",
+    icon: "🏆",
+    tier: "platinum",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 600
+  },
+  {
+    id: "special-challenge-50",
+    title: "Challenge Legend",
+    description: "Complete 50 challenges",
+    category: "special",
+    icon: "🏆",
+    tier: "diamond",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 1000
+  },
+  {
+    id: "special-quest-50",
+    title: "Quest Seeker",
+    description: "Complete 50 daily quests",
+    category: "special",
+    icon: "📜",
+    tier: "gold",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 250
+  },
+  {
+    id: "special-quest-100",
+    title: "Quest Master",
+    description: "Complete 100 daily quests",
+    category: "special",
+    icon: "📜",
+    tier: "platinum",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "special-quest-365",
+    title: "Quest Legend",
+    description: "Complete 365 daily quests",
+    category: "special",
+    icon: "📜",
+    tier: "diamond",
+    progress: 0,
+    target: 365,
+    completed: false,
+    points: 1500
+  },
+  {
+    id: "special-reward-5",
+    title: "Reward Collector",
+    description: "Unlock 5 rewards",
+    category: "special",
+    icon: "🎁",
+    tier: "silver",
+    progress: 0,
+    target: 5,
+    completed: false,
+    points: 150
+  },
+  {
+    id: "special-reward-15",
+    title: "Reward Hunter",
+    description: "Unlock 15 rewards",
+    category: "special",
+    icon: "🎁",
+    tier: "gold",
+    progress: 0,
+    target: 15,
+    completed: false,
+    points: 300
+  },
+  {
+    id: "special-reward-30",
+    title: "Reward Master",
+    description: "Unlock 30 rewards",
+    category: "special",
+    icon: "🎁",
+    tier: "platinum",
+    progress: 0,
+    target: 30,
+    completed: false,
+    points: 600
+  },
+  {
+    id: "special-achievement-50",
+    title: "Achievement Hunter",
+    description: "Unlock 50 achievements",
+    category: "special",
+    icon: "🏆",
+    tier: "gold",
+    progress: 0,
+    target: 50,
+    completed: false,
+    points: 500
+  },
+  {
+    id: "special-achievement-100",
+    title: "Achievement Master",
+    description: "Unlock 100 achievements",
+    category: "special",
+    icon: "🏆",
+    tier: "platinum",
+    progress: 0,
+    target: 100,
+    completed: false,
+    points: 1000
+  },
+  {
+    id: "special-achievement-150",
+    title: "Achievement Legend",
+    description: "Unlock 150 achievements",
+    category: "special",
+    icon: "🏆",
+    tier: "diamond",
+    progress: 0,
+    target: 150,
+    completed: false,
+    points: 1500
+  },
+  {
+    id: "special-achievement-200",
+    title: "Achievement God",
+    description: "Unlock all 200 achievements",
+    category: "special",
+    icon: "👑",
+    tier: "diamond",
+    progress: 0,
+    target: 200,
+    completed: false,
+    points: 2000
   }
 ];
 
@@ -1376,6 +2744,7 @@ export const useGamificationStore = create<GamificationState>()(
             // Workout type achievements
             case "workout-strength-10":
             case "workout-strength-50":
+            case "workout-strength-100":
               const strengthWorkouts = workoutStore.workoutLogs.filter(
                 log => log.completed && log.type === "strength"
               ).length;
@@ -1384,6 +2753,7 @@ export const useGamificationStore = create<GamificationState>()(
               
             case "workout-cardio-10":
             case "workout-cardio-50":
+            case "workout-cardio-100":
               const cardioWorkouts = workoutStore.workoutLogs.filter(
                 log => log.completed && log.type === "cardio"
               ).length;
@@ -1392,6 +2762,7 @@ export const useGamificationStore = create<GamificationState>()(
               
             case "workout-flexibility-10":
             case "workout-flexibility-30":
+            case "workout-flexibility-50":
               const flexibilityWorkouts = workoutStore.workoutLogs.filter(
                 log => log.completed && log.type === "flexibility"
               ).length;
@@ -1402,6 +2773,7 @@ export const useGamificationStore = create<GamificationState>()(
             case "workout-duration-30":
             case "workout-duration-60":
             case "workout-duration-90":
+            case "workout-duration-120":
               // These would need to be checked when a workout is completed
               // based on the duration of the workout
               break;
@@ -1409,6 +2781,8 @@ export const useGamificationStore = create<GamificationState>()(
             // Workout variety achievements
             case "workout-variety-5":
             case "workout-variety-10":
+            case "workout-variety-15":
+            case "workout-variety-20":
               const uniqueWorkoutTypes = new Set(
                 workoutStore.workoutLogs
                   .filter(log => log.completed)
@@ -1419,6 +2793,7 @@ export const useGamificationStore = create<GamificationState>()(
               
             // Time-based workout achievements
             case "workout-early-bird":
+            case "workout-early-bird-20":
               const earlyWorkouts = workoutStore.workoutLogs.filter(log => {
                 if (!log.completed) return false;
                 const workoutTime = new Date(log.date);
@@ -1428,6 +2803,7 @@ export const useGamificationStore = create<GamificationState>()(
               break;
               
             case "workout-night-owl":
+            case "workout-night-owl-20":
               const nightWorkouts = workoutStore.workoutLogs.filter(log => {
                 if (!log.completed) return false;
                 const workoutTime = new Date(log.date);
@@ -1437,6 +2813,8 @@ export const useGamificationStore = create<GamificationState>()(
               break;
               
             case "workout-weekend-warrior":
+            case "workout-weekend-warrior-25":
+            case "workout-weekend-warrior-50":
               const weekendWorkouts = workoutStore.workoutLogs.filter(log => {
                 if (!log.completed) return false;
                 const workoutDay = new Date(log.date).getDay();
@@ -1460,18 +2838,24 @@ export const useGamificationStore = create<GamificationState>()(
               
             // Streak comeback achievement
             case "streak-comeback":
+            case "streak-comeback-major":
               // This would need special handling when a user resumes after a break
               break;
               
             // Weekly consistency achievement
             case "streak-3-weeks":
+            case "streak-weekly-4":
+            case "streak-weekly-5":
+            case "streak-monthly-12":
               // This would need special tracking of weekly workout counts
               break;
               
             // Weight achievements
             case "weight-track-7":
             case "weight-track-30":
-            case "weight-track-90": {
+            case "weight-track-90":
+            case "weight-track-180":
+            case "weight-track-365": {
               // Count consecutive days of weight tracking
               const weightLogsTrack = healthStore.weightLogs;
               if (weightLogsTrack.length > 0) {
@@ -1527,6 +2911,8 @@ export const useGamificationStore = create<GamificationState>()(
               
             case "weight-maintain-30":
             case "weight-maintain-90":
+            case "weight-maintain-180":
+            case "weight-maintain-365":
               // These would need special tracking of weight maintenance
               break;
               
@@ -1541,6 +2927,9 @@ export const useGamificationStore = create<GamificationState>()(
             case "steps-20000":
             case "steps-25000":
             case "steps-30000":
+            case "steps-35000":
+            case "steps-40000":
+            case "steps-50000":
               // Get today's steps
               const todaySteps = healthStore.getStepsForDate(new Date().toISOString())?.steps || 0;
               progress = todaySteps;
@@ -1555,6 +2944,7 @@ export const useGamificationStore = create<GamificationState>()(
               
             case "steps-250k":
             case "steps-500k":
+            case "steps-750k":
               // Calculate monthly steps
               const monthlySteps = healthStore.getStepsForMonth()
                 .reduce((total, log) => total + log.steps, 0);
@@ -1562,6 +2952,8 @@ export const useGamificationStore = create<GamificationState>()(
               break;
               
             case "steps-1m":
+            case "steps-2m":
+            case "steps-5m":
               // Calculate total steps
               const totalSteps = healthStore.stepLogs
                 .reduce((total, log) => total + log.steps, 0);
@@ -1570,16 +2962,22 @@ export const useGamificationStore = create<GamificationState>()(
               
             case "steps-streak-7":
             case "steps-streak-30":
+            case "steps-streak-60":
+            case "steps-streak-90":
+            case "steps-streak-180":
+            case "steps-streak-365":
               // These would need special tracking of step streaks
               break;
               
             case "steps-weekend-50k":
+            case "steps-weekend-100k":
               // This would need special tracking of weekend steps
               break;
               
             // Special achievements
             case "special-first-photo":
             case "special-photo-series":
+            case "special-photo-series-12":
               // These would need to be integrated with the photo store
               break;
               
