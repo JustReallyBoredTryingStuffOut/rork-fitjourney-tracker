@@ -28,8 +28,8 @@ export default function AddWorkoutScheduleScreen() {
   const [showWorkoutSelector, setShowWorkoutSelector] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // New state for schedule type
-  const [scheduleType, setScheduleType] = useState<'recurring' | 'one-time'>('recurring');
+  // Schedule type state
+  const [scheduleType, setScheduleType] = useState<'recurring' | 'one-time'>('one-time');
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('weekly');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -40,7 +40,22 @@ export default function AddWorkoutScheduleScreen() {
     if (params.workoutId) {
       setSelectedWorkoutId(params.workoutId as string);
     }
-  }, [params.workoutId]);
+    
+    // Check if a date was passed in params
+    if (params.selectedDate) {
+      try {
+        const date = new Date(params.selectedDate as string);
+        if (!isNaN(date.getTime())) {
+          setSelectedDate(date);
+          setSelectedDay(date.getDay());
+          // Default to one-time schedule when a specific date is selected
+          setScheduleType('one-time');
+        }
+      } catch (error) {
+        console.error("Error parsing date from params:", error);
+      }
+    }
+  }, [params.workoutId, params.selectedDate]);
   
   // Days of the week
   const days = [
@@ -247,7 +262,7 @@ export default function AddWorkoutScheduleScreen() {
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Schedule a Workout</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Add a workout to your weekly schedule</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Add a workout to your schedule</Text>
         </View>
         
         <View style={[styles.section, { backgroundColor: colors.card, shadowColor: "#000" }]}>
@@ -284,29 +299,6 @@ export default function AddWorkoutScheduleScreen() {
               style={[
                 styles.scheduleTypeButton,
                 { backgroundColor: colors.background },
-                scheduleType === 'recurring' && [styles.selectedScheduleType, { backgroundColor: colors.primary }]
-              ]}
-              onPress={() => setScheduleType('recurring')}
-            >
-              <Repeat 
-                size={20} 
-                color={scheduleType === 'recurring' ? colors.white : colors.textSecondary} 
-                style={styles.scheduleTypeIcon}
-              />
-              <Text
-                style={[
-                  styles.scheduleTypeText,
-                  { color: scheduleType === 'recurring' ? colors.white : colors.text }
-                ]}
-              >
-                Recurring
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.scheduleTypeButton,
-                { backgroundColor: colors.background },
                 scheduleType === 'one-time' && [styles.selectedScheduleType, { backgroundColor: colors.primary }]
               ]}
               onPress={() => setScheduleType('one-time')}
@@ -323,6 +315,29 @@ export default function AddWorkoutScheduleScreen() {
                 ]}
               >
                 One-time
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.scheduleTypeButton,
+                { backgroundColor: colors.background },
+                scheduleType === 'recurring' && [styles.selectedScheduleType, { backgroundColor: colors.primary }]
+              ]}
+              onPress={() => setScheduleType('recurring')}
+            >
+              <Repeat 
+                size={20} 
+                color={scheduleType === 'recurring' ? colors.white : colors.textSecondary} 
+                style={styles.scheduleTypeIcon}
+              />
+              <Text
+                style={[
+                  styles.scheduleTypeText,
+                  { color: scheduleType === 'recurring' ? colors.white : colors.text }
+                ]}
+              >
+                Recurring
               </Text>
             </TouchableOpacity>
           </View>

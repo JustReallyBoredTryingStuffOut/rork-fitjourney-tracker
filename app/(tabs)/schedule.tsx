@@ -145,20 +145,67 @@ export default function ScheduleScreen() {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     
-    // Reset selections
-    setSelectedWorkout(null);
-    setSelectedScheduledWorkout(null);
-    
-    // Check for completed workouts on this date
-    const logs = getWorkoutsForDate(date);
-    if (logs.length > 0 && showCompletedWorkouts) {
-      setSelectedWorkout(logs[0].id);
-    }
-    
-    // Check for scheduled workouts on this date
-    const scheduledForDate = getScheduledWorkoutsForDate(date);
-    if (scheduledForDate.length > 0 && showScheduledWorkouts) {
-      setSelectedScheduledWorkout(scheduledForDate[0].id);
+    // Check if the user wants to add a workout for this date
+    const today = new Date();
+    if (date >= today || (date.getDate() === today.getDate() && 
+                          date.getMonth() === today.getMonth() && 
+                          date.getFullYear() === today.getFullYear())) {
+      // Ask if they want to schedule a workout for this date
+      Alert.alert(
+        "Schedule Workout",
+        `Would you like to schedule a workout for ${formatDate(date)}?`,
+        [
+          {
+            text: "No, just view",
+            style: "cancel",
+            onPress: () => {
+              // Reset selections
+              setSelectedWorkout(null);
+              setSelectedScheduledWorkout(null);
+              
+              // Check for completed workouts on this date
+              const logs = getWorkoutsForDate(date);
+              if (logs.length > 0 && showCompletedWorkouts) {
+                setSelectedWorkout(logs[0].id);
+              }
+              
+              // Check for scheduled workouts on this date
+              const scheduledForDate = getScheduledWorkoutsForDate(date);
+              if (scheduledForDate.length > 0 && showScheduledWorkouts) {
+                setSelectedScheduledWorkout(scheduledForDate[0].id);
+              }
+            }
+          },
+          {
+            text: "Schedule",
+            onPress: () => {
+              // Navigate to add workout schedule with the selected date
+              const dateString = date.toISOString();
+              router.push({
+                pathname: "/add-workout-schedule",
+                params: { selectedDate: dateString }
+              });
+            }
+          }
+        ]
+      );
+    } else {
+      // For past dates, just show the workouts
+      // Reset selections
+      setSelectedWorkout(null);
+      setSelectedScheduledWorkout(null);
+      
+      // Check for completed workouts on this date
+      const logs = getWorkoutsForDate(date);
+      if (logs.length > 0 && showCompletedWorkouts) {
+        setSelectedWorkout(logs[0].id);
+      }
+      
+      // Check for scheduled workouts on this date
+      const scheduledForDate = getScheduledWorkoutsForDate(date);
+      if (scheduledForDate.length > 0 && showScheduledWorkouts) {
+        setSelectedScheduledWorkout(scheduledForDate[0].id);
+      }
     }
   };
   
