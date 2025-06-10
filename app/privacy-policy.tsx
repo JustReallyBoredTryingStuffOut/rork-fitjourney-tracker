@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { getColors } from '@/constants/colors';
 import { Stack, useRouter } from 'expo-router';
@@ -35,6 +35,16 @@ export default function PrivacyPolicy() {
           headerTintColor: colors.text,
         }} 
       />
+      
+      {/* Additional back button at the top of content for visibility */}
+      <TouchableOpacity 
+        onPress={handleGoBack} 
+        style={[styles.visibleBackButton, { backgroundColor: colors.card }]}
+        accessibilityLabel="Go back"
+      >
+        <ArrowLeft size={20} color={colors.primary} />
+        <Text style={[styles.backButtonText, { color: colors.text }]}>Back</Text>
+      </TouchableOpacity>
       
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
@@ -178,5 +188,27 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     borderRadius: 8,
+  },
+  visibleBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontWeight: '500',
+    fontSize: 16,
   },
 });
