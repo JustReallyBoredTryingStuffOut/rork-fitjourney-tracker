@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
           <Text style={[styles.bulletPoint, { color: colors.text }]}>
             • Health and Fitness Data: Workout records, nutrition logs, step counts, weight logs
           </Text>
-          <Text style{[styles.bulletPoint, { color: colors.text }]}>
+          <Text style={[styles.bulletPoint, { color: colors.text }]}>
             • Photos: Progress photos and food photos that you choose to upload. These photos are stored locally on your device and are encrypted to ensure your privacy.
           </Text>
           <Text style={[styles.bulletPoint, { color: colors.text }]}>
