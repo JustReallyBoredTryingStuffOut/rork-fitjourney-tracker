@@ -46,12 +46,19 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
   // For web platform, we'll use a different approach
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.container, { height }]}>
-        <iframe
-          src={embedUrl}
-          style={{ width: "100%", height: "100%", border: "none" }}
-          allowFullScreen
-        />
+      <View style={styles.videoContainer}>
+        <View style={[styles.container, { height }]}>
+          <iframe
+            src={embedUrl}
+            style={{ width: "100%", height: "100%", border: "none" }}
+            allowFullScreen
+          />
+        </View>
+        <Text style={styles.attributionText}>
+          {isYouTube ? "Video content provided by YouTube. All rights belong to their respective owners." : 
+           isTikTok ? "Video content provided by TikTok. All rights belong to their respective owners." :
+           "Video content provided by third party. All rights belong to their respective owners."}
+        </Text>
       </View>
     );
   }
@@ -66,25 +73,36 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
   }
   
   return (
-    <View style={[styles.container, { height }]}>
-      <WebView
-        source={{ uri: embedUrl }}
-        style={styles.webview}
-        allowsFullscreenVideo
-        javaScriptEnabled
-        domStorageEnabled
-      />
-      <TouchableOpacity 
-        style={styles.openButton}
-        onPress={handleOpenLink}
-      >
-        <ExternalLink size={16} color="#FFFFFF" />
-      </TouchableOpacity>
+    <View style={styles.videoContainer}>
+      <View style={[styles.container, { height }]}>
+        <WebView
+          source={{ uri: embedUrl }}
+          style={styles.webview}
+          allowsFullscreenVideo
+          javaScriptEnabled
+          domStorageEnabled
+        />
+        <TouchableOpacity 
+          style={styles.openButton}
+          onPress={handleOpenLink}
+        >
+          <ExternalLink size={16} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.attributionText}>
+        {isYouTube ? "Video content provided by YouTube. All rights belong to their respective owners." : 
+         isTikTok ? "Video content provided by TikTok. All rights belong to their respective owners." :
+         "Video content provided by third party. All rights belong to their respective owners."}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  videoContainer: {
+    width: "100%",
+    marginBottom: 12,
+  },
   container: {
     width: "100%",
     borderRadius: 12,
@@ -110,5 +128,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  attributionText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 4,
+    fontStyle: "italic",
   },
 });

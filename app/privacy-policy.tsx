@@ -129,12 +129,32 @@ export default function PrivacyPolicy() {
             Our app is not intended for children under the age of 18. We do not knowingly collect personal information from children under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
           </Text>
           
-          <Text style={[styles.section, { color: colors.text }]}>8. Changes to This Privacy Policy</Text>
+          <Text style={[styles.section, { color: colors.text }]}>8. Third-Party Content and Copyright</Text>
+          <Text style={[styles.paragraph, { color: colors.text }]}>
+            Our app may display exercise tutorial videos from third-party platforms such as YouTube and TikTok. These videos remain the property of their respective creators and are subject to the terms of service of the platforms hosting them. We do not claim ownership of any third-party video content displayed in our app.
+          </Text>
+          <Text style={[styles.bulletPoint, { color: colors.text }]}>
+            • All YouTube videos are property of their respective creators and YouTube/Google LLC
+          </Text>
+          <Text style={[styles.bulletPoint, { color: colors.text }]}>
+            • All TikTok videos are property of their respective creators and TikTok/ByteDance Ltd
+          </Text>
+          <Text style={[styles.bulletPoint, { color: colors.text }]}>
+            • Videos are displayed through official embedding features provided by these platforms
+          </Text>
+          <Text style={[styles.bulletPoint, { color: colors.text }]}>
+            • We do not host, store, or modify any third-party video content
+          </Text>
+          <Text style={[styles.paragraph, { color: colors.text }]}>
+            If you are a content creator and believe your content is being used inappropriately in our app, please contact us at the email address below.
+          </Text>
+          
+          <Text style={[styles.section, { color: colors.text }]}>9. Changes to This Privacy Policy</Text>
           <Text style={[styles.paragraph, { color: colors.text }]}>
             We may update our Privacy Policy from time to time. We will notify you of any significant changes by posting the new Privacy Policy within the app and updating the 'Last Updated' date.
           </Text>
           
-          <Text style={[styles.section, { color: colors.text }]}>9. Contact Us</Text>
+          <Text style={[styles.section, { color: colors.text }]}>10. Contact Us</Text>
           <Text style={[styles.paragraph, { color: colors.text }]}>
             If you have any questions about this Privacy Policy or our data practices, or to exercise your GDPR rights, please contact us at:
           </Text>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
-import { Play, ArrowLeft } from "lucide-react-native";
+import { Play, ArrowLeft, Info } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useWorkoutStore } from "@/store/workoutStore";
 import * as WebBrowser from "expo-web-browser";
@@ -14,6 +14,7 @@ export default function ExerciseDetailScreen() {
   const router = useRouter();
   const { exercises } = useWorkoutStore();
   const [showVideo, setShowVideo] = useState(false);
+  const [showCopyrightInfo, setShowCopyrightInfo] = useState(false);
   
   const exercise = exercises.find(e => e.id === id);
   
@@ -37,6 +38,10 @@ export default function ExerciseDetailScreen() {
   
   const handleGoBack = () => {
     router.back();
+  };
+  
+  const toggleCopyrightInfo = () => {
+    setShowCopyrightInfo(!showCopyrightInfo);
   };
   
   // Check if this is the face pull exercise
@@ -105,19 +110,53 @@ export default function ExerciseDetailScreen() {
       
       {showVideo && Platform.OS === "web" && exercise.videoUrl && (
         <View style={styles.videoContainer}>
-          <Text style={styles.sectionTitle}>Tutorial Video</Text>
+          <View style={styles.videoHeaderContainer}>
+            <Text style={styles.sectionTitle}>Tutorial Video</Text>
+            <TouchableOpacity 
+              onPress={toggleCopyrightInfo}
+              style={styles.infoButton}
+            >
+              <Info size={18} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          
+          {showCopyrightInfo && (
+            <View style={styles.copyrightInfoContainer}>
+              <Text style={styles.copyrightInfoText}>
+                The video content displayed here is the property of its respective creators and is provided through YouTube/TikTok's embedding services. We do not claim ownership of any third-party video content. For more information, please see our Privacy Policy.
+              </Text>
+            </View>
+          )}
+          
           <VideoEmbed url={exercise.videoUrl} height={240} />
         </View>
       )}
       
       {Platform.OS !== "web" && exercise.videoUrl && (
-        <TouchableOpacity 
-          style={styles.watchVideoButton}
-          onPress={handlePlayVideo}
-        >
-          <Play size={20} color={colors.primary} />
-          <Text style={styles.watchVideoText}>Watch Tutorial Video</Text>
-        </TouchableOpacity>
+        <View style={styles.videoButtonContainer}>
+          <TouchableOpacity 
+            style={styles.watchVideoButton}
+            onPress={handlePlayVideo}
+          >
+            <Play size={20} color={colors.primary} />
+            <Text style={styles.watchVideoText}>Watch Tutorial Video</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={toggleCopyrightInfo}
+            style={styles.infoButtonSmall}
+          >
+            <Info size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+          
+          {showCopyrightInfo && (
+            <View style={styles.copyrightInfoContainer}>
+              <Text style={styles.copyrightInfoText}>
+                The video content accessible through this link is the property of its respective creators and is hosted on YouTube/TikTok. We do not claim ownership of any third-party video content. For more information, please see our Privacy Policy.
+              </Text>
+            </View>
+          )}
+        </View>
       )}
       
       {/* Show animation for face pull exercise */}
@@ -239,6 +278,15 @@ const styles = StyleSheet.create({
   videoContainer: {
     marginBottom: 24,
   },
+  videoHeaderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  videoButtonContainer: {
+    marginBottom: 24,
+  },
   watchVideoButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -246,7 +294,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.highlight,
     borderRadius: 12,
     paddingVertical: 16,
-    marginBottom: 24,
+    marginBottom: 8,
   },
   watchVideoText: {
     fontSize: 16,
@@ -262,5 +310,24 @@ const styles = StyleSheet.create({
   },
   backToExercisesButton: {
     marginBottom: 16,
+  },
+  infoButton: {
+    padding: 8,
+  },
+  infoButtonSmall: {
+    alignSelf: "center",
+    padding: 8,
+  },
+  copyrightInfoContainer: {
+    backgroundColor: colors.card,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  copyrightInfoText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    fontStyle: "italic",
   }
 });
