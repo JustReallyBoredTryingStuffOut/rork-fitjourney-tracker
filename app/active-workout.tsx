@@ -55,47 +55,87 @@ const voiceConfig = {
   language: 'en-GB',
   pitch: 1.05,
   rate: 0.92,
-  // iOS specific voice - Sarah is a high-quality British female voice
-  voice: Platform.OS === 'ios' ? 'com.apple.ttsbundle.Serena-compact' : undefined
 };
 
-// Get available voices on component mount (iOS only)
+// Premium British female voices in order of preference for iOS
+const preferredBritishVoices = [
+  'com.apple.voice.premium.en-GB.Serena',
+  'com.apple.voice.premium.en-GB.Kate',
+  'com.apple.ttsbundle.Serena-compact',
+  'com.apple.ttsbundle.Tessa-compact',
+  'com.apple.voice.compact.en-GB.Serena',
+  'com.apple.voice.compact.en-GB.Kate',
+  'com.apple.eloquence.en-GB.Serena'
+];
+
+// Get available voices on component mount
 let bestBritishFemaleVoice: string | undefined = undefined;
 
-if (Platform.OS === 'ios') {
-  Speech.getAvailableVoicesAsync().then(voices => {
-    // Look for high-quality British female voices in order of preference
-    const preferredVoices = [
-      'com.apple.ttsbundle.Serena-compact',
-      'com.apple.ttsbundle.Tessa-compact',
-      'com.apple.voice.compact.en-GB.Serena',
-      'com.apple.voice.compact.en-GB.Kate',
-      'com.apple.eloquence.en-GB.Serena'
-    ];
+// Function to initialize the best available voice
+const initializeVoice = async () => {
+  if (Platform.OS === 'web') return;
+  
+  try {
+    const voices = await Speech.getAvailableVoicesAsync();
     
-    for (const preferredVoice of preferredVoices) {
+    // First try to find one of our preferred voices
+    for (const preferredVoice of preferredBritishVoices) {
       if (voices.some(v => v.identifier === preferredVoice)) {
         bestBritishFemaleVoice = preferredVoice;
-        break;
+        console.log(`Selected preferred voice: ${preferredVoice}`);
+        return;
       }
     }
     
-    // If no preferred voice found, look for any British female voice
-    if (!bestBritishFemaleVoice) {
-      const britishVoice = voices.find(v => 
-        v.language.includes('en-GB') && 
-        (v.quality === 'Enhanced' || v.quality === 'Premium') &&
-        v.name.includes('female')
-      );
-      
-      if (britishVoice) {
-        bestBritishFemaleVoice = britishVoice.identifier;
-      }
+    // If no preferred voice found, look for any high-quality British female voice
+    const highQualityBritishVoice = voices.find(v => 
+      v.language.includes('en-GB') && 
+      (v.quality === 'Enhanced' || v.quality === 'Premium') &&
+      (v.name.toLowerCase().includes('female') || 
+       v.name.includes('Kate') || 
+       v.name.includes('Serena') || 
+       v.name.includes('Tessa'))
+    );
+    
+    if (highQualityBritishVoice) {
+      bestBritishFemaleVoice = highQualityBritishVoice.identifier;
+      console.log(`Selected high-quality voice: ${highQualityBritishVoice.identifier}`);
+      return;
     }
-  }).catch(err => {
+    
+    // Last resort: any British English voice
+    const anyBritishVoice = voices.find(v => v.language.includes('en-GB'));
+    if (anyBritishVoice) {
+      bestBritishFemaleVoice = anyBritishVoice.identifier;
+      console.log(`Selected fallback British voice: ${anyBritishVoice.identifier}`);
+      return;
+    }
+    
+    // If all else fails, use any English voice
+    const anyEnglishVoice = voices.find(v => v.language.includes('en-'));
+    if (anyEnglishVoice) {
+      bestBritishFemaleVoice = anyEnglishVoice.identifier;
+      console.log(`Selected any English voice: ${anyEnglishVoice.identifier}`);
+    }
+  } catch (err) {
     console.log('Error getting available voices:', err);
-  });
-}
+  }
+};
+
+// Initialize voice when component loads
+initializeVoice();
+
+// Helper function to speak with the best available voice
+const speakWithBestVoice = (text: string) => {
+  if (Platform.OS === 'web') return;
+  
+  const speechOptions = {
+    ...voiceConfig,
+    voice: bestBritishFemaleVoice
+  };
+  
+  Speech.speak(text, speechOptions);
+};
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
@@ -208,16 +248,10 @@ export default function ActiveWorkoutScreen() {
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
       if (activeTimer.isResting && activeTimer.isRunning) {
         // Rest started
-        Speech.speak("Rest period started", {
-          ...voiceConfig,
-          voice: bestBritishFemaleVoice || voiceConfig.voice
-        });
+        speakWithBestVoice("Rest period started");
       } else if (!activeTimer.isResting && activeTimer.isRunning && activeTimer.elapsedTime < 1000) {
         // Workout started
-        Speech.speak("Workout timer started", {
-          ...voiceConfig,
-          voice: bestBritishFemaleVoice || voiceConfig.voice
-        });
+        speakWithBestVoice("Workout timer started");
       }
     }
   }, [activeTimer.isResting, activeTimer.isRunning, activeTimer.elapsedTime]);
@@ -316,10 +350,7 @@ export default function ActiveWorkoutScreen() {
     
     // Voice prompt for workout start
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
-      Speech.speak(`Starting ${workout.name} workout. Let's go!`, {
-        ...voiceConfig,
-        voice: bestBritishFemaleVoice || voiceConfig.voice
-      });
+      speakWithBestVoice(`Starting ${workout.name} workout. Let's go!`);
     }
   };
   
@@ -469,12 +500,11 @@ export default function ActiveWorkoutScreen() {
       return;
     }
     
-    // Check if it's a YouTube or TikTok URL
+    // Check if it's a YouTube URL (TikTok embedding is problematic on iOS)
     const isYouTube = videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be");
-    const isTikTok = videoUrl.includes("tiktok.com");
     
-    if (!isYouTube && !isTikTok) {
-      Alert.alert("Error", "Please enter a valid YouTube or TikTok URL");
+    if (!isYouTube) {
+      Alert.alert("Error", "Please enter a valid YouTube URL. TikTok videos cannot be embedded on iOS.");
       return;
     }
     
@@ -607,10 +637,7 @@ export default function ActiveWorkoutScreen() {
       
       // Provide feedback
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
-        Speech.speak("Exercise order updated", {
-          ...voiceConfig,
-          voice: bestBritishFemaleVoice || voiceConfig.voice
-        });
+        speakWithBestVoice("Exercise order updated");
       }
     }
   };
@@ -627,10 +654,7 @@ export default function ActiveWorkoutScreen() {
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
       const exercise = exercises.find(e => e.id === activeWorkout.exercises[exerciseIndex].exerciseId);
       if (exercise) {
-        Speech.speak(`${exercise.name} completed. Great job!`, {
-          ...voiceConfig,
-          voice: bestBritishFemaleVoice || voiceConfig.voice
-        });
+        speakWithBestVoice(`${exercise.name} completed. Great job!`);
       }
     }
     
@@ -650,10 +674,7 @@ export default function ActiveWorkoutScreen() {
     
     // Voice feedback
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
-      Speech.speak("Starting rest between exercises", {
-        ...voiceConfig,
-        voice: bestBritishFemaleVoice || voiceConfig.voice
-      });
+      speakWithBestVoice("Starting rest between exercises");
     }
   };
   
@@ -920,7 +941,7 @@ export default function ActiveWorkoutScreen() {
             
             <View style={styles.addVideoSection}>
               <Button
-                title="Add YouTube or TikTok Video"
+                title="Add YouTube Video"
                 onPress={handleAddVideo}
                 variant="outline"
                 icon={<Video size={18} color={colors.primary} />}
@@ -1242,7 +1263,7 @@ export default function ActiveWorkoutScreen() {
             </View>
             
             <Text style={styles.videoModalSubtitle}>
-              Paste a YouTube or TikTok URL
+              Paste a YouTube URL
             </Text>
             
             <TextInput

@@ -17,47 +17,87 @@ const voiceConfig = {
   language: 'en-GB',
   pitch: 1.05,
   rate: 0.92,
-  // iOS specific voice - Sarah is a high-quality British female voice
-  voice: Platform.OS === 'ios' ? 'com.apple.ttsbundle.Serena-compact' : undefined
 };
 
-// Get available voices on component mount (iOS only)
+// Premium British female voices in order of preference for iOS
+const preferredBritishVoices = [
+  'com.apple.voice.premium.en-GB.Serena',
+  'com.apple.voice.premium.en-GB.Kate',
+  'com.apple.ttsbundle.Serena-compact',
+  'com.apple.ttsbundle.Tessa-compact',
+  'com.apple.voice.compact.en-GB.Serena',
+  'com.apple.voice.compact.en-GB.Kate',
+  'com.apple.eloquence.en-GB.Serena'
+];
+
+// Get available voices on component mount
 let bestBritishFemaleVoice: string | undefined = undefined;
 
-if (Platform.OS === 'ios') {
-  Speech.getAvailableVoicesAsync().then(voices => {
-    // Look for high-quality British female voices in order of preference
-    const preferredVoices = [
-      'com.apple.ttsbundle.Serena-compact',
-      'com.apple.ttsbundle.Tessa-compact',
-      'com.apple.voice.compact.en-GB.Serena',
-      'com.apple.voice.compact.en-GB.Kate',
-      'com.apple.eloquence.en-GB.Serena'
-    ];
+// Function to initialize the best available voice
+const initializeVoice = async () => {
+  if (Platform.OS === 'web') return;
+  
+  try {
+    const voices = await Speech.getAvailableVoicesAsync();
     
-    for (const preferredVoice of preferredVoices) {
+    // First try to find one of our preferred voices
+    for (const preferredVoice of preferredBritishVoices) {
       if (voices.some(v => v.identifier === preferredVoice)) {
         bestBritishFemaleVoice = preferredVoice;
-        break;
+        console.log(`Selected preferred voice: ${preferredVoice}`);
+        return;
       }
     }
     
-    // If no preferred voice found, look for any British female voice
-    if (!bestBritishFemaleVoice) {
-      const britishVoice = voices.find(v => 
-        v.language.includes('en-GB') && 
-        (v.quality === 'Enhanced' || v.quality === 'Premium') &&
-        v.name.includes('female')
-      );
-      
-      if (britishVoice) {
-        bestBritishFemaleVoice = britishVoice.identifier;
-      }
+    // If no preferred voice found, look for any high-quality British female voice
+    const highQualityBritishVoice = voices.find(v => 
+      v.language.includes('en-GB') && 
+      (v.quality === 'Enhanced' || v.quality === 'Premium') &&
+      (v.name.toLowerCase().includes('female') || 
+       v.name.includes('Kate') || 
+       v.name.includes('Serena') || 
+       v.name.includes('Tessa'))
+    );
+    
+    if (highQualityBritishVoice) {
+      bestBritishFemaleVoice = highQualityBritishVoice.identifier;
+      console.log(`Selected high-quality voice: ${highQualityBritishVoice.identifier}`);
+      return;
     }
-  }).catch(err => {
+    
+    // Last resort: any British English voice
+    const anyBritishVoice = voices.find(v => v.language.includes('en-GB'));
+    if (anyBritishVoice) {
+      bestBritishFemaleVoice = anyBritishVoice.identifier;
+      console.log(`Selected fallback British voice: ${anyBritishVoice.identifier}`);
+      return;
+    }
+    
+    // If all else fails, use any English voice
+    const anyEnglishVoice = voices.find(v => v.language.includes('en-'));
+    if (anyEnglishVoice) {
+      bestBritishFemaleVoice = anyEnglishVoice.identifier;
+      console.log(`Selected any English voice: ${anyEnglishVoice.identifier}`);
+    }
+  } catch (err) {
     console.log('Error getting available voices:', err);
-  });
-}
+  }
+};
+
+// Initialize voice when component loads
+initializeVoice();
+
+// Helper function to speak with the best available voice
+const speakWithBestVoice = (text: string) => {
+  if (Platform.OS === 'web') return;
+  
+  const speechOptions = {
+    ...voiceConfig,
+    voice: bestBritishFemaleVoice
+  };
+  
+  Speech.speak(text, speechOptions);
+};
 
 export default function Timer({ 
   compact = false, 
@@ -96,20 +136,13 @@ export default function Timer({
             
             // Only speak if we haven't spoken this second yet
             if (secondsRemaining <= 10 && secondsRemaining >= 1 && secondsRemaining !== lastSpokenSecond) {
-              // Use the best available British female voice
-              Speech.speak(secondsRemaining.toString(), {
-                ...voiceConfig,
-                voice: bestBritishFemaleVoice || voiceConfig.voice
-              });
+              speakWithBestVoice(secondsRemaining.toString());
               setLastSpokenSecond(secondsRemaining);
             }
             
             // When timer reaches zero
             if (secondsRemaining === 0 && lastSpokenSecond !== 0) {
-              Speech.speak("Rest complete. Ready for next set.", {
-                ...voiceConfig,
-                voice: bestBritishFemaleVoice || voiceConfig.voice
-              });
+              speakWithBestVoice("Rest complete. Ready for next set.");
               setLastSpokenSecond(0);
               
               // Vibrate when timer reaches zero
@@ -138,10 +171,7 @@ export default function Timer({
             
             // Announce every 5 minutes
             if (minutes > 0 && seconds === 0 && minutes % 5 === 0) {
-              Speech.speak(`${minutes} minutes elapsed`, {
-                ...voiceConfig,
-                voice: bestBritishFemaleVoice || voiceConfig.voice
-              });
+              speakWithBestVoice(`${minutes} minutes elapsed`);
             }
           }
         }
@@ -167,25 +197,16 @@ export default function Timer({
       pauseTimer();
       
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
-        Speech.speak("Timer paused", {
-          ...voiceConfig,
-          voice: bestBritishFemaleVoice || voiceConfig.voice
-        });
+        speakWithBestVoice("Timer paused");
       }
     } else {
       startTimer();
       
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
         if (activeTimer.isResting) {
-          Speech.speak("Rest timer started", {
-            ...voiceConfig,
-            voice: bestBritishFemaleVoice || voiceConfig.voice
-          });
+          speakWithBestVoice("Rest timer started");
         } else {
-          Speech.speak("Workout timer started", {
-            ...voiceConfig,
-            voice: bestBritishFemaleVoice || voiceConfig.voice
-          });
+          speakWithBestVoice("Workout timer started");
         }
       }
     }

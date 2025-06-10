@@ -7,15 +7,10 @@ import {
   Animated, 
   PanResponder,
   Dimensions,
-  Platform
+  Platform,
+  Vibration
 } from 'react-native';
-import { 
-  GripVertical, 
-  Check, 
-  Clock, 
-  ChevronDown, 
-  ChevronUp 
-} from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Check, Clock } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Exercise, ExerciseLog } from '@/types';
@@ -36,8 +31,8 @@ type DraggableExerciseCardProps = {
   children: React.ReactNode;
 };
 
-const { height } = Dimensions.get('window');
-const CARD_HEIGHT = 60; // Height for collapsed card
+const CARD_HEIGHT = 80; // Height of collapsed card
+const DRAG_THRESHOLD = 50; // Distance needed to trigger a reorder
 
 export default function DraggableExerciseCard({
   exercise,
@@ -57,129 +52,140 @@ export default function DraggableExerciseCard({
   const { colors } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
-  const cardRef = useRef<View>(null);
+  const screenHeight = Dimensions.get('window').height;
   
-  // Calculate possible positions for snapping
-  const getSnapPoints = () => {
-    const points = [];
-    for (let i = 0; i < totalExercises; i++) {
-      points.push(i * CARD_HEIGHT);
+  // Calculate possible drop positions
+  const getDropIndex = (gestureY: number, cardY: number) => {
+    const relativeY = gestureY - cardY;
+    const direction = relativeY > 0 ? 1 : -1;
+    const distance = Math.abs(relativeY);
+    
+    if (distance > DRAG_THRESHOLD) {
+      const newIndex = index + direction;
+      if (newIndex >= 0 && newIndex < totalExercises) {
+        return newIndex;
+      }
     }
-    return points;
-  };
-
-  // Find the closest snap point
-  const getClosestSnapPoint = (y: number) => {
-    const snapPoints = getSnapPoints();
-    const currentPosition = index * CARD_HEIGHT;
-    const targetPosition = currentPosition + y;
     
-    // Calculate which index this position corresponds to
-    const targetIndex = Math.round(targetPosition / CARD_HEIGHT);
-    
-    // Clamp the index to valid range
-    return Math.max(0, Math.min(totalExercises - 1, targetIndex));
+    return index;
   };
-
-  // Create PanResponder for handling drag gestures
-  const panResponder = Platform.OS !== 'web' ? PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, gestureState) => {
-      // Only respond to vertical movements greater than threshold
-      return Math.abs(gestureState.dy) > 10;
-    },
-    onPanResponderGrant: () => {
-      setIsDragging(true);
-      onDragStart();
-      pan.setValue({ x: 0, y: 0 });
-      
-      // Add visual feedback when dragging starts
-      Animated.timing(pan, {
-        toValue: { x: 0, y: 0 },
-        duration: 100,
-        useNativeDriver: false
-      }).start();
-    },
-    onPanResponderMove: (_, gestureState) => {
-      // Update position based on gesture
-      pan.setValue({ x: 0, y: gestureState.dy });
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      // Calculate the new index based on the gesture
-      const newIndex = getClosestSnapPoint(gestureState.dy);
-      
-      // Animate back to the original position
-      Animated.spring(pan, {
-        toValue: { x: 0, y: 0 },
-        useNativeDriver: false,
-        friction: 5
-      }).start(() => {
-        setIsDragging(false);
+  
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to vertical movements
+        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < 10;
+      },
+      onPanResponderGrant: () => {
+        // Start dragging
+        setIsDragging(true);
+        onDragStart();
         
-        // Only call onDragEnd if the index actually changed
-        if (newIndex !== index) {
-          onDragEnd(newIndex);
+        // Provide haptic feedback when drag starts
+        if (Platform.OS !== 'web') {
+          Vibration.vibrate(50);
         }
-      });
-    }
-  }) : { panHandlers: {} };
-
+        
+        // Store the initial position
+        pan.setOffset({
+          x: pan.x._value,
+          y: pan.y._value
+        });
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (_, gestureState) => {
+        // Reset the pan offset
+        pan.flattenOffset();
+        
+        // Calculate the new index based on the gesture
+        const dropIndex = getDropIndex(gestureState.moveY, gestureState.y0);
+        
+        // Reset the position
+        Animated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+          friction: 5
+        }).start(() => {
+          setIsDragging(false);
+          
+          // Only call onDragEnd if the index changed
+          if (dropIndex !== index) {
+            onDragEnd(dropIndex);
+          }
+        });
+      }
+    })
+  ).current;
+  
+  // Calculate styles for the draggable card
+  const cardStyle = {
+    transform: [{ translateY: pan.y }],
+    zIndex: isDragging ? 999 : 1,
+    shadowOpacity: isDragging ? 0.3 : 0.1,
+    shadowRadius: isDragging ? 10 : 2,
+    elevation: isDragging ? 8 : 2,
+  };
+  
   return (
-    <Animated.View
+    <Animated.View 
       style={[
-        styles.container,
-        {
-          backgroundColor: colors.card,
-          transform: [{ translateY: pan.y }],
-          zIndex: isDragging ? 999 : 1,
-          elevation: isDragging ? 5 : 1,
-          shadowOpacity: isDragging ? 0.3 : 0.1,
-          height: isExpanded ? 'auto' : CARD_HEIGHT,
-        },
-        isDragging && styles.draggingCard,
-        isCompleted && styles.completedCard
+        styles.container, 
+        { backgroundColor: colors.card },
+        cardStyle
       ]}
-      ref={cardRef}
+      {...panResponder.panHandlers}
     >
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          {Platform.OS !== 'web' && (
-            <TouchableOpacity 
-              {...panResponder.panHandlers} 
-              style={[
-                styles.dragHandle,
-                isDragging && styles.activeDragHandle
-              ]}
-              hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-              activeOpacity={0.7}
-            >
-              <GripVertical size={20} color={isDragging ? colors.primary : colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-          <View style={styles.exerciseInfo}>
-            <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={1}>
-              {exercise.name}
-            </Text>
-            <Text style={[styles.exerciseMuscles, { color: colors.primary }]} numberOfLines={1}>
-              {exercise.muscleGroups.join(", ")}
-            </Text>
-          </View>
+      <TouchableOpacity 
+        style={[
+          styles.header,
+          isCompleted && styles.completedHeader
+        ]}
+        onPress={onToggleExpand}
+        activeOpacity={0.7}
+      >
+        <View style={styles.exerciseInfo}>
+          <Text 
+            style={[
+              styles.exerciseName, 
+              { color: isCompleted ? colors.textSecondary : colors.text },
+              isCompleted && styles.completedText
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {exercise.name}
+          </Text>
+          
+          <Text 
+            style={[
+              styles.exerciseDetail, 
+              { color: colors.textSecondary },
+              isCompleted && styles.completedText
+            ]}
+          >
+            {exerciseLog.sets.length} sets • {exercise.muscleGroups.join(', ')}
+          </Text>
         </View>
         
-        <View style={styles.headerRight}>
-          {areAllSetsCompleted && !isCompleted && (
+        <View style={styles.headerActions}>
+          {isCompleted ? (
+            <View style={[styles.completedBadge, { backgroundColor: colors.secondary }]}>
+              <Check size={16} color="#FFFFFF" />
+            </View>
+          ) : areAllSetsCompleted ? (
             <TouchableOpacity
-              style={[styles.completeIconButton, { backgroundColor: colors.success }]}
+              style={[styles.markCompletedButton, { backgroundColor: "rgba(80, 200, 120, 0.1)" }]}
               onPress={onMarkCompleted}
             >
-              <Check size={16} color="#FFFFFF" />
+              <Check size={16} color={colors.secondary} />
             </TouchableOpacity>
-          )}
+          ) : null}
           
-          <TouchableOpacity 
-            style={styles.expandButton}
-            onPress={onToggleExpand}
-          >
+          <TouchableOpacity style={styles.expandButton}>
             {isExpanded ? (
               <ChevronUp size={20} color={colors.textSecondary} />
             ) : (
@@ -187,42 +193,42 @@ export default function DraggableExerciseCard({
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
       
       {isExpanded && (
         <View style={styles.content}>
           {children}
           
-          <View style={styles.footer}>
-            {areAllSetsCompleted && !isCompleted && (
-              <View style={styles.completionActions}>
-                <TouchableOpacity
-                  style={[styles.completeButton, { backgroundColor: colors.success }]}
-                  onPress={onMarkCompleted}
-                >
-                  <Check size={18} color="#FFFFFF" />
-                  <Text style={styles.completeButtonText}>Mark Completed</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.restButton, { backgroundColor: colors.warning }]}
-                  onPress={onStartRest}
-                >
-                  <Clock size={18} color="#FFFFFF" />
-                  <Text style={styles.restButtonText}>Rest</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+          {areAllSetsCompleted && !isCompleted && (
+            <View style={styles.completionActions}>
+              <TouchableOpacity
+                style={[styles.completionButton, { backgroundColor: "rgba(80, 200, 120, 0.1)" }]}
+                onPress={onMarkCompleted}
+              >
+                <Check size={16} color={colors.secondary} />
+                <Text style={[styles.completionButtonText, { color: colors.secondary }]}>
+                  Mark Completed
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.restButton, { backgroundColor: "rgba(255, 149, 0, 0.1)" }]}
+                onPress={onStartRest}
+              >
+                <Clock size={16} color="#FF9500" />
+                <Text style={[styles.restButtonText, { color: "#FF9500" }]}>
+                  Rest
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
       
-      {isCompleted && (
-        <View style={[styles.completedOverlay, { backgroundColor: `${colors.success}20` }]}>
-          <Check size={24} color={colors.success} />
-          <Text style={[styles.completedText, { color: colors.success }]}>
-            Completed
-          </Text>
+      {isDragging && (
+        <View style={styles.dragIndicator}>
+          <View style={styles.dragHandle} />
+          <View style={styles.dragHandle} />
         </View>
       )}
     </Animated.View>
@@ -233,67 +239,53 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     marginBottom: 12,
+    overflow: 'hidden',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-    overflow: 'hidden',
-  },
-  draggingCard: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  completedCard: {
-    opacity: 0.8,
   },
   header: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    height: CARD_HEIGHT,
+    padding: 16,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  dragHandle: {
-    paddingRight: 8,
-    height: '100%',
-    justifyContent: 'center',
-    width: 40,
-    alignItems: 'center',
-  },
-  activeDragHandle: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderRadius: 8,
+  completedHeader: {
+    opacity: 0.8,
   },
   exerciseInfo: {
     flex: 1,
+    marginRight: 8,
   },
   exerciseName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  exerciseMuscles: {
-    fontSize: 12,
+  exerciseDetail: {
+    fontSize: 14,
   },
-  headerRight: {
+  completedText: {
+    textDecorationLine: 'line-through',
+  },
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  completeIconButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  completedBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  markCompletedButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -304,65 +296,54 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   content: {
-    padding: 12,
+    padding: 16,
     paddingTop: 0,
-  },
-  footer: {
-    marginTop: 12,
   },
   completionActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 16,
   },
-  completeButton: {
+  completionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    flex: 3,
     marginRight: 8,
   },
-  completeButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 8,
+  completionButtonText: {
     fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 4,
   },
   restButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    flex: 1,
   },
   restButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 4,
     fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 4,
   },
-  completedOverlay: {
+  dragIndicator: {
     position: 'absolute',
     top: 0,
-    left: 0,
     right: 0,
     bottom: 0,
+    width: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(46, 204, 113, 0.1)',
-    flexDirection: 'row',
   },
-  completedText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+  dragHandle: {
+    width: 20,
+    height: 2,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    marginVertical: 2,
+    borderRadius: 1,
   },
 });
