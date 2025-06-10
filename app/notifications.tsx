@@ -127,10 +127,17 @@ export default function NotificationsScreen() {
       <Stack.Screen 
         options={{
           title: "Notifications",
-          headerBackTitle: "Profile",
+          headerShown: true,
+          headerBackVisible: false,
           headerLeft: () => (
-            <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+            <TouchableOpacity 
+              onPress={handleGoBack} 
+              style={styles.backButton}
+              accessibilityLabel="Go back"
+              accessibilityHint="Returns to the previous screen"
+            >
               <ArrowLeft size={24} color={colors.text} />
+              <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           ),
         }}
@@ -410,7 +417,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 8,
+    marginLeft: -4,
+  },
+  backButtonText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "500",
+    marginLeft: 4,
   },
   footer: {
     position: "absolute",
