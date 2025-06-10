@@ -788,7 +788,17 @@ export default function ActiveWorkoutScreen() {
   const handleSwitchField = () => {
     if (!editingSetData) return;
     
-    // Switch to the other field
+    // Check if both fields have values
+    const hasWeightValue = editingSetData.weight.trim() !== "";
+    const hasRepsValue = editingSetData.reps.trim() !== "";
+    
+    // If both fields have values, save the data
+    if (hasWeightValue && hasRepsValue) {
+      handleSaveSetData();
+      return;
+    }
+    
+    // Otherwise, switch to the other field
     setEditingSetData({
       ...editingSetData,
       field: editingSetData.field === 'weight' ? 'reps' : 'weight'
@@ -798,7 +808,8 @@ export default function ActiveWorkoutScreen() {
   // Function to minimize the keyboard
   const handleMinimizeKeyboard = () => {
     Keyboard.dismiss();
-    // Don't save the data yet, just minimize the keyboard
+    // Clear editing state to fully close the keyboard
+    setEditingSetData(null);
   };
   
   // Custom numeric keyboard component
@@ -858,6 +869,10 @@ export default function ActiveWorkoutScreen() {
         });
       }
     };
+    
+    // Check if both fields have values
+    const hasWeightValue = editingSetData.weight.trim() !== "";
+    const hasRepsValue = editingSetData.reps.trim() !== "";
     
     return (
       <View style={styles.customKeyboard}>
@@ -926,13 +941,15 @@ export default function ActiveWorkoutScreen() {
             style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
             onPress={() => handleKeyPress('-')}
           >
-            <Minus size={20} color={colors.text} />
+            <Minus size={20} color="#000000" />
+            <Text style={[styles.keyboardKeyText, { marginLeft: 5 }]}>-</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
             onPress={() => handleKeyPress('+')}
           >
-            <Plus size={20} color={colors.text} />
+            <Plus size={20} color="#000000" />
+            <Text style={[styles.keyboardKeyText, { marginLeft: 5 }]}>+</Text>
           </TouchableOpacity>
         </View>
         
@@ -942,10 +959,15 @@ export default function ActiveWorkoutScreen() {
             onPress={handleSwitchField}
           >
             <Text style={styles.keyboardNextButtonText}>
-              {editingSetData.field === 'weight' ? 'Next (Reps)' : 'Back (Weight)'}
+              {hasWeightValue && hasRepsValue 
+                ? "Save" 
+                : editingSetData.field === 'weight' 
+                  ? 'Next (Reps)' 
+                  : 'Back (Weight)'}
             </Text>
-            {editingSetData.field === 'weight' && <ArrowRight size={16} color="#FFFFFF" />}
-            {editingSetData.field === 'reps' && <ArrowLeft size={16} color="#FFFFFF" />}
+            {editingSetData.field === 'weight' && !hasRepsValue && <ArrowRight size={16} color="#FFFFFF" />}
+            {editingSetData.field === 'reps' && !hasWeightValue && <ArrowLeft size={16} color="#FFFFFF" />}
+            {hasWeightValue && hasRepsValue && <Check size={16} color="#FFFFFF" />}
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -1271,7 +1293,7 @@ export default function ActiveWorkoutScreen() {
                       />
                       
                       <Button
-                        title="Start Rest"
+                        title="Rest Timer"
                         onPress={() => setShowRestModal(true)}
                         variant="outline"
                         size="small"
@@ -1928,12 +1950,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   weightColumn: {
-    flex: 1,
+    width: 60,
     marginHorizontal: 4,
     alignItems: "center",
   },
   repsColumn: {
-    flex: 1,
+    width: 60,
     marginHorizontal: 4,
     alignItems: "center",
   },
@@ -1943,20 +1965,18 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     justifyContent: "center",
-    width: "100%",
-    height: 40, // Reduced height
+    height: 40,
     backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
   },
   input: {
-    flex: 1,
     paddingHorizontal: 8,
     fontSize: 16,
     color: colors.text,
     textAlign: "center",
-    height: 40, // Reduced height
+    height: 40,
   },
   setValueText: {
     fontSize: 16,
@@ -1977,7 +1997,7 @@ const styles = StyleSheet.create({
   saveButton: {
     alignItems: "center",
     justifyContent: "center",
-    height: 40, // Reduced height
+    height: 40,
     backgroundColor: "rgba(80, 200, 120, 0.1)",
     borderRadius: 8,
   },
@@ -2085,7 +2105,7 @@ const styles = StyleSheet.create({
   },
   keyboardKeyText: {
     fontSize: 20,
-    color: colors.text,
+    color: "#000000",
     fontWeight: '500',
   },
   keyboardFooter: {
