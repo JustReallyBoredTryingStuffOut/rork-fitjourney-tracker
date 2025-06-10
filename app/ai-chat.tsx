@@ -321,6 +321,7 @@ export default function AiChatScreen() {
               placeholder="Ask me anything about fitness..."
               placeholderTextColor={colors.textSecondary}
               multiline
+              maxHeight={100}
               maxLength={500}
             />
             
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
   },
   input: {
     flex: 1,
@@ -418,9 +419,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
     fontSize: 16,
     color: colors.text,
-    maxHeight: 100,
     minHeight: 40,
   },
   sendButton: {

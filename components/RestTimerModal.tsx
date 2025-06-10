@@ -151,7 +151,7 @@ export default function RestTimerModal({
                         value={voiceEnabled}
                         onValueChange={setVoiceEnabled}
                         trackColor={{ false: colors.border, true: `${colors.primary}80` }}
-                        thumbColor={voiceEnabled ? colors.primary : "#f4f3f4"}
+                        thumbColor={voiceEnabled ? colors.white : colors.background}
                       />
                     )}
                   </View>
@@ -180,7 +180,7 @@ export default function RestTimerModal({
                         value={autoStart}
                         onValueChange={setAutoStart}
                         trackColor={{ false: colors.border, true: `${colors.primary}80` }}
-                        thumbColor={autoStart ? colors.primary : "#f4f3f4"}
+                        thumbColor={autoStart ? colors.white : colors.background}
                       />
                     )}
                   </View>
@@ -209,7 +209,7 @@ export default function RestTimerModal({
                         value={countdownBeep}
                         onValueChange={setCountdownBeep}
                         trackColor={{ false: colors.border, true: `${colors.primary}80` }}
-                        thumbColor={countdownBeep ? colors.primary : "#f4f3f4"}
+                        thumbColor={countdownBeep ? colors.white : colors.background}
                       />
                     )}
                   </View>

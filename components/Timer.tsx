@@ -56,21 +56,27 @@ export default function Timer({
               });
               setLastSpokenSecond(secondsRemaining);
             }
-          }
-          
-          if (timeRemaining <= 0) {
-            // Vibrate when timer reaches zero
-            if (Platform.OS !== 'web') {
-              Vibration.vibrate([0, 500, 200, 500]);
-            }
             
-            if (timerSettings.voicePrompts && Platform.OS !== 'web') {
+            // When timer reaches zero
+            if (secondsRemaining === 0 && lastSpokenSecond !== 0) {
               Speech.speak("Rest complete. Ready for next set.", {
                 language: 'en',
                 pitch: 1.0,
                 rate: 0.9
               });
+              setLastSpokenSecond(0);
+              
+              // Vibrate when timer reaches zero
+              if (Platform.OS !== 'web') {
+                Vibration.vibrate([0, 500, 200, 500]);
+              }
             }
+          } else if (timeRemaining <= 0 && Platform.OS !== 'web') {
+            // Vibrate even if voice prompts are off
+            Vibration.vibrate([0, 500, 200, 500]);
+          }
+          
+          if (timeRemaining <= 0) {
             skipRestTimer();
           }
           

@@ -379,7 +379,7 @@ export default function AddWorkoutScheduleScreen() {
                 <Picker
                   selectedValue={recurrenceFrequency}
                   onValueChange={(itemValue) => setRecurrenceFrequency(itemValue)}
-                  style={styles.picker}
+                  style={[styles.picker, { width: '100%' }]}
                   dropdownIconColor={colors.text}
                 >
                   <Picker.Item label="Weekly" value="weekly" color={Platform.OS === 'android' ? colors.text : undefined} />
@@ -616,7 +616,7 @@ export default function AddWorkoutScheduleScreen() {
                 <Picker
                   selectedValue={reminderTime}
                   onValueChange={(itemValue) => setReminderTime(itemValue)}
-                  style={styles.picker}
+                  style={[styles.picker, { width: '100%' }]}
                   dropdownIconColor={colors.text}
                 >
                   <Picker.Item label="5 minutes before" value={5} color={Platform.OS === 'android' ? colors.text : undefined} />
@@ -985,7 +985,6 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 50,
-    width: '100%', // Ensure picker takes full width of container
   },
   // Button Styles
   saveButton: {
