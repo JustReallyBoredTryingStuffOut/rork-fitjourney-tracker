@@ -87,7 +87,6 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.profileName}>John Doe</Text>
-        <Text style={styles.profileEmail}>john.doe@example.com</Text>
       </View>
       
       {profileSections.map((section, index) => (
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: 16,
   },
   profileEmail: {
     fontSize: 14,
