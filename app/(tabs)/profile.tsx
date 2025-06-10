@@ -92,20 +92,16 @@ export default function ProfileScreen() {
             source={{ uri: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }}
             style={styles.profileImage}
           />
-          <TouchableOpacity style={styles.editImageButton}>
+          <TouchableOpacity 
+            style={styles.editImageButton}
+            onPress={() => router.push("/edit-profile")}
+          >
             <Camera size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
         
         <Text style={styles.profileName}>John Doe</Text>
         <Text style={styles.profileEmail}>john.doe@example.com</Text>
-        
-        <TouchableOpacity 
-          style={styles.editProfileButton}
-          onPress={() => router.push("/edit-profile")}
-        >
-          <Text style={styles.editProfileText}>Edit Profile</Text>
-        </TouchableOpacity>
       </View>
       
       {profileSections.map((section, index) => (
@@ -190,18 +186,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginBottom: 16,
-  },
-  editProfileButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  editProfileText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: "500",
   },
   section: {
     padding: 16,
