@@ -87,14 +87,14 @@ export default function ProfileScreen() {
         <Text style={styles.profileName}>John Doe</Text>
       </View>
       
-      {/* Gamification Toggle */}
+      {/* Achievement System Toggle */}
       <View style={styles.gamificationContainer}>
         <View style={styles.gamificationLeft}>
           <View style={styles.gamificationIconContainer}>
             <Trophy size={20} color={colors.primary} />
           </View>
           <View>
-            <Text style={styles.gamificationTitle}>Enable Gamification</Text>
+            <Text style={styles.gamificationTitle}>Enable Achievement System</Text>
             <Text style={styles.gamificationDescription}>
               Turn on achievements, challenges, and rewards
             </Text>
