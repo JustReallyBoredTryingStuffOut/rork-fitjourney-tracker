@@ -59,6 +59,16 @@ interface WorkoutState {
   // New action to get previous set data for an exercise
   getPreviousSetData: (exerciseId: string) => { weight: number; reps: number } | null;
   
+  // New action to get exercise history
+  getRecentExerciseHistory: (exerciseId: string, limit?: number) => Array<{
+    date: string;
+    workoutId: string;
+    workoutName: string;
+    sets: WorkoutSet[];
+    maxWeight: number;
+    maxReps: number;
+  }>;
+  
   scheduleWorkout: (scheduledWorkout: ScheduledWorkout) => void;
   updateScheduledWorkout: (scheduledWorkout: ScheduledWorkout) => void;
   removeScheduledWorkout: (id: string) => void;
@@ -577,6 +587,58 @@ export const useWorkoutStore = create<WorkoutState>()(
         }
         
         return null;
+      },
+      
+      // New function to get exercise history
+      getRecentExerciseHistory: (exerciseId, limit = 5) => {
+        const { workoutLogs, workouts } = get();
+        
+        // Find all completed workouts that contain this exercise
+        const relevantWorkouts = workoutLogs
+          .filter(log => log.completed)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        const history = [];
+        
+        for (const workout of relevantWorkouts) {
+          // Find the exercise in this workout
+          const exerciseLog = workout.exercises.find(ex => ex.exerciseId === exerciseId);
+          
+          if (exerciseLog && exerciseLog.sets.length > 0) {
+            // Find the workout name
+            const workoutData = workouts.find(w => w.id === workout.workoutId);
+            const workoutName = workoutData ? workoutData.name : "Unknown Workout";
+            
+            // Find the max weight and reps
+            let maxWeight = 0;
+            let maxReps = 0;
+            
+            exerciseLog.sets.forEach(set => {
+              if (set.weight > maxWeight) {
+                maxWeight = set.weight;
+              }
+              if (set.reps > maxReps) {
+                maxReps = set.reps;
+              }
+            });
+            
+            history.push({
+              date: workout.date,
+              workoutId: workout.workoutId,
+              workoutName,
+              sets: exerciseLog.sets,
+              maxWeight,
+              maxReps
+            });
+            
+            // Limit the number of history items
+            if (history.length >= limit) {
+              break;
+            }
+          }
+        }
+        
+        return history;
       },
       
       scheduleWorkout: (scheduledWorkout) => set((state) => ({

@@ -195,12 +195,9 @@ export default function DraggableExerciseCard({
         cardStyle
       ]}
     >
-      {/* Drag handle - positioned at the left side */}
+      {/* Drag handle - positioned at the top */}
       <View 
-        style={[
-          styles.dragHandleContainer,
-          isExpanded && styles.dragHandleContainerExpanded
-        ]}
+        style={styles.dragHandleContainer}
         {...panResponder.panHandlers}
       >
         <GripVertical size={20} color={colors.textSecondary} />
@@ -215,17 +212,19 @@ export default function DraggableExerciseCard({
         activeOpacity={0.7}
       >
         <View style={styles.exerciseInfo}>
-          <Text 
-            style={[
-              styles.exerciseName, 
-              { color: isCompleted ? colors.textSecondary : colors.text },
-              isCompleted && styles.completedText
-            ]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {exercise.name}
-          </Text>
+          <TouchableOpacity onPress={onToggleExpand}>
+            <Text 
+              style={[
+                styles.exerciseName, 
+                { color: isCompleted ? colors.textSecondary : colors.text },
+                isCompleted && styles.completedText
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {exercise.name}
+            </Text>
+          </TouchableOpacity>
           
           <Text 
             style={[
@@ -252,7 +251,7 @@ export default function DraggableExerciseCard({
             </TouchableOpacity>
           ) : null}
           
-          <TouchableOpacity style={styles.expandButton}>
+          <TouchableOpacity style={styles.expandButton} onPress={onToggleExpand}>
             {isExpanded ? (
               <ChevronUp size={20} color={colors.textSecondary} />
             ) : (
@@ -404,17 +403,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    bottom: 0,
     width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
-  },
-  dragHandleContainerExpanded: {
-    height: 48, // Fixed height at the top when expanded
-    bottom: 'auto', // Remove bottom positioning
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   dragIndicator: {
     position: 'absolute',
