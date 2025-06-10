@@ -61,8 +61,8 @@ import { APP_NAME } from "@/app/_layout";
 // Voice configuration for a more natural British female voice
 const voiceConfig = {
   language: 'en-GB',
-  pitch: 1.05,
-  rate: 0.92,
+  pitch: 1.1,
+  rate: 0.9,
 };
 
 // Premium British female voices in order of preference for iOS
@@ -73,7 +73,10 @@ const preferredBritishVoices = [
   'com.apple.ttsbundle.Tessa-compact',
   'com.apple.voice.compact.en-GB.Serena',
   'com.apple.voice.compact.en-GB.Kate',
-  'com.apple.eloquence.en-GB.Serena'
+  'com.apple.eloquence.en-GB.Serena',
+  'en-GB-Standard-A', // Google TTS voice
+  'en-GB-Standard-F', // Google TTS voice
+  'en-GB-Wavenet-C'   // Google TTS voice
 ];
 
 // Get available voices on component mount

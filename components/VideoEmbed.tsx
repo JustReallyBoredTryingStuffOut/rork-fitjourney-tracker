@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Text, Linking, TouchableOpacity, Platform } from "react-native";
+import { View, StyleSheet, Text, Linking, TouchableOpacity, Platform, Image } from "react-native";
 import { ExternalLink, Play } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { WebView } from "react-native-webview";
@@ -45,13 +45,9 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
   let embedUrl = "";
   if (youtubeId) {
     embedUrl = `https://www.youtube.com/embed/${youtubeId}`;
-  } else if (tiktokId) {
-    // Use different embed URL format for iOS to improve compatibility
-    if (Platform.OS === "ios") {
-      embedUrl = `https://www.tiktok.com/embed/v2/${tiktokId}?autoplay=0&mute=0`;
-    } else {
-      embedUrl = `https://www.tiktok.com/embed/v2/${tiktokId}`;
-    }
+  } else if (tiktokId && Platform.OS !== "ios") {
+    // Only use TikTok embed for non-iOS platforms
+    embedUrl = `https://www.tiktok.com/embed/v2/${tiktokId}`;
   }
   
   const handleOpenLink = () => {
@@ -78,20 +74,27 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
     );
   }
   
-  // For iOS with TikTok, we'll provide a fallback option
-  if (Platform.OS === "ios" && isTikTok && !embedUrl) {
+  // For iOS with TikTok, we'll provide a better fallback option
+  if (Platform.OS === "ios" && isTikTok) {
     return (
       <View style={styles.videoContainer}>
         <View style={[styles.container, { height }]}>
-          <View style={styles.fallbackContainer}>
-            <Text style={styles.fallbackText}>TikTok video preview not available</Text>
-            <TouchableOpacity 
-              style={styles.fallbackButton}
-              onPress={handleOpenLink}
-            >
-              <Play size={20} color="#FFFFFF" />
-              <Text style={styles.fallbackButtonText}>Open in TikTok</Text>
-            </TouchableOpacity>
+          <View style={styles.tiktokFallbackContainer}>
+            <Image 
+              source={{ uri: "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?q=80&w=1000&auto=format&fit=crop" }}
+              style={styles.tiktokThumbnail}
+              resizeMode="cover"
+            />
+            <View style={styles.tiktokOverlay}>
+              <Text style={styles.tiktokText}>TikTok videos cannot be embedded on iOS</Text>
+              <TouchableOpacity 
+                style={styles.tiktokButton}
+                onPress={handleOpenLink}
+              >
+                <Play size={16} color="#FFFFFF" />
+                <Text style={styles.tiktokButtonText}>Open in TikTok</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
         <Text style={styles.attributionText}>
@@ -214,6 +217,47 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   fallbackButtonText: {
+    color: "#FFFFFF",
+    marginLeft: 8,
+    fontWeight: "500",
+  },
+  // TikTok specific styles for iOS
+  tiktokFallbackContainer: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+  },
+  tiktokThumbnail: {
+    width: "100%",
+    height: "100%",
+  },
+  tiktokOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  tiktokText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  tiktokButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EE1D52", // TikTok red
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  tiktokButtonText: {
     color: "#FFFFFF",
     marginLeft: 8,
     fontWeight: "500",

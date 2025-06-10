@@ -10,7 +10,7 @@ import {
   Platform,
   Vibration
 } from 'react-native';
-import { ChevronDown, ChevronUp, Check, Clock } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Check, Clock, GripVertical } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Exercise, ExerciseLog } from '@/types';
@@ -32,7 +32,7 @@ type DraggableExerciseCardProps = {
 };
 
 const CARD_HEIGHT = 80; // Height of collapsed card
-const DRAG_THRESHOLD = 50; // Distance needed to trigger a reorder
+const DRAG_THRESHOLD = 40; // Distance needed to trigger a reorder
 
 export default function DraggableExerciseCard({
   exercise,
@@ -51,33 +51,47 @@ export default function DraggableExerciseCard({
 }: DraggableExerciseCardProps) {
   const { colors } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
+  const [dropZoneIndex, setDropZoneIndex] = useState<number | null>(null);
   const pan = useRef(new Animated.ValueXY()).current;
+  const cardRef = useRef<View>(null);
+  const cardPositionY = useRef(0);
+  
+  // Get screen dimensions
   const screenHeight = Dimensions.get('window').height;
   
   // Calculate possible drop positions
-  const getDropIndex = (gestureY: number, cardY: number) => {
-    const relativeY = gestureY - cardY;
+  const getDropIndex = (gestureY: number) => {
+    // Calculate the relative position from the card's original position
+    const relativeY = gestureY - cardPositionY.current;
+    
+    // Determine direction (up or down)
     const direction = relativeY > 0 ? 1 : -1;
-    const distance = Math.abs(relativeY);
     
-    if (distance > DRAG_THRESHOLD) {
-      const newIndex = index + direction;
-      if (newIndex >= 0 && newIndex < totalExercises) {
-        return newIndex;
-      }
-    }
+    // Calculate how many positions to move
+    const positions = Math.floor(Math.abs(relativeY) / CARD_HEIGHT);
     
-    return index;
+    // Calculate new index
+    let newIndex = index + (positions * direction);
+    
+    // Ensure the new index is within bounds
+    newIndex = Math.max(0, Math.min(totalExercises - 1, newIndex));
+    
+    return newIndex !== index ? newIndex : null;
   };
   
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to vertical movements
-        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < 10;
+        // Only respond to vertical movements that are significant
+        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
       },
       onPanResponderGrant: () => {
+        // Measure the card's position on the screen
+        cardRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          cardPositionY.current = pageY;
+        });
+        
         // Start dragging
         setIsDragging(true);
         onDragStart();
@@ -93,28 +107,38 @@ export default function DraggableExerciseCard({
           y: pan.y._value
         });
       },
-      onPanResponderMove: Animated.event(
-        [null, { dy: pan.y }],
-        { useNativeDriver: false }
-      ),
+      onPanResponderMove: (_, gestureState) => {
+        // Update the animated value
+        Animated.event(
+          [null, { dy: pan.y }],
+          { useNativeDriver: false }
+        )(_, gestureState);
+        
+        // Calculate potential drop index
+        const potentialDropIndex = getDropIndex(gestureState.moveY);
+        if (potentialDropIndex !== dropZoneIndex) {
+          setDropZoneIndex(potentialDropIndex);
+        }
+      },
       onPanResponderRelease: (_, gestureState) => {
         // Reset the pan offset
         pan.flattenOffset();
         
-        // Calculate the new index based on the gesture
-        const dropIndex = getDropIndex(gestureState.moveY, gestureState.y0);
+        // Calculate the final drop index
+        const finalDropIndex = getDropIndex(gestureState.moveY);
         
-        // Reset the position
+        // Reset the position with animation
         Animated.spring(pan, {
           toValue: { x: 0, y: 0 },
           useNativeDriver: false,
           friction: 5
         }).start(() => {
           setIsDragging(false);
+          setDropZoneIndex(null);
           
-          // Only call onDragEnd if the index changed
-          if (dropIndex !== index) {
-            onDragEnd(dropIndex);
+          // Only call onDragEnd if we have a valid drop index
+          if (finalDropIndex !== null) {
+            onDragEnd(finalDropIndex);
           }
         });
       }
@@ -132,12 +156,12 @@ export default function DraggableExerciseCard({
   
   return (
     <Animated.View 
+      ref={cardRef}
       style={[
         styles.container, 
         { backgroundColor: colors.card },
         cardStyle
       ]}
-      {...panResponder.panHandlers}
     >
       <TouchableOpacity 
         style={[
@@ -225,10 +249,19 @@ export default function DraggableExerciseCard({
         </View>
       )}
       
+      {/* Drag handle - this is what users will press and hold to drag */}
+      <View 
+        style={styles.dragHandleContainer}
+        {...panResponder.panHandlers}
+      >
+        <GripVertical size={20} color={colors.textSecondary} />
+      </View>
+      
       {isDragging && (
         <View style={styles.dragIndicator}>
-          <View style={styles.dragHandle} />
-          <View style={styles.dragHandle} />
+          <Text style={[styles.dragIndicatorText, { color: colors.primary }]}>
+            Dragging...
+          </Text>
         </View>
       )}
     </Animated.View>
@@ -245,12 +278,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
+    paddingRight: 48, // Make room for the drag handle
   },
   completedHeader: {
     opacity: 0.8,
@@ -330,20 +365,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 4,
   },
-  dragIndicator: {
+  dragHandleContainer: {
     position: 'absolute',
     top: 0,
     right: 0,
     bottom: 0,
-    width: 20,
+    width: 48,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
-  dragHandle: {
-    width: 20,
-    height: 2,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    marginVertical: 2,
-    borderRadius: 1,
+  dragIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  dragIndicatorText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
