@@ -3,6 +3,12 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import { Platform } from "react-native";
+import { 
+  encryptAndSavePhoto, 
+  deleteEncryptedPhoto, 
+  ENCRYPTED_PHOTOS_DIR,
+  setupEncryptedPhotoDirectory
+} from "@/utils/fileEncryption";
 
 export type FoodPhoto = {
   id: string;
@@ -39,6 +45,7 @@ interface PhotoState {
   foodPhotos: FoodPhoto[];
   progressPhotos: ProgressPhoto[];
   workoutMedia: MediaType[];
+  encryptionEnabled: boolean;
   
   // Actions
   addFoodPhoto: (photo: FoodPhoto) => Promise<void>;
@@ -53,6 +60,9 @@ interface PhotoState {
   addWorkoutMedia: (media: MediaType) => Promise<void>;
   updateWorkoutMedia: (media: MediaType) => Promise<void>;
   deleteWorkoutMedia: (id: string) => Promise<void>;
+  
+  // Encryption settings
+  toggleEncryption: (enabled: boolean) => void;
   
   // Helpers
   getFoodPhotosByDate: (date: string) => FoodPhoto[];
@@ -90,6 +100,9 @@ const setupPhotoDirectories = async () => {
   if (!workoutDirInfo.exists) {
     await FileSystem.makeDirectoryAsync(workoutMediaDir, { intermediates: true });
   }
+  
+  // Also setup encrypted photos directory
+  await setupEncryptedPhotoDirectory();
 };
 
 // Initialize directories
@@ -103,20 +116,31 @@ export const usePhotoStore = create<PhotoState>()(
       foodPhotos: [],
       progressPhotos: [],
       workoutMedia: [],
+      encryptionEnabled: true, // Enable encryption by default
+      
+      toggleEncryption: (enabled) => {
+        set({ encryptionEnabled: enabled });
+      },
       
       addFoodPhoto: async (photo) => {
         if (Platform.OS !== "web") {
-          // Save photo to local filesystem
-          const fileName = `food_${photo.id}.jpg`;
-          const newUri = `${FileSystem.documentDirectory}photos/food/${fileName}`;
-          
           try {
-            await FileSystem.copyAsync({
-              from: photo.uri,
-              to: newUri
-            });
+            const fileName = `food_${photo.id}.jpg`;
+            let newUri;
             
-            // Update the URI to point to the local file
+            if (get().encryptionEnabled) {
+              // Encrypt and save the photo
+              newUri = await encryptAndSavePhoto(photo.uri, fileName);
+            } else {
+              // Save without encryption (original behavior)
+              newUri = `${FileSystem.documentDirectory}photos/food/${fileName}`;
+              await FileSystem.copyAsync({
+                from: photo.uri,
+                to: newUri
+              });
+            }
+            
+            // Update the URI to point to the saved file
             photo.uri = newUri;
           } catch (error) {
             console.error("Error saving food photo:", error);
@@ -140,7 +164,13 @@ export const usePhotoStore = create<PhotoState>()(
         
         if (photoToDelete && Platform.OS !== "web") {
           try {
-            await FileSystem.deleteAsync(photoToDelete.uri);
+            if (photoToDelete.uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
+              // Delete encrypted photo
+              await deleteEncryptedPhoto(photoToDelete.uri);
+            } else {
+              // Delete regular photo
+              await FileSystem.deleteAsync(photoToDelete.uri);
+            }
           } catch (error) {
             console.error("Error deleting food photo:", error);
           }
@@ -153,17 +183,23 @@ export const usePhotoStore = create<PhotoState>()(
       
       addProgressPhoto: async (photo) => {
         if (Platform.OS !== "web") {
-          // Save photo to local filesystem
-          const fileName = `progress_${photo.id}.jpg`;
-          const newUri = `${FileSystem.documentDirectory}photos/progress/${fileName}`;
-          
           try {
-            await FileSystem.copyAsync({
-              from: photo.uri,
-              to: newUri
-            });
+            const fileName = `progress_${photo.id}.jpg`;
+            let newUri;
             
-            // Update the URI to point to the local file
+            if (get().encryptionEnabled) {
+              // Encrypt and save the photo
+              newUri = await encryptAndSavePhoto(photo.uri, fileName);
+            } else {
+              // Save without encryption (original behavior)
+              newUri = `${FileSystem.documentDirectory}photos/progress/${fileName}`;
+              await FileSystem.copyAsync({
+                from: photo.uri,
+                to: newUri
+              });
+            }
+            
+            // Update the URI to point to the saved file
             photo.uri = newUri;
           } catch (error) {
             console.error("Error saving progress photo:", error);
@@ -187,7 +223,13 @@ export const usePhotoStore = create<PhotoState>()(
         
         if (photoToDelete && Platform.OS !== "web") {
           try {
-            await FileSystem.deleteAsync(photoToDelete.uri);
+            if (photoToDelete.uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
+              // Delete encrypted photo
+              await deleteEncryptedPhoto(photoToDelete.uri);
+            } else {
+              // Delete regular photo
+              await FileSystem.deleteAsync(photoToDelete.uri);
+            }
           } catch (error) {
             console.error("Error deleting progress photo:", error);
           }
@@ -202,17 +244,24 @@ export const usePhotoStore = create<PhotoState>()(
       addWorkoutMedia: async (media) => {
         // Only save to filesystem if it's a local file (not a URL) and not on web
         if (Platform.OS !== "web" && !media.uri.startsWith("http")) {
-          const extension = get().isGifUrl(media.uri) ? "gif" : "jpg";
-          const fileName = `workout_${media.id}.${extension}`;
-          const newUri = `${FileSystem.documentDirectory}photos/workout/${fileName}`;
-          
           try {
-            await FileSystem.copyAsync({
-              from: media.uri,
-              to: newUri
-            });
+            const extension = get().isGifUrl(media.uri) ? "gif" : "jpg";
+            const fileName = `workout_${media.id}.${extension}`;
+            let newUri;
             
-            // Update the URI to point to the local file
+            if (get().encryptionEnabled) {
+              // Encrypt and save the media
+              newUri = await encryptAndSavePhoto(media.uri, fileName);
+            } else {
+              // Save without encryption (original behavior)
+              newUri = `${FileSystem.documentDirectory}photos/workout/${fileName}`;
+              await FileSystem.copyAsync({
+                from: media.uri,
+                to: newUri
+              });
+            }
+            
+            // Update the URI to point to the saved file
             media.uri = newUri;
           } catch (error) {
             console.error("Error saving workout media:", error);
@@ -236,7 +285,13 @@ export const usePhotoStore = create<PhotoState>()(
         
         if (mediaToDelete && Platform.OS !== "web" && !mediaToDelete.uri.startsWith("http")) {
           try {
-            await FileSystem.deleteAsync(mediaToDelete.uri);
+            if (mediaToDelete.uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
+              // Delete encrypted media
+              await deleteEncryptedPhoto(mediaToDelete.uri);
+            } else {
+              // Delete regular media
+              await FileSystem.deleteAsync(mediaToDelete.uri);
+            }
           } catch (error) {
             console.error("Error deleting workout media:", error);
           }

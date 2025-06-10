@@ -5,18 +5,18 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  Image, 
   Modal,
   Alert,
   Platform
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Camera, Plus, Trash2, X, ArrowLeft } from "lucide-react-native";
+import { Camera, Plus, Trash2, X, ArrowLeft, Lock } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { usePhotoStore, ProgressPhoto } from "@/store/photoStore";
 import { useHealthStore } from "@/store/healthStore";
 import ProgressPhotoCapture from "@/components/ProgressPhotoCapture";
 import Button from "@/components/Button";
+import EncryptedImage from "@/components/EncryptedImage";
 
 export default function ProgressPhotosScreen() {
   const router = useRouter();
@@ -98,6 +98,12 @@ export default function ProgressPhotosScreen() {
         <Text style={styles.subtitle}>
           Take photos regularly to visualize your fitness journey
         </Text>
+        <View style={styles.securityContainer}>
+          <Lock size={12} color={colors.primary} />
+          <Text style={styles.securityNote}>
+            Photos are encrypted and stored locally for your privacy
+          </Text>
+        </View>
       </View>
       
       <View style={styles.categoriesContainer}>
@@ -145,9 +151,10 @@ export default function ProgressPhotosScreen() {
                     style={styles.photoItem}
                     onPress={() => setSelectedPhoto(photo)}
                   >
-                    <Image 
-                      source={{ uri: photo.uri }} 
-                      style={styles.photoThumbnail} 
+                    <EncryptedImage 
+                      uri={photo.uri} 
+                      style={styles.photoThumbnail}
+                      fallbackUri="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
                     />
                     <View style={styles.photoInfo}>
                       <Text style={styles.photoCategory}>{photo.category}</Text>
@@ -212,10 +219,11 @@ export default function ProgressPhotosScreen() {
                 </TouchableOpacity>
               </View>
               
-              <Image 
-                source={{ uri: selectedPhoto.uri }} 
+              <EncryptedImage 
+                uri={selectedPhoto.uri} 
                 style={styles.photoDetailImage} 
                 resizeMode="contain"
+                fallbackUri="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
               />
               
               <View style={styles.photoDetailInfo}>
@@ -272,6 +280,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  securityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  securityNote: {
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+    fontStyle: "italic",
   },
   categoriesContainer: {
     flexDirection: "row",

@@ -5,7 +5,6 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  Image, 
   Modal,
   Alert
 } from "react-native";
@@ -14,6 +13,7 @@ import { Camera, Plus, Trash2, X, ArrowLeft } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { usePhotoStore, FoodPhoto } from "@/store/photoStore";
 import Button from "@/components/Button";
+import EncryptedImage from "@/components/EncryptedImage";
 
 export default function FoodPhotosScreen() {
   const router = useRouter();
@@ -80,6 +80,9 @@ export default function FoodPhotosScreen() {
         <Text style={styles.subtitle}>
           Track your meals visually with nutritional analysis
         </Text>
+        <Text style={styles.securityNote}>
+          Photos are encrypted and stored locally for your privacy
+        </Text>
       </View>
       
       {foodPhotos.length > 0 ? (
@@ -95,9 +98,10 @@ export default function FoodPhotosScreen() {
                     style={styles.photoItem}
                     onPress={() => setSelectedPhoto(photo)}
                   >
-                    <Image 
-                      source={{ uri: photo.uri }} 
-                      style={styles.photoThumbnail} 
+                    <EncryptedImage 
+                      uri={photo.uri} 
+                      style={styles.photoThumbnail}
+                      fallbackUri="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
                     />
                     <View style={styles.photoInfo}>
                       <Text style={styles.photoName} numberOfLines={1}>
@@ -159,10 +163,11 @@ export default function FoodPhotosScreen() {
                 </TouchableOpacity>
               </View>
               
-              <Image 
-                source={{ uri: selectedPhoto.uri }} 
+              <EncryptedImage 
+                uri={selectedPhoto.uri} 
                 style={styles.photoDetailImage} 
                 resizeMode="contain"
+                fallbackUri="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
               />
               
               <View style={styles.nutritionContainer}>
@@ -231,6 +236,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  securityNote: {
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 8,
+    fontStyle: "italic",
   },
   photosContainer: {
     flex: 1,

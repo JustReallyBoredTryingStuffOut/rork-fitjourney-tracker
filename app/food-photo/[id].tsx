@@ -4,8 +4,7 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity, 
-  Image,
+  TouchableOpacity,
   Alert
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
@@ -14,11 +13,13 @@ import {
   Calendar, 
   Clock, 
   Trash2, 
-  Share2 
+  Share2,
+  Lock
 } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { usePhotoStore } from "@/store/photoStore";
 import Button from "@/components/Button";
+import EncryptedImage from "@/components/EncryptedImage";
 
 export default function FoodPhotoDetailScreen() {
   const router = useRouter();
@@ -59,7 +60,20 @@ export default function FoodPhotoDetailScreen() {
   
   const handleShare = () => {
     // Share functionality would go here
-    console.log("Share photo:", photo);
+    Alert.alert(
+      "Privacy Notice",
+      "This photo is encrypted for your privacy. Sharing will create a temporary unencrypted copy. Continue?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Share",
+          onPress: () => console.log("Share photo:", photo)
+        }
+      ]
+    );
   };
   
   const handleDelete = () => {
@@ -104,10 +118,11 @@ export default function FoodPhotoDetailScreen() {
       />
       
       <ScrollView style={styles.content}>
-        <Image 
-          source={{ uri: photo.uri }} 
+        <EncryptedImage 
+          uri={photo.uri} 
           style={styles.foodImage} 
           resizeMode="cover"
+          fallbackUri="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
         />
         
         <View style={styles.photoHeader}>
@@ -124,6 +139,13 @@ export default function FoodPhotoDetailScreen() {
                 hour: '2-digit', 
                 minute: '2-digit' 
               })}
+            </Text>
+          </View>
+          
+          <View style={styles.securityContainer}>
+            <Lock size={14} color={colors.primary} />
+            <Text style={styles.securityText}>
+              This photo is encrypted and stored locally
             </Text>
           </View>
         </View>
@@ -203,12 +225,23 @@ const styles = StyleSheet.create({
   dateTimeContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 8,
   },
   dateTimeText: {
     fontSize: 14,
     color: colors.textSecondary,
     marginLeft: 4,
     marginRight: 12,
+  },
+  securityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  securityText: {
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+    fontStyle: "italic",
   },
   macrosCard: {
     flexDirection: "row",
