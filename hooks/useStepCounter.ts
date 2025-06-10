@@ -7,6 +7,9 @@ import * as ExpoDevice from "expo-device";
 // Import the CoreBluetooth module with correct path
 import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
 
+// Import the HealthKit module (simulated for this implementation)
+import HealthKit from "@/src/NativeModules/HealthKit";
+
 export default function useStepCounter() {
   const [isPedometerAvailable, setIsPedometerAvailable] = useState(false);
   const [currentStepCount, setCurrentStepCount] = useState(0);
@@ -17,6 +20,9 @@ export default function useStepCounter() {
   const [useMockData, setUseMockData] = useState(false);
   const [bluetoothState, setBluetoothState] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<"unknown" | "granted" | "denied">("unknown");
+  const [healthKitAvailable, setHealthKitAvailable] = useState(false);
+  const [healthKitAuthorized, setHealthKitAuthorized] = useState(false);
+  const [dataSource, setDataSource] = useState<"healthKit" | "pedometer" | "connectedDevice" | "mock">("pedometer");
   
   const { 
     isTrackingSteps, 
@@ -32,6 +38,7 @@ export default function useStepCounter() {
   const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mockDataTimerRef = useRef<NodeJS.Timeout | null>(null);
   const bluetoothListenerRef = useRef<(() => void) | null>(null);
+  const healthKitObserverRef = useRef<(() => void) | null>(null);
   
   // Initialize Bluetooth state and permissions
   useEffect(() => {
@@ -83,24 +90,88 @@ export default function useStepCounter() {
       }
     };
     
-    initializeBluetooth();
-    
-    return () => {
-      if (bluetoothListenerRef.current) {
-        bluetoothListenerRef.current();
-        bluetoothListenerRef.current = null;
+    // Initialize HealthKit if on iOS
+    const initializeHealthKit = async () => {
+      if (Platform.OS === 'ios') {
+        try {
+          // Check if HealthKit is available on this device
+          const isAvailable = await HealthKit.isHealthDataAvailable();
+          setHealthKitAvailable(isAvailable);
+          
+          if (isAvailable) {
+            // Request authorization for steps
+            const authResult = await HealthKit.requestAuthorization(['steps']);
+            setHealthKitAuthorized(authResult.authorized);
+            
+            if (authResult.authorized) {
+              // Set HealthKit as the primary data source
+              setDataSource("healthKit");
+              setIsPedometerAvailable(true);
+              setError(null);
+              
+              // Get initial step count for today
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              const stepsResult = await HealthKit.getStepCount(
+                today.toISOString(),
+                new Date().toISOString()
+              );
+              
+              if (stepsResult.success) {
+                setCurrentStepCount(stepsResult.steps);
+                
+                // Log the steps
+                const stepLog = {
+                  id: today.toISOString(),
+                  date: today.toISOString(),
+                  steps: stepsResult.steps,
+                  distance: calculateDistance(stepsResult.steps),
+                  calories: calculateCaloriesBurned(stepsResult.steps),
+                  source: "Apple Health"
+                };
+                
+                addStepLog(stepLog);
+              }
+              
+              // Set up observer for step count changes
+              healthKitObserverRef.current = HealthKit.observeStepCount((result) => {
+                if (result.success) {
+                  setCurrentStepCount(result.steps);
+                  
+                  // Log the updated steps
+                  const stepLog = {
+                    id: today.toISOString(),
+                    date: today.toISOString(),
+                    steps: result.steps,
+                    distance: calculateDistance(result.steps),
+                    calories: calculateCaloriesBurned(result.steps),
+                    source: "Apple Health"
+                  };
+                  
+                  addStepLog(stepLog);
+                }
+              });
+            } else {
+              // Fall back to pedometer if HealthKit authorization denied
+              checkPedometerAvailability();
+            }
+          } else {
+            // Fall back to pedometer if HealthKit not available
+            checkPedometerAvailability();
+          }
+        } catch (error: any) {
+          console.error("Error initializing HealthKit:", error);
+          // Fall back to pedometer
+          checkPedometerAvailability();
+        }
+      } else {
+        // Not on iOS, check pedometer
+        checkPedometerAvailability();
       }
     };
-  }, []);
-  
-  // Check if pedometer is available and if we have connected devices
-  useEffect(() => {
-    if (Platform.OS === "web") {
-      setError("Step counting is not available on web");
-      return;
-    }
     
-    const checkAvailability = async () => {
+    const checkPedometerAvailability = async () => {
       try {
         // Check for connected devices first
         const appleWatch = getConnectedDeviceByType("appleWatch");
@@ -112,6 +183,7 @@ export default function useStepCounter() {
         if (connectedDevice && connectedDevice.connected) {
           setIsUsingConnectedDevice(true);
           setDeviceName(connectedDevice.name);
+          setDataSource("connectedDevice");
           
           // If we have a connected device, we don't need the pedometer
           setIsPedometerAvailable(true);
@@ -119,51 +191,55 @@ export default function useStepCounter() {
         }
         
         // Fall back to device pedometer if no connected devices
-        if (Platform.OS === 'ios') {
-          // On iOS, check if the Apple Watch is paired and available
-          if (bluetoothState === "poweredOn" && permissionStatus === "granted") {
-            // In a real app, we would check for paired Apple Watch here
-            // For now, we'll check if the Pedometer is available as a fallback
-            const isAvailable = await Pedometer.isAvailableAsync();
-            setIsPedometerAvailable(isAvailable);
-            
-            if (!isAvailable) {
-              setError("Pedometer is not available on this device");
-              requestHealthKitPermissions();
-            }
-          } else {
-            // If Bluetooth is not available or permissions not granted
-            const isAvailable = await Pedometer.isAvailableAsync();
-            setIsPedometerAvailable(isAvailable);
-            
-            if (!isAvailable) {
-              setError("Pedometer is not available on this device");
-              requestHealthKitPermissions();
-            }
-          }
+        const isAvailable = await Pedometer.isAvailableAsync();
+        setIsPedometerAvailable(isAvailable);
+        
+        if (isAvailable) {
+          setDataSource("pedometer");
+          setError(null);
         } else {
-          const isAvailable = await Pedometer.isAvailableAsync();
-          setIsPedometerAvailable(isAvailable);
-          
-          if (!isAvailable) {
-            setError("Pedometer is not available on this device");
-            setUseMockData(true);
-          }
+          setError("Pedometer is not available on this device");
+          setUseMockData(true);
+          setDataSource("mock");
         }
       } catch (e) {
         console.error("Error checking pedometer availability:", e);
         setError("Error checking pedometer availability");
-        
-        // On iOS, we might need to request HealthKit permissions
-        if (Platform.OS === "ios") {
-          requestHealthKitPermissions();
-        } else {
-          setUseMockData(true);
-        }
+        setUseMockData(true);
+        setDataSource("mock");
       }
     };
     
-    checkAvailability();
+    initializeBluetooth();
+    initializeHealthKit();
+    
+    return () => {
+      if (bluetoothListenerRef.current) {
+        bluetoothListenerRef.current();
+        bluetoothListenerRef.current = null;
+      }
+      
+      if (healthKitObserverRef.current) {
+        healthKitObserverRef.current();
+        healthKitObserverRef.current = null;
+      }
+      
+      if (syncTimerRef.current) {
+        clearInterval(syncTimerRef.current);
+      }
+      
+      if (mockDataTimerRef.current) {
+        clearInterval(mockDataTimerRef.current);
+      }
+    };
+  }, []);
+  
+  // Check if pedometer is available and if we have connected devices
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      setError("Step counting is not available on web");
+      return;
+    }
     
     // Set up periodic sync for connected devices
     if (isUsingConnectedDevice && isTrackingSteps) {
@@ -182,45 +258,6 @@ export default function useStepCounter() {
     };
   }, [isTrackingSteps, isUsingConnectedDevice, connectedDevices, bluetoothState, permissionStatus]);
   
-  // Request HealthKit permissions on iOS
-  const requestHealthKitPermissions = () => {
-    if (Platform.OS !== "ios") return;
-    
-    // In a real app, this would use the HealthKit framework
-    // For now, we'll simulate the permission request
-    Alert.alert(
-      "Health Access",
-      "This app would like to access your health data to track your steps and activity.",
-      [
-        {
-          text: "Don't Allow",
-          style: "cancel",
-          onPress: () => {
-            setError("Health data access denied. Using mock data for testing.");
-            setUseMockData(true);
-          }
-        },
-        {
-          text: "OK",
-          onPress: () => {
-            // Simulate checking if the permission fixed the CMErrorDomain 105 issue
-            setTimeout(() => {
-              // There's still a 50% chance the error persists (simulating real-world behavior)
-              if (Math.random() > 0.5) {
-                setError("Step counting is still unavailable due to device restrictions (CMErrorDomain 105). Using sample data instead.");
-                setUseMockData(true);
-              } else {
-                setError(null);
-                setIsPedometerAvailable(true);
-                setUseMockData(false);
-              }
-            }, 1000);
-          }
-        }
-      ]
-    );
-  };
-  
   // Start/stop step tracking
   useEffect(() => {
     if (!isPedometerAvailable || Platform.OS === "web") return;
@@ -237,6 +274,11 @@ export default function useStepCounter() {
         // Get yesterday's date at midnight
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
+        
+        // If using HealthKit, we don't need to do anything here as it's already set up
+        if (dataSource === "healthKit") {
+          return;
+        }
         
         // If using a connected device, sync with it
         if (isUsingConnectedDevice) {
@@ -281,7 +323,7 @@ export default function useStepCounter() {
             setError("Pedometer data is temporarily unavailable (CMErrorDomain 105). This is likely due to missing Health permissions.");
             
             // On iOS, we need to request HealthKit permissions
-            if (Platform.OS === "ios") {
+            if (Platform.OS === 'ios') {
               requestHealthKitPermissions();
             } else {
               setUseMockData(true);
@@ -338,7 +380,7 @@ export default function useStepCounter() {
             setError("Unable to track steps in real-time due to device restrictions (CMErrorDomain 105). This is likely due to missing Health permissions.");
             
             // On iOS, we need to request HealthKit permissions
-            if (Platform.OS === "ios") {
+            if (Platform.OS === 'ios') {
               requestHealthKitPermissions();
             } else {
               setUseMockData(true);
@@ -361,7 +403,7 @@ export default function useStepCounter() {
           setError("Step counting is currently unavailable due to device restrictions (CMErrorDomain 105). This is likely due to missing Health permissions.");
           
           // On iOS, we need to request HealthKit permissions
-          if (Platform.OS === "ios") {
+          if (Platform.OS === 'ios') {
             requestHealthKitPermissions();
           } else {
             setUseMockData(true);
@@ -390,7 +432,95 @@ export default function useStepCounter() {
         clearInterval(mockDataTimerRef.current);
       }
     };
-  }, [isTrackingSteps, isPedometerAvailable, isUsingConnectedDevice, useMockData]);
+  }, [isTrackingSteps, isPedometerAvailable, isUsingConnectedDevice, useMockData, dataSource]);
+  
+  // Request HealthKit permissions on iOS
+  const requestHealthKitPermissions = async () => {
+    if (Platform.OS !== "ios") return;
+    
+    try {
+      // Check if HealthKit is available
+      const isAvailable = await HealthKit.isHealthDataAvailable();
+      setHealthKitAvailable(isAvailable);
+      
+      if (!isAvailable) {
+        setError("HealthKit is not available on this device. Using mock data instead.");
+        setUseMockData(true);
+        setupMockDataTracking();
+        return;
+      }
+      
+      // Request authorization for steps
+      const authResult = await HealthKit.requestAuthorization(['steps']);
+      setHealthKitAuthorized(authResult.authorized);
+      
+      if (authResult.authorized) {
+        // Set HealthKit as the primary data source
+        setDataSource("healthKit");
+        setIsPedometerAvailable(true);
+        setError(null);
+        setUseMockData(false);
+        
+        // Get initial step count for today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const stepsResult = await HealthKit.getStepCount(
+          today.toISOString(),
+          new Date().toISOString()
+        );
+        
+        if (stepsResult.success) {
+          setCurrentStepCount(stepsResult.steps);
+          
+          // Log the steps
+          const stepLog = {
+            id: today.toISOString(),
+            date: today.toISOString(),
+            steps: stepsResult.steps,
+            distance: calculateDistance(stepsResult.steps),
+            calories: calculateCaloriesBurned(stepsResult.steps),
+            source: "Apple Health"
+          };
+          
+          addStepLog(stepLog);
+        }
+        
+        // Set up observer for step count changes
+        if (healthKitObserverRef.current) {
+          healthKitObserverRef.current();
+        }
+        
+        healthKitObserverRef.current = HealthKit.observeStepCount((result) => {
+          if (result.success) {
+            setCurrentStepCount(result.steps);
+            
+            // Log the updated steps
+            const stepLog = {
+              id: today.toISOString(),
+              date: today.toISOString(),
+              steps: result.steps,
+              distance: calculateDistance(result.steps),
+              calories: calculateCaloriesBurned(result.steps),
+              source: "Apple Health"
+            };
+            
+            addStepLog(stepLog);
+          }
+        });
+      } else {
+        // If authorization denied, use mock data
+        setError("Health data access denied. Using mock data for testing.");
+        setUseMockData(true);
+        setupMockDataTracking();
+      }
+    } catch (error: any) {
+      console.error("Error requesting HealthKit permissions:", error);
+      setError(`Error requesting HealthKit permissions: ${error.message}`);
+      setUseMockData(true);
+      setupMockDataTracking();
+    }
+  };
   
   // Setup mock data tracking
   const setupMockDataTracking = () => {
@@ -510,8 +640,53 @@ export default function useStepCounter() {
     setRetryCount(prev => prev + 1);
     
     try {
-      // On iOS, check Bluetooth state and permissions first
+      // On iOS, check if HealthKit is available first
       if (Platform.OS === "ios") {
+        const isAvailable = await HealthKit.isHealthDataAvailable();
+        
+        if (isAvailable) {
+          // Request authorization for steps
+          const authResult = await HealthKit.requestAuthorization(['steps']);
+          
+          if (authResult.authorized) {
+            // Set HealthKit as the primary data source
+            setDataSource("healthKit");
+            setIsPedometerAvailable(true);
+            setError(null);
+            setUseMockData(false);
+            setHealthKitAuthorized(true);
+            setHealthKitAvailable(true);
+            
+            // Get initial step count for today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const stepsResult = await HealthKit.getStepCount(
+              today.toISOString(),
+              new Date().toISOString()
+            );
+            
+            if (stepsResult.success) {
+              setCurrentStepCount(stepsResult.steps);
+              
+              // Log the steps
+              const stepLog = {
+                id: today.toISOString(),
+                date: today.toISOString(),
+                steps: stepsResult.steps,
+                distance: calculateDistance(stepsResult.steps),
+                calories: calculateCaloriesBurned(stepsResult.steps),
+                source: "Apple Health"
+              };
+              
+              addStepLog(stepLog);
+            }
+            
+            return true;
+          }
+        }
+        
+        // If HealthKit is not available or authorization denied, check Bluetooth
         const stateResult = await CoreBluetooth.getBluetoothState();
         setBluetoothState(stateResult.state);
         
@@ -527,10 +702,6 @@ export default function useStepCounter() {
           setError("Bluetooth permissions are required to connect to devices.");
           return false;
         }
-        
-        // Also request HealthKit permissions
-        requestHealthKitPermissions();
-        return true;
       }
       
       // Check if pedometer is available
@@ -553,6 +724,7 @@ export default function useStepCounter() {
       setIsPedometerAvailable(true);
       setError(null);
       setUseMockData(false);
+      setDataSource("pedometer");
       return true;
     } catch (e: any) {
       console.error("Error retrying pedometer connection:", e);
@@ -565,7 +737,7 @@ export default function useStepCounter() {
         setError("Step counting is still unavailable due to device restrictions (CMErrorDomain 105). This is likely due to missing Health permissions.");
         
         // On iOS, we need to request HealthKit permissions
-        if (Platform.OS === "ios") {
+        if (Platform.OS === 'ios') {
           requestHealthKitPermissions();
           return true;
         } else {
@@ -598,6 +770,33 @@ export default function useStepCounter() {
     if (isUsingConnectedDevice) {
       syncWithConnectedDevice();
     }
+    
+    // If using HealthKit, refresh the data
+    if (dataSource === "healthKit") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const stepsResult = await HealthKit.getStepCount(
+        today.toISOString(),
+        new Date().toISOString()
+      );
+      
+      if (stepsResult.success) {
+        setCurrentStepCount(stepsResult.steps);
+        
+        // Log the steps
+        const stepLog = {
+          id: today.toISOString(),
+          date: today.toISOString(),
+          steps: stepsResult.steps,
+          distance: calculateDistance(stepsResult.steps),
+          calories: calculateCaloriesBurned(stepsResult.steps),
+          source: "Apple Health"
+        };
+        
+        addStepLog(stepLog);
+      }
+    }
   };
   
   const stopTracking = () => {
@@ -621,7 +820,37 @@ export default function useStepCounter() {
       return syncWithConnectedDevice();
     }
     
-    // If not using a connected device, try to retry pedometer connection
+    // If using HealthKit, refresh the data
+    if (dataSource === "healthKit") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const stepsResult = await HealthKit.getStepCount(
+        today.toISOString(),
+        new Date().toISOString()
+      );
+      
+      if (stepsResult.success) {
+        setCurrentStepCount(stepsResult.steps);
+        
+        // Log the steps
+        const stepLog = {
+          id: today.toISOString(),
+          date: today.toISOString(),
+          steps: stepsResult.steps,
+          distance: calculateDistance(stepsResult.steps),
+          calories: calculateCaloriesBurned(stepsResult.steps),
+          source: "Apple Health"
+        };
+        
+        addStepLog(stepLog);
+        return true;
+      }
+      
+      return false;
+    }
+    
+    // If not using a connected device or HealthKit, try to retry pedometer connection
     if (!isPedometerAvailable && !useMockData) {
       return retryPedometerConnection();
     }
@@ -642,6 +871,9 @@ export default function useStepCounter() {
     useMockData,
     retryPedometerConnection,
     bluetoothState,
-    permissionStatus
+    permissionStatus,
+    dataSource,
+    healthKitAvailable,
+    healthKitAuthorized
   };
 }

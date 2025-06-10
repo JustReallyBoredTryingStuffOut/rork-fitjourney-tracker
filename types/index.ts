@@ -262,6 +262,8 @@ export interface StepLog {
   steps: number;
   distance?: number; // in km
   calories?: number;
+  source?: string; // e.g., 'Apple Health', 'Fitbit', 'Device Pedometer'
+  deviceId?: string; // ID of the device that provided the data
 }
 
 export interface CardioLog {
@@ -413,13 +415,72 @@ export interface AppSettings {
 }
 
 // Device Connection Types
-export interface ConnectedDevice {
+export interface HealthDevice {
   id: string;
   name: string;
-  type: 'fitness_tracker' | 'smart_scale' | 'heart_rate_monitor' | 'other';
-  lastSynced?: string;
-  batteryLevel?: number;
+  type: 'appleWatch' | 'fitbit' | 'garmin' | 'samsung' | 'whoop' | 'xiaomi' | 'other';
+  model?: string;
   connected: boolean;
+  lastSynced?: string;
+  capabilities?: string[];
+  batteryLevel?: number;
+}
+
+export interface DeviceSync {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  timestamp: string;
+  dataTypes: string[];
+  recordCount: number;
+}
+
+export interface DeviceData {
+  deviceId: string;
+  deviceType: string;
+  steps?: {
+    date: string;
+    steps: number;
+    distance?: number;
+    calories?: number;
+  }[];
+  activities?: {
+    externalId: string;
+    type: string;
+    date: string;
+    duration: number;
+    distance: number;
+    calories: number;
+    notes?: string;
+    isOutdoor?: boolean;
+    location?: string;
+    heartRate?: {
+      avg: number;
+      max: number;
+      min: number;
+    };
+    elevationGain?: number;
+    route?: {
+      lat: number;
+      lng: number;
+      timestamp: string;
+    }[];
+  }[];
+}
+
+// Health Goals
+export interface HealthGoals {
+  dailySteps: number;
+  weeklyWorkouts: number;
+  targetWeight: number;
+  targetDate: string;
+}
+
+// Water Intake
+export interface WaterIntake {
+  id: string;
+  date: string;
+  amount: number;
 }
 
 // Export all types

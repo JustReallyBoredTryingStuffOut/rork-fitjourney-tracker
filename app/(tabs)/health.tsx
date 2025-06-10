@@ -28,6 +28,8 @@ import Button from "@/components/Button";
 
 // Import CoreBluetooth with correct path
 import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
+// Import HealthKit module
+import HealthKit from "@/src/NativeModules/HealthKit";
 
 export default function HealthScreen() {
   const router = useRouter();
@@ -48,6 +50,8 @@ export default function HealthScreen() {
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [bluetoothState, setBluetoothState] = useState<string | null>("poweredOn"); // Default to poweredOn
   const [permissionStatus, setPermissionStatus] = useState<"unknown" | "granted" | "denied">("granted"); // Default to granted
+  const [healthKitAvailable, setHealthKitAvailable] = useState(false);
+  const [healthKitAuthorized, setHealthKitAuthorized] = useState(false);
   
   // Initialize Bluetooth state and permissions
   useEffect(() => {
@@ -83,6 +87,37 @@ export default function HealthScreen() {
     }
   }, []);
   
+  // Initialize HealthKit
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      const initializeHealthKit = async () => {
+        try {
+          // Check if HealthKit is available
+          const isAvailable = await HealthKit.isHealthDataAvailable();
+          setHealthKitAvailable(isAvailable);
+          
+          if (isAvailable) {
+            // Request authorization for health data
+            const authResult = await HealthKit.requestAuthorization([
+              'steps', 
+              'distance', 
+              'calories', 
+              'heartRate', 
+              'sleep', 
+              'workouts'
+            ]);
+            
+            setHealthKitAuthorized(authResult.authorized);
+          }
+        } catch (error) {
+          console.error("Error initializing HealthKit:", error);
+        }
+      };
+      
+      initializeHealthKit();
+    }
+  }, []);
+  
   // Calculate total workouts
   const totalWorkouts = workoutLogs.length;
   
@@ -107,13 +142,53 @@ export default function HealthScreen() {
   const garmin = getConnectedDeviceByType("garmin");
   
   const handleSyncAllDevices = async () => {
-    if (!hasConnectedDevices) {
+    if (!hasConnectedDevices && !healthKitAuthorized) {
       Alert.alert(
-        "No Connected Devices",
-        "You don't have any connected devices. Would you like to add one?",
+        "No Data Sources",
+        "You don't have any connected devices or Apple Health access. Would you like to connect a device or enable Apple Health?",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Add Device", onPress: () => router.push("/health-devices") }
+          { text: "Connect Device", onPress: () => router.push("/health-devices") },
+          { 
+            text: "Enable Apple Health", 
+            onPress: async () => {
+              if (Platform.OS === 'ios') {
+                try {
+                  const authResult = await HealthKit.requestAuthorization([
+                    'steps', 
+                    'distance', 
+                    'calories', 
+                    'heartRate', 
+                    'sleep', 
+                    'workouts'
+                  ]);
+                  
+                  setHealthKitAuthorized(authResult.authorized);
+                  
+                  if (authResult.authorized) {
+                    Alert.alert(
+                      "Apple Health Connected",
+                      "Your app is now connected to Apple Health. Your health data will be synced automatically.",
+                      [{ text: "OK" }]
+                    );
+                  } else {
+                    Alert.alert(
+                      "Apple Health Access Denied",
+                      "Please open the Settings app and grant this app access to your health data.",
+                      [{ text: "OK" }]
+                    );
+                  }
+                } catch (error) {
+                  console.error("Error requesting HealthKit authorization:", error);
+                  Alert.alert(
+                    "Error",
+                    "There was an error connecting to Apple Health. Please try again.",
+                    [{ text: "OK" }]
+                  );
+                }
+              }
+            }
+          }
         ]
       );
       return;
@@ -122,8 +197,44 @@ export default function HealthScreen() {
     setIsSyncingAll(true);
     
     try {
-      // Simulate syncing with all connected devices
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Sync with Apple Health if authorized
+      if (Platform.OS === 'ios' && healthKitAuthorized) {
+        // Get today's date at midnight
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Get 7 days ago
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        // Get step data
+        const stepsResult = await HealthKit.getStepCount(
+          sevenDaysAgo.toISOString(),
+          new Date().toISOString()
+        );
+        
+        if (stepsResult.success) {
+          // Log success
+          console.log(`Synced ${stepsResult.steps} steps from Apple Health`);
+        }
+        
+        // Get workout data
+        const workoutsResult = await HealthKit.getWorkouts(
+          sevenDaysAgo.toISOString(),
+          new Date().toISOString()
+        );
+        
+        if (workoutsResult.success) {
+          // Log success
+          console.log(`Synced ${workoutsResult.workouts.length} workouts from Apple Health`);
+        }
+      }
+      
+      // Sync with connected devices
+      if (hasConnectedDevices) {
+        // Simulate syncing with all connected devices
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
       
       Alert.alert(
         "Sync Complete",
@@ -148,6 +259,62 @@ export default function HealthScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Health Tracking</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Monitor your fitness progress</Text>
       </View>
+      
+      {/* Apple Health Banner (iOS only) */}
+      {Platform.OS === 'ios' && healthKitAvailable && !healthKitAuthorized && (
+        <View style={[
+          styles.healthKitBanner, 
+          { backgroundColor: "rgba(74, 144, 226, 0.1)" }
+        ]}>
+          <View style={styles.healthKitContent}>
+            <Zap size={20} color={colors.primary} />
+            <Text style={[styles.healthKitText, { color: colors.text }]}>
+              Connect to Apple Health to automatically sync your steps, workouts, and more.
+            </Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.healthKitButton, { backgroundColor: colors.primary }]}
+            onPress={async () => {
+              try {
+                const authResult = await HealthKit.requestAuthorization([
+                  'steps', 
+                  'distance', 
+                  'calories', 
+                  'heartRate', 
+                  'sleep', 
+                  'workouts'
+                ]);
+                
+                setHealthKitAuthorized(authResult.authorized);
+                
+                if (authResult.authorized) {
+                  Alert.alert(
+                    "Apple Health Connected",
+                    "Your app is now connected to Apple Health. Your health data will be synced automatically.",
+                    [{ text: "OK" }]
+                  );
+                } else {
+                  Alert.alert(
+                    "Apple Health Access Denied",
+                    "Please open the Settings app and grant this app access to your health data.",
+                    [{ text: "OK" }]
+                  );
+                }
+              } catch (error) {
+                console.error("Error requesting HealthKit authorization:", error);
+                Alert.alert(
+                  "Error",
+                  "There was an error connecting to Apple Health. Please try again.",
+                  [{ text: "OK" }]
+                );
+              }
+            }}
+          >
+            <Text style={styles.healthKitButtonText}>Connect</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       
       {/* Bluetooth Status Banner (iOS only) */}
       {Platform.OS === 'ios' && bluetoothState !== "poweredOn" && (
@@ -214,18 +381,30 @@ export default function HealthScreen() {
         </View>
       )}
       
-      {hasConnectedDevices && (
+      {/* Connected Device Banner */}
+      {(hasConnectedDevices || (Platform.OS === 'ios' && healthKitAuthorized)) && (
         <View style={[styles.deviceBanner, { backgroundColor: colors.highlight }]}>
           <View style={styles.deviceInfo}>
-            <Watch size={20} color={colors.primary} />
-            <Text style={[styles.deviceText, { color: colors.text }]}>
-              Connected to {
-                appleWatch ? "Apple Watch" : 
-                fitbit ? "Fitbit" : 
-                garmin ? "Garmin" : 
-                "Smart Device"
-              }
-            </Text>
+            {healthKitAuthorized && Platform.OS === 'ios' ? (
+              <>
+                <Zap size={20} color={colors.primary} />
+                <Text style={[styles.deviceText, { color: colors.text }]}>
+                  Connected to Apple Health
+                </Text>
+              </>
+            ) : (
+              <>
+                <Watch size={20} color={colors.primary} />
+                <Text style={[styles.deviceText, { color: colors.text }]}>
+                  Connected to {
+                    appleWatch ? "Apple Watch" : 
+                    fitbit ? "Fitbit" : 
+                    garmin ? "Garmin" : 
+                    "Smart Device"
+                  }
+                </Text>
+              </>
+            )}
           </View>
           <TouchableOpacity 
             style={styles.syncAllButton}
@@ -297,7 +476,7 @@ export default function HealthScreen() {
         </View>
       </View>
       
-      {!hasConnectedDevices && (
+      {!hasConnectedDevices && !(Platform.OS === 'ios' && healthKitAuthorized) && (
         <TouchableOpacity 
           style={[styles.connectDeviceCard, { backgroundColor: colors.card }]}
           onPress={() => router.push("/health-devices")}
@@ -311,7 +490,7 @@ export default function HealthScreen() {
                 Connect a Device
               </Text>
               <Text style={[styles.connectDeviceSubtitle, { color: colors.textSecondary }]}>
-                Sync with Apple Watch, Fitbit, or Garmin
+                Sync with Apple Health, Apple Watch, Fitbit, or Garmin
               </Text>
             </View>
           </View>
@@ -348,7 +527,9 @@ export default function HealthScreen() {
                   
                   {activity.source && (
                     <View style={styles.activitySourceContainer}>
-                      {activity.source.includes("Apple") ? (
+                      {activity.source.includes("Apple Health") ? (
+                        <Zap size={12} color={colors.primary} />
+                      ) : activity.source.includes("Apple") ? (
                         <Watch size={12} color={colors.textSecondary} />
                       ) : activity.source.includes("Fitbit") ? (
                         <Watch size={12} color="#00B0B9" />
@@ -517,6 +698,32 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     marginTop: 4,
+  },
+  healthKitBanner: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  healthKitContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  healthKitText: {
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
+  healthKitButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  healthKitButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "500",
+    fontSize: 14,
   },
   bluetoothStatusBanner: {
     padding: 16,
