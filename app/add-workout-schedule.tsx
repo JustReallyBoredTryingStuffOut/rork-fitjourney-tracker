@@ -380,10 +380,11 @@ export default function AddWorkoutScheduleScreen() {
                   selectedValue={recurrenceFrequency}
                   onValueChange={(itemValue) => setRecurrenceFrequency(itemValue)}
                   style={styles.picker}
+                  dropdownIconColor={colors.text}
                 >
-                  <Picker.Item label="Weekly" value="weekly" />
-                  <Picker.Item label="Every 2 weeks" value="biweekly" />
-                  <Picker.Item label="Monthly" value="monthly" />
+                  <Picker.Item label="Weekly" value="weekly" color={Platform.OS === 'android' ? colors.text : undefined} />
+                  <Picker.Item label="Every 2 weeks" value="biweekly" color={Platform.OS === 'android' ? colors.text : undefined} />
+                  <Picker.Item label="Monthly" value="monthly" color={Platform.OS === 'android' ? colors.text : undefined} />
                 </Picker>
               </View>
             </View>
@@ -616,12 +617,13 @@ export default function AddWorkoutScheduleScreen() {
                   selectedValue={reminderTime}
                   onValueChange={(itemValue) => setReminderTime(itemValue)}
                   style={styles.picker}
+                  dropdownIconColor={colors.text}
                 >
-                  <Picker.Item label="5 minutes before" value={5} />
-                  <Picker.Item label="10 minutes before" value={10} />
-                  <Picker.Item label="15 minutes before" value={15} />
-                  <Picker.Item label="30 minutes before" value={30} />
-                  <Picker.Item label="1 hour before" value={60} />
+                  <Picker.Item label="5 minutes before" value={5} color={Platform.OS === 'android' ? colors.text : undefined} />
+                  <Picker.Item label="10 minutes before" value={10} color={Platform.OS === 'android' ? colors.text : undefined} />
+                  <Picker.Item label="15 minutes before" value={15} color={Platform.OS === 'android' ? colors.text : undefined} />
+                  <Picker.Item label="30 minutes before" value={30} color={Platform.OS === 'android' ? colors.text : undefined} />
+                  <Picker.Item label="1 hour before" value={60} color={Platform.OS === 'android' ? colors.text : undefined} />
                 </Picker>
               </View>
             </View>
@@ -979,9 +981,11 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 8,
     overflow: "hidden",
+    height: 50, // Fixed height to prevent stretching
   },
   picker: {
     height: 50,
+    width: '100%', // Ensure picker takes full width of container
   },
   // Button Styles
   saveButton: {
