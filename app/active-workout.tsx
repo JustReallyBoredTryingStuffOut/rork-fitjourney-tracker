@@ -48,6 +48,7 @@ import NoteInput from "@/components/NoteInput";
 import VideoEmbed from "@/components/VideoEmbed";
 import { useTheme } from "@/context/ThemeContext";
 import PRCelebrationModal from "@/components/PRCelebrationModal";
+import DraggableExerciseCard from "@/components/DraggableExerciseCard";
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
@@ -78,7 +79,13 @@ export default function ActiveWorkoutScreen() {
     isWorkoutRunningTooLong,
     longWorkoutThreshold,
     getPersonalRecordMessage,
-    isMajorLift
+    isMajorLift,
+    // New functions for exercise reordering and completion
+    reorderExercises,
+    markExerciseCompleted,
+    isExerciseCompleted,
+    areAllSetsCompleted,
+    startExerciseRestTimer
   } = useWorkoutStore();
   
   const { showLongWorkoutNotification } = useNotificationStore();
@@ -104,6 +111,12 @@ export default function ActiveWorkoutScreen() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(-1);
   const [currentSetIndex, setCurrentSetIndex] = useState(-1);
   const [useConnectedDevice, setUseConnectedDevice] = useState(false);
+  
+  // State for exercise expansion
+  const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
+  
+  // State for drag and drop
+  const [isDragging, setIsDragging] = useState(false);
   
   // PR celebration state
   const [showPRModal, setShowPRModal] = useState(false);
@@ -207,6 +220,17 @@ export default function ActiveWorkoutScreen() {
       );
     }
   }, [workoutStarted, hasConnectedDevices]);
+  
+  // Initialize expanded state for exercises
+  useEffect(() => {
+    if (activeWorkout && activeWorkout.exercises.length > 0) {
+      const initialExpandedState: Record<number, boolean> = {};
+      activeWorkout.exercises.forEach((_, index) => {
+        initialExpandedState[index] = index === 0; // Only expand the first exercise by default
+      });
+      setExpandedExercises(initialExpandedState);
+    }
+  }, [activeWorkout]);
   
   if (!activeWorkout) {
     router.replace("/");
@@ -491,6 +515,82 @@ export default function ActiveWorkoutScreen() {
     setCurrentPR(null);
   };
   
+  // New handlers for exercise reordering and completion
+  const handleToggleExpand = (index: number) => {
+    setExpandedExercises(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+  
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+  
+  const handleDragEnd = (fromIndex: number, toIndex: number) => {
+    setIsDragging(false);
+    
+    // Only reorder if the indices are different and valid
+    if (fromIndex !== toIndex && 
+        fromIndex >= 0 && 
+        toIndex >= 0 && 
+        fromIndex < activeWorkout.exercises.length && 
+        toIndex < activeWorkout.exercises.length) {
+      reorderExercises(fromIndex, toIndex);
+      
+      // Update expanded state to match the new order
+      const newExpandedState = { ...expandedExercises };
+      const expandedValue = newExpandedState[fromIndex];
+      delete newExpandedState[fromIndex];
+      newExpandedState[toIndex] = expandedValue;
+      setExpandedExercises(newExpandedState);
+    }
+  };
+  
+  const handleMarkExerciseCompleted = (exerciseIndex: number) => {
+    markExerciseCompleted(exerciseIndex, true);
+    
+    // Provide haptic feedback
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(200);
+    }
+    
+    // Voice feedback
+    if (timerSettings.voicePrompts && Platform.OS !== 'web') {
+      const exercise = exercises.find(e => e.id === activeWorkout.exercises[exerciseIndex].exerciseId);
+      if (exercise) {
+        Speech.speak(`${exercise.name} completed. Great job!`, {
+          language: 'en',
+          pitch: 1.0,
+          rate: 0.9
+        });
+      }
+    }
+    
+    // Auto-expand the next exercise if available
+    if (exerciseIndex < activeWorkout.exercises.length - 1) {
+      setExpandedExercises(prev => ({
+        ...prev,
+        [exerciseIndex]: false,
+        [exerciseIndex + 1]: true
+      }));
+    }
+  };
+  
+  const handleStartExerciseRest = (exerciseIndex: number) => {
+    // Start a rest timer between exercises
+    startExerciseRestTimer(timerSettings.defaultRestTime * 1.5); // Use a longer rest time between exercises
+    
+    // Voice feedback
+    if (timerSettings.voicePrompts && Platform.OS !== 'web') {
+      Speech.speak("Starting rest between exercises", {
+        language: 'en',
+        pitch: 1.0,
+        rate: 0.9
+      });
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <Stack.Screen 
@@ -650,15 +750,26 @@ export default function ActiveWorkoutScreen() {
                 const exercise = exercises.find(e => e.id === exerciseLog.exerciseId);
                 if (!exercise) return null;
                 
+                const isCompleted = isExerciseCompleted(exerciseIndex);
+                const allSetsCompleted = areAllSetsCompleted(exerciseIndex);
+                const isExpanded = expandedExercises[exerciseIndex] || false;
+                
                 return (
-                  <View key={exerciseLog.id} style={styles.exerciseCard}>
-                    <View style={styles.exerciseHeader}>
-                      <Text style={styles.exerciseName}>{exercise.name}</Text>
-                      <Text style={styles.exerciseMuscles}>
-                        {exercise.muscleGroups.join(", ")}
-                      </Text>
-                    </View>
-                    
+                  <DraggableExerciseCard
+                    key={exerciseLog.id}
+                    exercise={exercise}
+                    exerciseLog={exerciseLog}
+                    index={exerciseIndex}
+                    isCompleted={isCompleted}
+                    areAllSetsCompleted={allSetsCompleted}
+                    isExpanded={isExpanded}
+                    onToggleExpand={() => handleToggleExpand(exerciseIndex)}
+                    onDragStart={handleDragStart}
+                    onDragEnd={(toIndex) => handleDragEnd(exerciseIndex, toIndex)}
+                    onMarkCompleted={() => handleMarkExerciseCompleted(exerciseIndex)}
+                    onStartRest={() => handleStartExerciseRest(exerciseIndex)}
+                    totalExercises={activeWorkout.exercises.length}
+                  >
                     <View style={styles.exerciseNotesContainer}>
                       <NoteInput
                         initialValue={exerciseLog.notes}
@@ -728,7 +839,7 @@ export default function ActiveWorkoutScreen() {
                         style={styles.restButton}
                       />
                     </View>
-                  </View>
+                  </DraggableExerciseCard>
                 );
               })}
             </View>
@@ -1317,30 +1428,6 @@ const styles = StyleSheet.create({
   },
   exercisesContainer: {
     marginBottom: 24,
-  },
-  exerciseCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  exerciseHeader: {
-    marginBottom: 12,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  exerciseMuscles: {
-    fontSize: 14,
-    color: colors.primary,
   },
   exerciseNotesContainer: {
     marginBottom: 16,

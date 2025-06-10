@@ -49,6 +49,13 @@ interface WorkoutState {
   updateExerciseNote: (exerciseIndex: number, note: string) => void;
   updateWorkoutNote: (note: string) => void;
   
+  // New actions for exercise reordering and completion
+  reorderExercises: (fromIndex: number, toIndex: number) => void;
+  markExerciseCompleted: (exerciseIndex: number, completed: boolean) => void;
+  isExerciseCompleted: (exerciseIndex: number) => boolean;
+  areAllSetsCompleted: (exerciseIndex: number) => boolean;
+  startExerciseRestTimer: (duration?: number) => void;
+  
   scheduleWorkout: (scheduledWorkout: ScheduledWorkout) => void;
   updateScheduledWorkout: (scheduledWorkout: ScheduledWorkout) => void;
   removeScheduledWorkout: (id: string) => void;
@@ -193,6 +200,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             exerciseId: exercise.id,
             sets: [],
             notes: "",
+            completed: false, // Add completed flag for each exercise
           })),
           notes: "",
           completed: false,
@@ -454,6 +462,85 @@ export const useWorkoutStore = create<WorkoutState>()(
           }
         };
       }),
+      
+      // New functions for exercise reordering and completion
+      reorderExercises: (fromIndex, toIndex) => set((state) => {
+        if (!state.activeWorkout) return state;
+        
+        const updatedExercises = [...state.activeWorkout.exercises];
+        
+        // Remove the exercise from the original position
+        const [movedExercise] = updatedExercises.splice(fromIndex, 1);
+        
+        // Insert the exercise at the new position
+        updatedExercises.splice(toIndex, 0, movedExercise);
+        
+        return {
+          activeWorkout: {
+            ...state.activeWorkout,
+            exercises: updatedExercises,
+          }
+        };
+      }),
+      
+      markExerciseCompleted: (exerciseIndex, completed) => set((state) => {
+        if (!state.activeWorkout) return state;
+        
+        const updatedExercises = [...state.activeWorkout.exercises];
+        
+        if (exerciseIndex >= 0 && exerciseIndex < updatedExercises.length) {
+          updatedExercises[exerciseIndex] = {
+            ...updatedExercises[exerciseIndex],
+            completed,
+          };
+        }
+        
+        return {
+          activeWorkout: {
+            ...state.activeWorkout,
+            exercises: updatedExercises,
+          }
+        };
+      }),
+      
+      isExerciseCompleted: (exerciseIndex) => {
+        const { activeWorkout } = get();
+        
+        if (!activeWorkout || exerciseIndex < 0 || exerciseIndex >= activeWorkout.exercises.length) {
+          return false;
+        }
+        
+        return activeWorkout.exercises[exerciseIndex].completed || false;
+      },
+      
+      areAllSetsCompleted: (exerciseIndex) => {
+        const { activeWorkout } = get();
+        
+        if (!activeWorkout || exerciseIndex < 0 || exerciseIndex >= activeWorkout.exercises.length) {
+          return false;
+        }
+        
+        const exercise = activeWorkout.exercises[exerciseIndex];
+        
+        // If there are no sets, return false
+        if (exercise.sets.length === 0) {
+          return false;
+        }
+        
+        // Check if all sets have both weight and reps filled in
+        return exercise.sets.every(set => 
+          (set.weight > 0 || set.weight === 0) && 
+          (set.reps > 0 || set.reps === 0)
+        );
+      },
+      
+      startExerciseRestTimer: (duration) => {
+        const { timerSettings } = get();
+        const restDuration = duration || timerSettings.defaultRestTime;
+        
+        // Use the existing startRestTimer function with the specified duration
+        get().startRestTimer(restDuration);
+      },
       
       scheduleWorkout: (scheduledWorkout) => set((state) => ({
         scheduledWorkouts: [...state.scheduledWorkouts, scheduledWorkout]
