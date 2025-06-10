@@ -11,6 +11,7 @@
         "@react-native-picker/picker": "2.11.0",
         "@react-navigation/native": "^7.1.6",
         "expo": "^53.0.4",
+        "expo-av": "~15.1.5",
         "expo-blur": "~14.1.4",
         "expo-camera": "~16.1.6",
         "expo-constants": "~17.1.4",
@@ -736,6 +737,8 @@
     "expo-application": ["expo-application@6.1.4", "", { "peerDependencies": { "expo": "*" } }, "sha512-jXVZb3llTQ5j4C/I03GxKjujmhKex9Xo5JDZo/pRjScHSr4NoeMjPKWThyWVlWDM1v5YSEcsRJebVfTvq9SR5Q=="],
 
     "expo-asset": ["expo-asset@11.1.4", "", { "dependencies": { "@expo/image-utils": "^0.7.4", "expo-constants": "~17.1.4" }, "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-e3210sF0YHKRTCjVUOVmDAJ0Dk4vepL9RocKe36S7S+VthoCZwsBGLAM2LLvBa1SdmODF92AS0Nrcfi/1/VlbQ=="],
+
+    "expo-av": ["expo-av@15.1.5", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*", "react-native-web": "*" }, "optionalPeers": ["react-native-web"] }, "sha512-nd1B97Ix0u8IGL45jTtI66RNiRyiY9bYrS3nliugqjDF011RS03V7XpIeJdQnIh9/+P1/ei1b3vbpyifYVjmSw=="],
 
     "expo-blur": ["expo-blur@14.1.4", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-55P9tK/RjJZEcu2tU7BqX3wmIOrGMOOkmHztJMMws+ZGHzvtjnPmT7dsQxhOU9vPj77oHnKetYHU2sik3iBcCw=="],
 

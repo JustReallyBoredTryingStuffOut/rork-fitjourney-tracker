@@ -38,6 +38,7 @@ import {
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
 import { colors } from "@/constants/colors";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { useNotificationStore } from "@/store/notificationStore";
@@ -102,7 +103,8 @@ export default function ActiveWorkoutScreen() {
     markExerciseCompleted,
     isExerciseCompleted,
     areAllSetsCompleted,
-    startExerciseRestTimer
+    startExerciseRestTimer,
+    getPreviousSetData
   } = useWorkoutStore();
   
   const { showLongWorkoutNotification } = useNotificationStore();
@@ -146,6 +148,9 @@ export default function ActiveWorkoutScreen() {
   const [showPRModal, setShowPRModal] = useState(false);
   const [currentPR, setCurrentPR] = useState<PersonalRecord | null>(null);
   
+  // Sound effect for set completion
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  
   // Ref to track if long workout notification has been shown
   const longWorkoutNotificationShown = useRef(false);
   
@@ -154,6 +159,28 @@ export default function ActiveWorkoutScreen() {
     device => device.connected && 
     (device.type === "appleWatch" || device.type === "fitbit" || device.type === "garmin")
   );
+  
+  // Load sound effect
+  useEffect(() => {
+    async function loadSound() {
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          require('@/assets/sounds/complete.mp3')
+        );
+        setSound(sound);
+      } catch (error) {
+        console.log('Error loading sound', error);
+      }
+    }
+    
+    loadSound();
+    
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
   
   // Start a timer to update workout duration
   useEffect(() => {
@@ -629,6 +656,48 @@ export default function ActiveWorkoutScreen() {
     }
   };
   
+  // New function to handle set completion
+  const handleCompleteSet = (exerciseIndex: number, setIndex: number) => {
+    // Play sound effect
+    if (sound) {
+      try {
+        sound.replayAsync();
+      } catch (error) {
+        console.log('Error playing sound', error);
+      }
+    }
+    
+    // Provide haptic feedback
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(100);
+    }
+    
+    // Start rest timer
+    startRestTimer(timerSettings.defaultRestTime);
+    
+    // Mark set as completed
+    if (activeWorkout && activeWorkout.exercises[exerciseIndex] && 
+        activeWorkout.exercises[exerciseIndex].sets[setIndex]) {
+      
+      // Update the set to mark it as completed
+      const updatedExercises = [...activeWorkout.exercises];
+      updatedExercises[exerciseIndex].sets[setIndex].completed = true;
+      
+      // This would typically be handled by a function in the workout store
+      // For now, we'll just provide feedback
+      if (timerSettings.voicePrompts && Platform.OS !== 'web') {
+        speakWithDefaultVoice("Set completed. Rest timer started.");
+      }
+    }
+  };
+  
+  // Function to handle keyboard submit for set data
+  const handleSetDataSubmit = () => {
+    if (editingSetData) {
+      handleSaveSetData();
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <Stack.Screen 
@@ -831,78 +900,95 @@ export default function ActiveWorkoutScreen() {
                       <View style={styles.setsContainer}>
                         <View style={styles.setsHeader}>
                           <Text style={[styles.setsHeaderText, styles.setColumn]}>SET</Text>
+                          <Text style={[styles.setsHeaderText, styles.previousColumn]}>PREVIOUS</Text>
                           <Text style={[styles.setsHeaderText, styles.weightColumn]}>KG</Text>
                           <Text style={[styles.setsHeaderText, styles.repsColumn]}>REPS</Text>
-                          <Text style={[styles.setsHeaderText, styles.notesColumn]}>NOTES</Text>
+                          <Text style={[styles.setsHeaderText, styles.checkColumn]}>✓</Text>
                         </View>
                         
-                        {exerciseLog.sets.map((set, setIndex) => (
-                          <View key={set.id} style={styles.setRow}>
-                            <Text style={[styles.setText, styles.setColumn]}>{setIndex + 1}</Text>
+                        {exerciseLog.sets.map((set, setIndex) => {
+                          // Get previous set data for this exercise
+                          const previousSetData = getPreviousSetData(exerciseLog.exerciseId);
+                          const previousText = previousSetData ? 
+                            `${previousSetData.weight}kg×${previousSetData.reps}` : 
+                            "-";
                             
-                            {editingSetData && 
-                             editingSetData.exerciseIndex === exerciseIndex && 
-                             editingSetData.setIndex === setIndex ? (
-                              // Editing mode
-                              <>
-                                <View style={[styles.inputContainer, styles.weightColumn]}>
-                                  <TextInput
-                                    style={styles.input}
-                                    value={editingSetData.weight}
-                                    keyboardType="numeric"
-                                    onChangeText={(value) => setEditingSetData({
-                                      ...editingSetData,
-                                      weight: value
-                                    })}
-                                  />
-                                </View>
-                                
-                                <View style={[styles.inputContainer, styles.repsColumn]}>
-                                  <TextInput
-                                    style={styles.input}
-                                    value={editingSetData.reps}
-                                    keyboardType="numeric"
-                                    onChangeText={(value) => setEditingSetData({
-                                      ...editingSetData,
-                                      reps: value
-                                    })}
-                                  />
-                                </View>
-                                
-                                <TouchableOpacity 
-                                  style={[styles.saveButton, styles.notesColumn]}
-                                  onPress={handleSaveSetData}
-                                >
-                                  <Save size={16} color={colors.secondary} />
-                                </TouchableOpacity>
-                              </>
-                            ) : (
-                              // Display mode
-                              <>
-                                <TouchableOpacity 
-                                  style={[styles.inputContainer, styles.weightColumn]}
-                                  onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
-                                >
-                                  <Text style={styles.setValueText}>{set.weight}</Text>
-                                </TouchableOpacity>
-                                
-                                <TouchableOpacity 
-                                  style={[styles.inputContainer, styles.repsColumn]}
-                                  onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
-                                >
-                                  <Text style={styles.setValueText}>{set.reps}</Text>
-                                </TouchableOpacity>
-                                
-                                <TouchableOpacity 
-                                  style={[styles.notesButton, styles.notesColumn]}
-                                  onPress={() => handleOpenSetNote(exerciseIndex, setIndex, set.notes)}
-                                >
-                                  <Edit3 size={16} color={colors.textSecondary} />
-                                </TouchableOpacity>
-                              </>
-                            )}
-                          </View>
-                        ))}
+                          return (
+                            <View key={set.id} style={styles.setRow}>
+                              <Text style={[styles.setText, styles.setColumn]}>{setIndex + 1}</Text>
+                              
+                              <Text style={[styles.previousText, styles.previousColumn]}>
+                                {previousText}
+                              </Text>
+                              
+                              {editingSetData && 
+                               editingSetData.exerciseIndex === exerciseIndex && 
+                               editingSetData.setIndex === setIndex ? (
+                                // Editing mode
+                                <>
+                                  <View style={[styles.inputContainer, styles.weightColumn]}>
+                                    <TextInput
+                                      style={styles.input}
+                                      value={editingSetData.weight}
+                                      keyboardType="numeric"
+                                      onChangeText={(value) => setEditingSetData({
+                                        ...editingSetData,
+                                        weight: value
+                                      })}
+                                      onSubmitEditing={handleSetDataSubmit}
+                                      returnKeyType="done"
+                                    />
+                                  </View>
+                                  
+                                  <View style={[styles.inputContainer, styles.repsColumn]}>
+                                    <TextInput
+                                      style={styles.input}
+                                      value={editingSetData.reps}
+                                      keyboardType="numeric"
+                                      onChangeText={(value) => setEditingSetData({
+                                        ...editingSetData,
+                                        reps: value
+                                      })}
+                                      onSubmitEditing={handleSetDataSubmit}
+                                      returnKeyType="done"
+                                    />
+                                  </View>
+                                  
+                                  <TouchableOpacity 
+                                    style={[styles.saveButton, styles.checkColumn]}
+                                    onPress={handleSaveSetData}
+                                  >
+                                    <Save size={16} color={colors.secondary} />
+                                  </TouchableOpacity>
+                                </>
+                              ) : (
+                                // Display mode
+                                <>
+                                  <TouchableOpacity 
+                                    style={[styles.inputContainer, styles.weightColumn]}
+                                    onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
+                                  >
+                                    <Text style={styles.setValueText}>{set.weight}</Text>
+                                  </TouchableOpacity>
+                                  
+                                  <TouchableOpacity 
+                                    style={[styles.inputContainer, styles.repsColumn]}
+                                    onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
+                                  >
+                                    <Text style={styles.setValueText}>{set.reps}</Text>
+                                  </TouchableOpacity>
+                                  
+                                  <TouchableOpacity 
+                                    style={[styles.checkButton, styles.checkColumn, set.completed && styles.checkButtonCompleted]}
+                                    onPress={() => handleCompleteSet(exerciseIndex, setIndex)}
+                                  >
+                                    <Check size={16} color={set.completed ? "#FFFFFF" : colors.secondary} />
+                                  </TouchableOpacity>
+                                </>
+                              )}
+                            </View>
+                          );
+                        })}
                       </View>
                     )}
                     
@@ -1553,9 +1639,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
   },
+  previousText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
   // Column layout styles
   setColumn: {
     width: 40,
+    textAlign: "center",
+  },
+  previousColumn: {
+    width: 80,
     textAlign: "center",
   },
   weightColumn: {
@@ -1568,7 +1663,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     alignItems: "center",
   },
-  notesColumn: {
+  checkColumn: {
     width: 40,
     alignItems: "center",
   },
@@ -1592,10 +1687,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
   },
-  notesButton: {
+  checkButton: {
     alignItems: "center",
     justifyContent: "center",
     height: 36,
+    width: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(80, 200, 120, 0.1)",
+  },
+  checkButtonCompleted: {
+    backgroundColor: colors.secondary,
   },
   saveButton: {
     alignItems: "center",

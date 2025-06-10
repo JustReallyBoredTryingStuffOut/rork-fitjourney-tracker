@@ -57,6 +57,7 @@ export default function DraggableExerciseCard({
   const cardPositionY = useRef(0);
   const initialTouchY = useRef(0);
   const lastReportedDropZone = useRef<number | null>(null);
+  const lastVibrationTime = useRef(0);
   
   // Get screen dimensions
   const screenHeight = Dimensions.get('window').height;
@@ -106,6 +107,7 @@ export default function DraggableExerciseCard({
         
         // Reset the last reported drop zone
         lastReportedDropZone.current = null;
+        lastVibrationTime.current = Date.now();
         
         // Store the initial position
         pan.setOffset({
@@ -129,8 +131,11 @@ export default function DraggableExerciseCard({
           lastReportedDropZone.current = potentialDropIndex;
           
           // Provide light haptic feedback when crossing threshold to a new position
-          if (potentialDropIndex !== null && Platform.OS !== 'web') {
+          // But limit the frequency of vibrations to prevent excessive feedback
+          const now = Date.now();
+          if (potentialDropIndex !== null && Platform.OS !== 'web' && now - lastVibrationTime.current > 300) {
             Vibration.vibrate(20);
+            lastVibrationTime.current = now;
           }
         }
       },

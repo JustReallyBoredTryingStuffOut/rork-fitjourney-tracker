@@ -56,6 +56,9 @@ interface WorkoutState {
   areAllSetsCompleted: (exerciseIndex: number) => boolean;
   startExerciseRestTimer: (duration?: number) => void;
   
+  // New action to get previous set data for an exercise
+  getPreviousSetData: (exerciseId: string) => { weight: number; reps: number } | null;
+  
   scheduleWorkout: (scheduledWorkout: ScheduledWorkout) => void;
   updateScheduledWorkout: (scheduledWorkout: ScheduledWorkout) => void;
   removeScheduledWorkout: (id: string) => void;
@@ -540,6 +543,40 @@ export const useWorkoutStore = create<WorkoutState>()(
         
         // Use the existing startRestTimer function with the specified duration
         get().startRestTimer(restDuration);
+      },
+      
+      // New function to get previous set data for an exercise
+      getPreviousSetData: (exerciseId) => {
+        const { workoutLogs } = get();
+        
+        // Find the most recent completed workout that contains this exercise
+        const recentWorkouts = [...workoutLogs]
+          .filter(log => log.completed)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        for (const workout of recentWorkouts) {
+          // Find the exercise in this workout
+          const exerciseLog = workout.exercises.find(ex => ex.exerciseId === exerciseId);
+          
+          if (exerciseLog && exerciseLog.sets.length > 0) {
+            // Find the set with the highest weight and reps
+            const bestSet = [...exerciseLog.sets]
+              .sort((a, b) => {
+                // Sort by weight first, then by reps
+                if (a.weight !== b.weight) {
+                  return b.weight - a.weight;
+                }
+                return b.reps - a.reps;
+              })[0];
+            
+            return {
+              weight: bestSet.weight,
+              reps: bestSet.reps
+            };
+          }
+        }
+        
+        return null;
       },
       
       scheduleWorkout: (scheduledWorkout) => set((state) => ({
