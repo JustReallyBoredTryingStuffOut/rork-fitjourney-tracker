@@ -865,23 +865,12 @@ export default function ActiveWorkoutScreen() {
           <Text style={styles.keyboardTitle}>
             {editingSetData.field === 'weight' ? 'Enter Weight (kg)' : 'Enter Reps'}
           </Text>
-          <View style={styles.keyboardHeaderButtons}>
-            <TouchableOpacity 
-              style={styles.keyboardMinimizeButton}
-              onPress={handleMinimizeKeyboard}
-            >
-              <Minimize size={20} color={colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.keyboardCloseButton}
-              onPress={() => {
-                Keyboard.dismiss();
-                handleSaveSetData();
-              }}
-            >
-              <X size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={styles.keyboardMinimizeButton}
+            onPress={handleMinimizeKeyboard}
+          >
+            <Minimize size={20} color={colors.text} />
+          </TouchableOpacity>
         </View>
         
         <View style={styles.keyboardRow}>
@@ -938,14 +927,12 @@ export default function ActiveWorkoutScreen() {
             onPress={() => handleKeyPress('-')}
           >
             <Minus size={20} color={colors.text} />
-            <Text style={styles.keyboardSpecialKeyText}>Decrease</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
             onPress={() => handleKeyPress('+')}
           >
             <Plus size={20} color={colors.text} />
-            <Text style={styles.keyboardSpecialKeyText}>Increase</Text>
           </TouchableOpacity>
         </View>
         
@@ -962,14 +949,11 @@ export default function ActiveWorkoutScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.keyboardDoneButton}
-            onPress={() => {
-              Keyboard.dismiss();
-              handleSaveSetData();
-            }}
+            style={styles.keyboardMinimizeFullButton}
+            onPress={handleMinimizeKeyboard}
           >
-            <Text style={styles.keyboardDoneButtonText}>Done</Text>
-            <Check size={16} color="#FFFFFF" />
+            <Text style={styles.keyboardMinimizeButtonText}>Minimize</Text>
+            <Minimize size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -1177,11 +1161,11 @@ export default function ActiveWorkoutScreen() {
                     {exerciseLog.sets.length > 0 && (
                       <View style={styles.setsContainer}>
                         <View style={styles.setsHeader}>
-                          <Text style={[styles.setsHeaderText, styles.setColumn, { color: "#FFFFFF" }]}>SET</Text>
-                          <Text style={[styles.setsHeaderText, styles.previousColumn, { color: "#FFFFFF" }]}>PREVIOUS</Text>
-                          <Text style={[styles.setsHeaderText, styles.weightColumn, { color: "#FFFFFF" }]}>KG</Text>
-                          <Text style={[styles.setsHeaderText, styles.repsColumn, { color: "#FFFFFF" }]}>REPS</Text>
-                          <Text style={[styles.setsHeaderText, styles.checkColumn, { color: "#FFFFFF" }]}>✓</Text>
+                          <Text style={[styles.setsHeaderText, styles.setColumn]}>SET</Text>
+                          <Text style={[styles.setsHeaderText, styles.previousColumn]}>PREVIOUS</Text>
+                          <Text style={[styles.setsHeaderText, styles.weightColumn]}>KG</Text>
+                          <Text style={[styles.setsHeaderText, styles.repsColumn]}>REPS</Text>
+                          <Text style={[styles.setsHeaderText, styles.checkColumn]}>✓</Text>
                         </View>
                         
                         {exerciseLog.sets.map((set, setIndex) => {
@@ -1287,11 +1271,11 @@ export default function ActiveWorkoutScreen() {
                       />
                       
                       <Button
-                        title="Rest Timer"
+                        title="Start Rest"
                         onPress={() => setShowRestModal(true)}
                         variant="outline"
                         size="small"
-                        icon={<Clock size={16} color={colors.primary} />}
+                        icon={<Clock size={16} color="#FF9500" />}
                         style={styles.restButton}
                       />
                     </View>
@@ -1960,7 +1944,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     justifyContent: "center",
     width: "100%",
-    height: 48, // Increased height
+    height: 40, // Reduced height
     backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
@@ -1969,13 +1953,13 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingHorizontal: 8,
-    fontSize: 16, // Increased font size
+    fontSize: 16,
     color: colors.text,
     textAlign: "center",
-    height: 48, // Increased height
+    height: 40, // Reduced height
   },
   setValueText: {
-    fontSize: 16, // Increased font size
+    fontSize: 16,
     color: colors.text,
     textAlign: "center",
   },
@@ -1993,7 +1977,7 @@ const styles = StyleSheet.create({
   saveButton: {
     alignItems: "center",
     justifyContent: "center",
-    height: 48, // Increased height
+    height: 40, // Reduced height
     backgroundColor: "rgba(80, 200, 120, 0.1)",
     borderRadius: 8,
   },
@@ -2008,6 +1992,8 @@ const styles = StyleSheet.create({
   restButton: {
     flex: 1,
     marginLeft: 8,
+    backgroundColor: "rgba(255, 149, 0, 0.1)",
+    borderColor: "#FF9500",
   },
   footer: {
     position: "absolute",
@@ -2061,21 +2047,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 12,
   },
-  keyboardHeaderButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   keyboardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
   },
-  keyboardCloseButton: {
-    padding: 8,
-  },
   keyboardMinimizeButton: {
     padding: 8,
-    marginRight: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   keyboardRow: {
     flexDirection: 'row',
@@ -2104,11 +2088,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '500',
   },
-  keyboardSpecialKeyText: {
-    fontSize: 14,
-    color: colors.text,
-    marginLeft: 8,
-  },
   keyboardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -2130,7 +2109,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
   },
-  keyboardDoneButton: {
+  keyboardMinimizeFullButton: {
     flex: 1,
     backgroundColor: colors.secondary,
     borderRadius: 8,
@@ -2140,7 +2119,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  keyboardDoneButtonText: {
+  keyboardMinimizeButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',

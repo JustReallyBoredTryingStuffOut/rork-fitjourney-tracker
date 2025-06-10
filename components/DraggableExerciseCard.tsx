@@ -195,7 +195,7 @@ export default function DraggableExerciseCard({
         cardStyle
       ]}
     >
-      {/* Drag handle - positioned at the top when expanded */}
+      {/* Drag handle - positioned at the left side */}
       <View 
         style={[
           styles.dragHandleContainer,
