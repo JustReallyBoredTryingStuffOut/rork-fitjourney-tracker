@@ -9,7 +9,8 @@ import {
   Dimensions,
   Platform,
   Vibration,
-  Modal
+  Modal,
+  Image
 } from 'react-native';
 import { ChevronDown, ChevronUp, Check, Clock, GripVertical, X, BarChart2, History, Info } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
@@ -87,38 +88,13 @@ export default function DraggableExerciseCard({
   // Calculate possible drop positions
   const getDropIndex = (gestureY: number) => {
     // Calculate the absolute position on screen
-    const absoluteY = gestureY;
+    const absoluteY = cardPositionY.current + gestureY - initialTouchY.current;
     
-    // Find which position this corresponds to
-    for (let i = 0; i < totalExercises; i++) {
-      // Skip the current card's position
-      if (i === index) continue;
-      
-      // Get the position of this card
-      const cardPosition = i * cardHeight.current + cardHeight.current / 2;
-      
-      // Calculate distance from the center of the dragged card to this position
-      const distance = Math.abs(absoluteY - cardPosition);
-      
-      // If we're close enough to this position, return it as the drop index
-      if (distance < cardHeight.current / 2) {
-        return i;
-      }
-    }
+    // Calculate which index this position corresponds to
+    const targetIndex = Math.round(absoluteY / cardHeight.current);
     
-    // If we're at the top of the list
-    if (absoluteY < cardHeight.current / 2) {
-      return 0;
-    }
-    
-    // If we're at the bottom of the list
-    if (absoluteY > (totalExercises - 1) * cardHeight.current + cardHeight.current / 2) {
-      return totalExercises - 1;
-    }
-    
-    // Calculate which position we're closest to
-    const closestIndex = Math.round(absoluteY / cardHeight.current);
-    return Math.max(0, Math.min(totalExercises - 1, closestIndex));
+    // Ensure the index is within bounds
+    return Math.max(0, Math.min(totalExercises - 1, targetIndex));
   };
   
   const panResponder = useRef(
@@ -147,15 +123,6 @@ export default function DraggableExerciseCard({
         // Start dragging
         setIsDragging(true);
         onDragStart();
-        
-        // Provide haptic feedback when drag starts
-        if (Platform.OS !== 'web') {
-          const now = Date.now();
-          if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
-            Vibration.vibrate(50);
-            lastVibrationTime.current = now;
-          }
-        }
         
         // Reset the last reported drop zone
         lastReportedDropZone.current = null;

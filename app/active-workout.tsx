@@ -605,28 +605,11 @@ export default function ActiveWorkoutScreen() {
   };
   
   const handleDragStart = (index: number) => {
-    // Provide haptic feedback when drag starts
-    if (Platform.OS !== 'web') {
-      const now = Date.now();
-      if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
-        Vibration.vibrate(50);
-        lastVibrationTime.current = now;
-      }
-    }
     setIsDragging(true);
     setDraggedExerciseIndex(index);
   };
   
   const handleDragEnd = (fromIndex: number, toIndex: number) => {
-    // Provide haptic feedback when drag ends
-    if (Platform.OS !== 'web') {
-      const now = Date.now();
-      if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
-        Vibration.vibrate(50);
-        lastVibrationTime.current = now;
-      }
-    }
-    
     setIsDragging(false);
     setDraggedExerciseIndex(null);
     
@@ -1974,10 +1957,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     height: 40,
+    color: "#FFFFFF",
   },
   setValueText: {
     fontSize: 16,
     textAlign: "center",
+    color: "#FFFFFF",
   },
   checkButton: {
     alignItems: "center",
