@@ -982,8 +982,8 @@ export const useWorkoutStore = create<WorkoutState>()(
                 // Get the workout duration
                 const workoutDuration = w.estimatedDuration || w.duration || 60;
                 
-                // Include workouts that are 35 minutes or less (slightly relaxed criteria)
-                return workoutDuration <= 35 && (
+                // Include workouts that are 30 minutes or less (slightly relaxed criteria)
+                return workoutDuration <= 30 && (
                   !w.difficulty || 
                   userFitnessLevel === 'advanced' ||
                   (userFitnessLevel === 'intermediate' && (w.difficulty === 'beginner' || w.difficulty === 'intermediate')) ||

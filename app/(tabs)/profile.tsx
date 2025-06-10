@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.text,
     marginBottom: 4,
+    flexShrink: 1,
   },
   gamificationDescription: {
     fontSize: 12,

@@ -305,7 +305,7 @@ export default function HomeScreen() {
         // But delay it to avoid immediate popup
         setTimeout(() => {
           setMoodSelectorDelayed(true);
-        }, 2000); // Increased delay to 2 seconds
+        }, 30000); // Increased delay to 30 seconds
       }
     }
   }, [initialCheckDone]);
@@ -334,7 +334,7 @@ export default function HomeScreen() {
       // Delay showing the mood selector to avoid immediate transition
       setTimeout(() => {
         setMoodSelectorDelayed(true);
-      }, 2000); // Increased delay to 2 seconds
+      }, 30000); // Increased delay to 30 seconds
     }
   }, [showGoalPrompt]);
   
