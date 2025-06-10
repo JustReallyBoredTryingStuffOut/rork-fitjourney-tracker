@@ -8,8 +8,10 @@ export const workouts: Workout[] = [
     description: "A comprehensive full-body workout targeting all major muscle groups.",
     exercises: [exercises[0], exercises[1], exercises[2], exercises[5]],
     duration: 60,
+    estimatedDuration: 60,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "high",
   },
   {
     id: "w2",
@@ -17,8 +19,10 @@ export const workouts: Workout[] = [
     description: "Concentrate on developing your chest, back, and arms.",
     exercises: [exercises[0], exercises[3], exercises[5]],
     duration: 45,
+    estimatedDuration: 45,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "medium",
   },
   {
     id: "w3",
@@ -26,8 +30,10 @@ export const workouts: Workout[] = [
     description: "Build strength and power in your legs and glutes.",
     exercises: [exercises[1], exercises[2]],
     duration: 40,
+    estimatedDuration: 40,
     difficulty: "advanced",
     category: "Strength",
+    intensity: "high",
   },
   {
     id: "w4",
@@ -35,8 +41,10 @@ export const workouts: Workout[] = [
     description: "Develop a strong and stable core with these targeted exercises.",
     exercises: [exercises[4]],
     duration: 30,
+    estimatedDuration: 30,
     difficulty: "beginner",
     category: "Core",
+    intensity: "medium",
   },
   // New bodyweight workouts
   {
@@ -45,8 +53,10 @@ export const workouts: Workout[] = [
     description: "A beginner-friendly workout using only your bodyweight.",
     exercises: [exercises[6], exercises[7], exercises[4], exercises[8]],
     duration: 30,
+    estimatedDuration: 30,
     difficulty: "beginner",
     category: "Bodyweight",
+    intensity: "low",
     imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -55,8 +65,10 @@ export const workouts: Workout[] = [
     description: "High-intensity interval training using bodyweight exercises to burn calories and improve conditioning.",
     exercises: [exercises[6], exercises[9], exercises[10], exercises[8]],
     duration: 25,
+    estimatedDuration: 25,
     difficulty: "intermediate",
     category: "Bodyweight",
+    intensity: "high",
     imageUrl: "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -65,8 +77,10 @@ export const workouts: Workout[] = [
     description: "Challenge yourself with this advanced bodyweight workout that builds strength and endurance.",
     exercises: [exercises[3], exercises[10], exercises[11], exercises[9]],
     duration: 45,
+    estimatedDuration: 45,
     difficulty: "advanced",
     category: "Bodyweight",
+    intensity: "high",
     imageUrl: "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -75,8 +89,10 @@ export const workouts: Workout[] = [
     description: "Focus on your upper body using only bodyweight exercises.",
     exercises: [exercises[6], exercises[3], exercises[11]],
     duration: 35,
+    estimatedDuration: 35,
     difficulty: "intermediate",
     category: "Bodyweight",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -85,8 +101,10 @@ export const workouts: Workout[] = [
     description: "Combine core strengthening with cardio for an effective full-body workout.",
     exercises: [exercises[4], exercises[9], exercises[10]],
     duration: 30,
+    estimatedDuration: 30,
     difficulty: "intermediate",
     category: "Bodyweight",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   // New workouts based on musclewiki and darebee
@@ -101,8 +119,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Tricep Pushdown") || exercises[33]
     ],
     duration: 50,
+    estimatedDuration: 50,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "high",
     imageUrl: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -116,8 +136,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Bicep Curl") || exercises[32]
     ],
     duration: 50,
+    estimatedDuration: 50,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "high",
     imageUrl: "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -131,8 +153,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Leg Curl") || exercises[18]
     ],
     duration: 50,
+    estimatedDuration: 50,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "high",
     imageUrl: "https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -146,8 +170,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Farmer's Walk") || exercises.find(e => e.id === "ex124") || exercises[8]
     ],
     duration: 40,
+    estimatedDuration: 40,
     difficulty: "intermediate",
     category: "Functional",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -161,8 +187,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "High Knees") || exercises[31]
     ],
     duration: 30,
+    estimatedDuration: 30,
     difficulty: "intermediate",
     category: "Cardio",
+    intensity: "high",
     imageUrl: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -176,8 +204,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Side Plank") || exercises.find(e => e.id === "ex110") || exercises[4]
     ],
     duration: 25,
+    estimatedDuration: 25,
     difficulty: "intermediate",
     category: "Core",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1566241142559-40e1dab266c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -191,8 +221,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Bicep Curl") || exercises[32]
     ],
     duration: 45,
+    estimatedDuration: 45,
     difficulty: "beginner",
     category: "Strength",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -206,8 +238,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Dead Bug") || exercises.find(e => e.id === "ex109") || exercises[4]
     ],
     duration: 30,
+    estimatedDuration: 30,
     difficulty: "beginner",
     category: "Mobility",
+    intensity: "low",
     imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -221,8 +255,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Skull Crusher") || exercises[35]
     ],
     duration: 35,
+    estimatedDuration: 35,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -236,8 +272,10 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Push-up") || exercises[7]
     ],
     duration: 40,
+    estimatedDuration: 40,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
   {
@@ -251,8 +289,91 @@ export const workouts: Workout[] = [
       exercises.find(e => e.name === "Seated Cable Row") || exercises[20]
     ],
     duration: 40,
+    estimatedDuration: 40,
     difficulty: "intermediate",
     category: "Strength",
+    intensity: "medium",
     imageUrl: "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
   },
+  // Adding more shorter workouts for tired/not great users
+  {
+    id: "w21",
+    name: "Quick Total Body",
+    description: "A fast but effective full-body workout when you're short on time.",
+    exercises: [
+      exercises.find(e => e.name === "Push-up") || exercises[7],
+      exercises.find(e => e.name === "Bodyweight Squat") || exercises[8],
+      exercises.find(e => e.name === "Plank") || exercises[5]
+    ],
+    duration: 20,
+    estimatedDuration: 20,
+    difficulty: "beginner",
+    category: "Bodyweight",
+    intensity: "medium",
+    imageUrl: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+  },
+  {
+    id: "w22",
+    name: "15-Minute Energy Boost",
+    description: "A quick workout to boost your energy when you're feeling tired.",
+    exercises: [
+      exercises.find(e => e.name === "Jumping Jacks") || exercises.find(e => e.id === "ex115") || exercises[30],
+      exercises.find(e => e.name === "Mountain Climbers") || exercises[10],
+      exercises.find(e => e.name === "High Knees") || exercises[31]
+    ],
+    duration: 15,
+    estimatedDuration: 15,
+    difficulty: "beginner",
+    category: "Cardio",
+    intensity: "low",
+    imageUrl: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+  },
+  {
+    id: "w23",
+    name: "Quick Core Focus",
+    description: "A short core workout that can be done when you're low on energy.",
+    exercises: [
+      exercises.find(e => e.name === "Plank") || exercises[5],
+      exercises.find(e => e.name === "Bicycle Crunch") || exercises.find(e => e.id === "ex108") || exercises[4],
+      exercises.find(e => e.name === "Russian Twist") || exercises[22]
+    ],
+    duration: 15,
+    estimatedDuration: 15,
+    difficulty: "beginner",
+    category: "Core",
+    intensity: "low",
+    imageUrl: "https://images.unsplash.com/photo-1566241142559-40e1dab266c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+  },
+  {
+    id: "w24",
+    name: "Gentle Mobility Session",
+    description: "A light mobility workout perfect for when you're feeling tired or sore.",
+    exercises: [
+      exercises.find(e => e.name === "Bodyweight Squat") || exercises[8],
+      exercises.find(e => e.name === "Glute Bridge") || exercises.find(e => e.id === "ex104") || exercises[7],
+      exercises.find(e => e.name === "Cat-Cow Stretch") || exercises.find(e => e.id === "ex125") || exercises[4]
+    ],
+    duration: 20,
+    estimatedDuration: 20,
+    difficulty: "beginner",
+    category: "Mobility",
+    intensity: "low",
+    imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+  },
+  {
+    id: "w25",
+    name: "25-Minute Upper Body",
+    description: "A shorter upper body workout for days when you have limited time or energy.",
+    exercises: [
+      exercises.find(e => e.name === "Push-up") || exercises[7],
+      exercises.find(e => e.name === "Dumbbell Shoulder Press") || exercises[6],
+      exercises.find(e => e.name === "Bicep Curl") || exercises[32]
+    ],
+    duration: 25,
+    estimatedDuration: 25,
+    difficulty: "beginner",
+    category: "Strength",
+    intensity: "medium",
+    imageUrl: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+  }
 ];

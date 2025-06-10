@@ -905,10 +905,21 @@ export const useWorkoutStore = create<WorkoutState>()(
         // Finally, filter workouts based on mood preference
         switch (preference) {
           case "shorter":
-            // For tired users who want shorter workouts
+            // For tired or not great users who want shorter workouts
+            // Check both estimatedDuration and duration properties, prioritizing shorter workouts
             filteredWorkouts = filteredWorkouts
-              .filter(w => w.estimatedDuration <= 30)
-              .sort((a, b) => a.estimatedDuration - b.estimatedDuration);
+              .filter(w => {
+                // Get the workout duration (use estimatedDuration if available, otherwise use duration)
+                const workoutDuration = w.estimatedDuration || w.duration || 60;
+                // Only include workouts that are 30 minutes or less
+                return workoutDuration <= 30;
+              })
+              .sort((a, b) => {
+                // Sort by duration (shortest first)
+                const durationA = a.estimatedDuration || a.duration || 60;
+                const durationB = b.estimatedDuration || b.duration || 60;
+                return durationA - durationB;
+              });
             break;
             
           case "light":
@@ -945,7 +956,11 @@ export const useWorkoutStore = create<WorkoutState>()(
             // For users feeling great who want a challenge
             filteredWorkouts = filteredWorkouts
               .filter(w => w.intensity === "high")
-              .sort((a, b) => b.estimatedDuration - a.estimatedDuration);
+              .sort((a, b) => {
+                const durationA = a.estimatedDuration || a.duration || 60;
+                const durationB = b.estimatedDuration || b.duration || 60;
+                return durationB - durationA; // Longer workouts first for challenging
+              });
             break;
             
           case "normal":
@@ -956,32 +971,67 @@ export const useWorkoutStore = create<WorkoutState>()(
         
         // If we don't have enough workouts after filtering, add some random ones
         if (filteredWorkouts.length < count) {
-          const additionalWorkouts = workouts
-            .filter(w => {
-              // Skip already included workouts
-              if (filteredWorkouts.includes(w)) return false;
-              
-              // Check fitness level appropriateness
-              if (w.difficulty) {
-                if (userFitnessLevel === 'beginner') {
-                  return w.difficulty === 'beginner';
-                } else if (userFitnessLevel === 'intermediate') {
-                  return w.difficulty === 'beginner' || w.difficulty === 'intermediate';
-                }
-              }
-              
-              return true;
-            })
-            .sort(() => 0.5 - Math.random())
-            .slice(0, count - filteredWorkouts.length);
+          // If we're looking for shorter workouts but don't have enough, 
+          // try to find more short workouts before falling back to any workout
+          if (preference === "shorter") {
+            const additionalShortWorkouts = workouts
+              .filter(w => {
+                // Skip already included workouts
+                if (filteredWorkouts.includes(w)) return false;
+                
+                // Get the workout duration
+                const workoutDuration = w.estimatedDuration || w.duration || 60;
+                
+                // Include workouts that are 35 minutes or less (slightly relaxed criteria)
+                return workoutDuration <= 35 && (
+                  !w.difficulty || 
+                  userFitnessLevel === 'advanced' ||
+                  (userFitnessLevel === 'intermediate' && (w.difficulty === 'beginner' || w.difficulty === 'intermediate')) ||
+                  (userFitnessLevel === 'beginner' && w.difficulty === 'beginner')
+                );
+              })
+              .sort((a, b) => {
+                const durationA = a.estimatedDuration || a.duration || 60;
+                const durationB = b.estimatedDuration || b.duration || 60;
+                return durationA - durationB; // Sort by duration (shortest first)
+              })
+              .slice(0, count - filteredWorkouts.length);
+            
+            filteredWorkouts = [...filteredWorkouts, ...additionalShortWorkouts];
+          }
           
-          filteredWorkouts = [...filteredWorkouts, ...additionalWorkouts];
+          // If we still don't have enough, add some random workouts
+          if (filteredWorkouts.length < count) {
+            const additionalWorkouts = workouts
+              .filter(w => {
+                // Skip already included workouts
+                if (filteredWorkouts.includes(w)) return false;
+                
+                // Check fitness level appropriateness
+                if (w.difficulty) {
+                  if (userFitnessLevel === 'beginner') {
+                    return w.difficulty === 'beginner';
+                  } else if (userFitnessLevel === 'intermediate') {
+                    return w.difficulty === 'beginner' || w.difficulty === 'intermediate';
+                  }
+                }
+                
+                return true;
+              })
+              .sort(() => 0.5 - Math.random())
+              .slice(0, count - filteredWorkouts.length);
+            
+            filteredWorkouts = [...filteredWorkouts, ...additionalWorkouts];
+          }
         }
         
         // Randomize the order a bit to avoid always showing the same workouts
-        return filteredWorkouts
-          .sort(() => 0.5 - Math.random())
-          .slice(0, count);
+        // But keep the first few sorted by our criteria (especially important for shorter workouts)
+        const priorityWorkouts = filteredWorkouts.slice(0, Math.min(2, filteredWorkouts.length));
+        const remainingWorkouts = filteredWorkouts.slice(Math.min(2, filteredWorkouts.length))
+          .sort(() => 0.5 - Math.random());
+        
+        return [...priorityWorkouts, ...remainingWorkouts].slice(0, count);
       },
       
       getRestDayActivities: () => {
