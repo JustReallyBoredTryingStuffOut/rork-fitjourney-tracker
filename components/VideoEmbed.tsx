@@ -19,9 +19,19 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
   
   // Function to extract TikTok video ID
   const getTikTokVideoId = (url: string) => {
-    const regExp = /tiktok\.com\/@[^\/]+\/video\/(\d+)/;
-    const match = url.match(regExp);
-    return match ? match[1] : null;
+    // Support multiple TikTok URL formats
+    const regExps = [
+      /tiktok\.com\/@[^\/]+\/video\/(\d+)/,  // Standard format
+      /tiktok\.com\/t\/([^\/]+)/,            // Shortened t format
+      /vm\.tiktok\.com\/([^\/]+)/            // vm format
+    ];
+    
+    for (const regExp of regExps) {
+      const match = url.match(regExp);
+      if (match && match[1]) return match[1];
+    }
+    
+    return null;
   };
   
   // Determine video type and ID
@@ -36,7 +46,12 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
   if (youtubeId) {
     embedUrl = `https://www.youtube.com/embed/${youtubeId}`;
   } else if (tiktokId) {
-    embedUrl = `https://www.tiktok.com/embed/v2/${tiktokId}`;
+    // Use different embed URL format for iOS to improve compatibility
+    if (Platform.OS === "ios") {
+      embedUrl = `https://www.tiktok.com/embed/v2/${tiktokId}?autoplay=0&mute=0`;
+    } else {
+      embedUrl = `https://www.tiktok.com/embed/v2/${tiktokId}`;
+    }
   }
   
   const handleOpenLink = () => {
@@ -63,11 +78,41 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
     );
   }
   
+  // For iOS with TikTok, we'll provide a fallback option
+  if (Platform.OS === "ios" && isTikTok && !embedUrl) {
+    return (
+      <View style={styles.videoContainer}>
+        <View style={[styles.container, { height }]}>
+          <View style={styles.fallbackContainer}>
+            <Text style={styles.fallbackText}>TikTok video preview not available</Text>
+            <TouchableOpacity 
+              style={styles.fallbackButton}
+              onPress={handleOpenLink}
+            >
+              <Play size={20} color="#FFFFFF" />
+              <Text style={styles.fallbackButtonText}>Open in TikTok</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Text style={styles.attributionText}>
+          TikTok content. All rights belong to their respective owners.
+        </Text>
+      </View>
+    );
+  }
+  
   // For mobile platforms
   if (!embedUrl) {
     return (
       <View style={[styles.container, { height }]}>
         <Text style={styles.errorText}>Invalid video URL</Text>
+        <TouchableOpacity 
+          style={styles.fallbackButton}
+          onPress={handleOpenLink}
+        >
+          <ExternalLink size={16} color="#FFFFFF" />
+          <Text style={styles.fallbackButtonText}>Open Original Link</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -81,6 +126,19 @@ export default function VideoEmbed({ url, height = 200 }: VideoEmbedProps) {
           allowsFullscreenVideo
           javaScriptEnabled
           domStorageEnabled
+          onError={() => console.log("WebView error loading video")}
+          renderError={() => (
+            <View style={styles.fallbackContainer}>
+              <Text style={styles.errorText}>Error loading video</Text>
+              <TouchableOpacity 
+                style={styles.fallbackButton}
+                onPress={handleOpenLink}
+              >
+                <ExternalLink size={16} color="#FFFFFF" />
+                <Text style={styles.fallbackButtonText}>Open Original Link</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         />
         <TouchableOpacity 
           style={styles.openButton}
@@ -135,5 +193,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
     fontStyle: "italic",
+  },
+  fallbackContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  fallbackText: {
+    color: colors.textSecondary,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  fallbackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  fallbackButtonText: {
+    color: "#FFFFFF",
+    marginLeft: 8,
+    fontWeight: "500",
   },
 });

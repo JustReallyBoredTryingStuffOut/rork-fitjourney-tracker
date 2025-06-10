@@ -50,6 +50,53 @@ import { useTheme } from "@/context/ThemeContext";
 import PRCelebrationModal from "@/components/PRCelebrationModal";
 import DraggableExerciseCard from "@/components/DraggableExerciseCard";
 
+// Voice configuration for a more natural British female voice
+const voiceConfig = {
+  language: 'en-GB',
+  pitch: 1.05,
+  rate: 0.92,
+  // iOS specific voice - Sarah is a high-quality British female voice
+  voice: Platform.OS === 'ios' ? 'com.apple.ttsbundle.Serena-compact' : undefined
+};
+
+// Get available voices on component mount (iOS only)
+let bestBritishFemaleVoice: string | undefined = undefined;
+
+if (Platform.OS === 'ios') {
+  Speech.getAvailableVoicesAsync().then(voices => {
+    // Look for high-quality British female voices in order of preference
+    const preferredVoices = [
+      'com.apple.ttsbundle.Serena-compact',
+      'com.apple.ttsbundle.Tessa-compact',
+      'com.apple.voice.compact.en-GB.Serena',
+      'com.apple.voice.compact.en-GB.Kate',
+      'com.apple.eloquence.en-GB.Serena'
+    ];
+    
+    for (const preferredVoice of preferredVoices) {
+      if (voices.some(v => v.identifier === preferredVoice)) {
+        bestBritishFemaleVoice = preferredVoice;
+        break;
+      }
+    }
+    
+    // If no preferred voice found, look for any British female voice
+    if (!bestBritishFemaleVoice) {
+      const britishVoice = voices.find(v => 
+        v.language.includes('en-GB') && 
+        (v.quality === 'Enhanced' || v.quality === 'Premium') &&
+        v.name.includes('female')
+      );
+      
+      if (britishVoice) {
+        bestBritishFemaleVoice = britishVoice.identifier;
+      }
+    }
+  }).catch(err => {
+    console.log('Error getting available voices:', err);
+  });
+}
+
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -162,16 +209,14 @@ export default function ActiveWorkoutScreen() {
       if (activeTimer.isResting && activeTimer.isRunning) {
         // Rest started
         Speech.speak("Rest period started", {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       } else if (!activeTimer.isResting && activeTimer.isRunning && activeTimer.elapsedTime < 1000) {
         // Workout started
         Speech.speak("Workout timer started", {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       }
     }
@@ -272,9 +317,8 @@ export default function ActiveWorkoutScreen() {
     // Voice prompt for workout start
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
       Speech.speak(`Starting ${workout.name} workout. Let's go!`, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
+        ...voiceConfig,
+        voice: bestBritishFemaleVoice || voiceConfig.voice
       });
     }
   };
@@ -564,9 +608,8 @@ export default function ActiveWorkoutScreen() {
       // Provide feedback
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
         Speech.speak("Exercise order updated", {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       }
     }
@@ -585,9 +628,8 @@ export default function ActiveWorkoutScreen() {
       const exercise = exercises.find(e => e.id === activeWorkout.exercises[exerciseIndex].exerciseId);
       if (exercise) {
         Speech.speak(`${exercise.name} completed. Great job!`, {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       }
     }
@@ -609,9 +651,8 @@ export default function ActiveWorkoutScreen() {
     // Voice feedback
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
       Speech.speak("Starting rest between exercises", {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
+        ...voiceConfig,
+        voice: bestBritishFemaleVoice || voiceConfig.voice
       });
     }
   };

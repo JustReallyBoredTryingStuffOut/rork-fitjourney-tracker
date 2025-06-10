@@ -58,6 +58,53 @@ import ChallengeCard from "@/components/ChallengeCard";
 import AchievementModal from "@/components/AchievementModal";
 import { APP_NAME } from "@/app/_layout";
 
+// Voice configuration for a more natural British female voice
+const voiceConfig = {
+  language: 'en-GB',
+  pitch: 1.05,
+  rate: 0.92,
+  // iOS specific voice - Sarah is a high-quality British female voice
+  voice: Platform.OS === 'ios' ? 'com.apple.ttsbundle.Serena-compact' : undefined
+};
+
+// Get available voices on component mount (iOS only)
+let bestBritishFemaleVoice: string | undefined = undefined;
+
+if (Platform.OS === 'ios') {
+  Speech.getAvailableVoicesAsync().then(voices => {
+    // Look for high-quality British female voices in order of preference
+    const preferredVoices = [
+      'com.apple.ttsbundle.Serena-compact',
+      'com.apple.ttsbundle.Tessa-compact',
+      'com.apple.voice.compact.en-GB.Serena',
+      'com.apple.voice.compact.en-GB.Kate',
+      'com.apple.eloquence.en-GB.Serena'
+    ];
+    
+    for (const preferredVoice of preferredVoices) {
+      if (voices.some(v => v.identifier === preferredVoice)) {
+        bestBritishFemaleVoice = preferredVoice;
+        break;
+      }
+    }
+    
+    // If no preferred voice found, look for any British female voice
+    if (!bestBritishFemaleVoice) {
+      const britishVoice = voices.find(v => 
+        v.language.includes('en-GB') && 
+        (v.quality === 'Enhanced' || v.quality === 'Premium') &&
+        v.name.includes('female')
+      );
+      
+      if (britishVoice) {
+        bestBritishFemaleVoice = britishVoice.identifier;
+      }
+    }
+  }).catch(err => {
+    console.log('Error getting available voices:', err);
+  });
+}
+
 // Daily fitness tips
 const DAILY_FITNESS_TIPS = [
   "Consistency is key. Even a 10-minute workout is better than no workout.",
@@ -285,9 +332,8 @@ export default function HomeScreen() {
     // Speak the tip if voice is enabled
     if (voiceEnabled && Platform.OS !== 'web') {
       Speech.speak(`Fitness tip: ${newTip}`, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
+        ...voiceConfig,
+        voice: bestBritishFemaleVoice || voiceConfig.voice
       });
     }
   };
@@ -349,9 +395,8 @@ export default function HomeScreen() {
       
       if (voiceEnabled && Platform.OS !== 'web') {
         Speech.speak(welcomeMessage, {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       }
     }
@@ -425,9 +470,8 @@ export default function HomeScreen() {
       // Speak confirmation if voice is enabled
       if (voiceEnabled && Platform.OS !== 'web') {
         Speech.speak(`${timeframe === "weekly" ? "Weekly" : "Monthly"} goal set successfully! I'll help you achieve it.`, {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       }
       
@@ -669,9 +713,8 @@ export default function HomeScreen() {
       }
       
       Speech.speak(response, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
+        ...voiceConfig,
+        voice: bestBritishFemaleVoice || voiceConfig.voice
       });
     }
   };
@@ -681,9 +724,8 @@ export default function HomeScreen() {
     
     if (!voiceEnabled && Platform.OS !== 'web') {
       Speech.speak("Voice assistant enabled. I'm here to help with your fitness journey.", {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
+        ...voiceConfig,
+        voice: bestBritishFemaleVoice || voiceConfig.voice
       });
     }
   };
@@ -698,9 +740,8 @@ export default function HomeScreen() {
     // Speak analysis if voice is enabled
     if (voiceEnabled && Platform.OS !== 'web' && analysis.recommendations.timeOptimization.length > 0) {
       Speech.speak(`Based on your workout history, here's a tip: ${analysis.recommendations.timeOptimization[0]}`, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.9
+        ...voiceConfig,
+        voice: bestBritishFemaleVoice || voiceConfig.voice
       });
     }
   };

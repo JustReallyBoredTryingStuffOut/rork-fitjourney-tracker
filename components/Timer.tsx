@@ -12,6 +12,53 @@ type TimerProps = {
   onSettingsPress?: () => void;
 };
 
+// Voice configuration for a more natural British female voice
+const voiceConfig = {
+  language: 'en-GB',
+  pitch: 1.05,
+  rate: 0.92,
+  // iOS specific voice - Sarah is a high-quality British female voice
+  voice: Platform.OS === 'ios' ? 'com.apple.ttsbundle.Serena-compact' : undefined
+};
+
+// Get available voices on component mount (iOS only)
+let bestBritishFemaleVoice: string | undefined = undefined;
+
+if (Platform.OS === 'ios') {
+  Speech.getAvailableVoicesAsync().then(voices => {
+    // Look for high-quality British female voices in order of preference
+    const preferredVoices = [
+      'com.apple.ttsbundle.Serena-compact',
+      'com.apple.ttsbundle.Tessa-compact',
+      'com.apple.voice.compact.en-GB.Serena',
+      'com.apple.voice.compact.en-GB.Kate',
+      'com.apple.eloquence.en-GB.Serena'
+    ];
+    
+    for (const preferredVoice of preferredVoices) {
+      if (voices.some(v => v.identifier === preferredVoice)) {
+        bestBritishFemaleVoice = preferredVoice;
+        break;
+      }
+    }
+    
+    // If no preferred voice found, look for any British female voice
+    if (!bestBritishFemaleVoice) {
+      const britishVoice = voices.find(v => 
+        v.language.includes('en-GB') && 
+        (v.quality === 'Enhanced' || v.quality === 'Premium') &&
+        v.name.includes('female')
+      );
+      
+      if (britishVoice) {
+        bestBritishFemaleVoice = britishVoice.identifier;
+      }
+    }
+  }).catch(err => {
+    console.log('Error getting available voices:', err);
+  });
+}
+
 export default function Timer({ 
   compact = false, 
   showSettings = false,
@@ -49,10 +96,10 @@ export default function Timer({
             
             // Only speak if we haven't spoken this second yet
             if (secondsRemaining <= 10 && secondsRemaining >= 1 && secondsRemaining !== lastSpokenSecond) {
+              // Use the best available British female voice
               Speech.speak(secondsRemaining.toString(), {
-                language: 'en',
-                pitch: 1.0,
-                rate: 0.9
+                ...voiceConfig,
+                voice: bestBritishFemaleVoice || voiceConfig.voice
               });
               setLastSpokenSecond(secondsRemaining);
             }
@@ -60,9 +107,8 @@ export default function Timer({
             // When timer reaches zero
             if (secondsRemaining === 0 && lastSpokenSecond !== 0) {
               Speech.speak("Rest complete. Ready for next set.", {
-                language: 'en',
-                pitch: 1.0,
-                rate: 0.9
+                ...voiceConfig,
+                voice: bestBritishFemaleVoice || voiceConfig.voice
               });
               setLastSpokenSecond(0);
               
@@ -93,9 +139,8 @@ export default function Timer({
             // Announce every 5 minutes
             if (minutes > 0 && seconds === 0 && minutes % 5 === 0) {
               Speech.speak(`${minutes} minutes elapsed`, {
-                language: 'en',
-                pitch: 1.0,
-                rate: 0.9
+                ...voiceConfig,
+                voice: bestBritishFemaleVoice || voiceConfig.voice
               });
             }
           }
@@ -123,9 +168,8 @@ export default function Timer({
       
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
         Speech.speak("Timer paused", {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.9
+          ...voiceConfig,
+          voice: bestBritishFemaleVoice || voiceConfig.voice
         });
       }
     } else {
@@ -134,15 +178,13 @@ export default function Timer({
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
         if (activeTimer.isResting) {
           Speech.speak("Rest timer started", {
-            language: 'en',
-            pitch: 1.0,
-            rate: 0.9
+            ...voiceConfig,
+            voice: bestBritishFemaleVoice || voiceConfig.voice
           });
         } else {
           Speech.speak("Workout timer started", {
-            language: 'en',
-            pitch: 1.0,
-            rate: 0.9
+            ...voiceConfig,
+            voice: bestBritishFemaleVoice || voiceConfig.voice
           });
         }
       }
