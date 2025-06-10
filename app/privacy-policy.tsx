@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{ 
           title: "Privacy Policy",
@@ -141,9 +141,18 @@ export default function PrivacyPolicy() {
           <Text style={[styles.paragraph, { color: colors.text }]}>
             privacy@fitnessapp.example.com
           </Text>
+          
+          {/* Bottom back button for additional visibility */}
+          <TouchableOpacity 
+            onPress={handleGoBack} 
+            style={[styles.bottomBackButton, { backgroundColor: colors.primary }]}
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.bottomBackButtonText}>Back to Profile</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -196,6 +205,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginHorizontal: 16,
     marginTop: 16,
+    marginBottom: 8,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: {
@@ -209,6 +219,18 @@ const styles = StyleSheet.create({
   backButtonText: {
     marginLeft: 8,
     fontWeight: '500',
+    fontSize: 16,
+  },
+  bottomBackButton: {
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  bottomBackButtonText: {
+    color: '#fff',
+    fontWeight: '600',
     fontSize: 16,
   },
 });

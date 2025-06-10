@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform, SafeAreaView } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { getColors } from '@/constants/colors';
 import { Stack, useRouter } from 'expo-router';
@@ -172,79 +172,92 @@ export default function DataManagement() {
   };
   
   const handleGoBack = () => {
-    router.navigate("/(tabs)");
+    router.back();
   };
   
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{ 
           title: "Data Management",
           headerLeft: () => (
-            <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-              <ArrowLeft size={24} color={colors.text} />
+            <TouchableOpacity 
+              onPress={handleGoBack} 
+              style={styles.backButton}
+              accessibilityLabel="Go back"
+            >
+              <ArrowLeft size={24} color={colors.primary} />
             </TouchableOpacity>
           ),
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.text,
         }} 
       />
       
-      <View style={styles.section}>
-        <Text style={[styles.title, { color: colors.text }]}>Data Management</Text>
-        <Text style={[styles.description, { color: colors.text }]}>
-          Manage your personal data stored in this app. You can export your data or delete all data.
-        </Text>
-        
-        <View style={styles.card}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Export Your Data</Text>
-          <Text style={[styles.cardDescription, { color: colors.text }]}>
-            Export all your data in JSON format. This includes your profile, workouts, nutrition logs, and health data.
-            Photos will not be included in the export.
+      <ScrollView style={styles.scrollContent}>
+        <View style={styles.section}>
+          <Text style={[styles.title, { color: colors.text }]}>Data Management</Text>
+          <Text style={[styles.description, { color: colors.text }]}>
+            Manage your personal data stored in this app. You can export your data or delete all data.
           </Text>
+          
+          <View style={[styles.card, { borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Export Your Data</Text>
+            <Text style={[styles.cardDescription, { color: colors.text }]}>
+              Export all your data in JSON format. This includes your profile, workouts, nutrition logs, and health data.
+              Photos will not be included in the export.
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.primary }]}
+              onPress={exportData}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Export Data</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          
+          <View style={[styles.card, styles.dangerCard, { borderColor: colors.error }]}>
+            <Text style={[styles.cardTitle, { color: colors.error }]}>Delete All Data</Text>
+            <Text style={[styles.cardDescription, { color: colors.text }]}>
+              Permanently delete all your data from this app. This action cannot be undone.
+              All your profile information, workouts, logs, and photos will be deleted.
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.error }]}
+              onPress={deleteAllData}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Delete All Data</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            onPress={exportData}
-            disabled={isExporting}
+            style={styles.linkButton}
+            onPress={() => router.push('/privacy-policy')}
           >
-            {isExporting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Export Data</Text>
-            )}
+            <Text style={[styles.link, { color: colors.primary }]}>View Privacy Policy</Text>
           </TouchableOpacity>
         </View>
-        
-        <View style={[styles.card, styles.dangerCard, { borderColor: colors.error }]}>
-          <Text style={[styles.cardTitle, { color: colors.error }]}>Delete All Data</Text>
-          <Text style={[styles.cardDescription, { color: colors.text }]}>
-            Permanently delete all your data from this app. This action cannot be undone.
-            All your profile information, workouts, logs, and photos will be deleted.
-          </Text>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.error }]}
-            onPress={deleteAllData}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Delete All Data</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-        
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => router.push('/privacy-policy')}
-        >
-          <Text style={[styles.link, { color: colors.primary }]}>View Privacy Policy</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollContent: {
     flex: 1,
     padding: 16,
   },
@@ -266,7 +279,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   dangerCard: {
     marginTop: 24,
@@ -294,7 +314,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   linkButton: {
-    marginTop: 16,
+    marginTop: 24,
     alignItems: 'center',
   },
   link: {
@@ -303,5 +323,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    borderRadius: 8,
   },
 });
