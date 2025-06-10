@@ -313,30 +313,32 @@ export default function AiChatScreen() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
           style={styles.inputContainer}
         >
-          <TextInput
-            style={styles.input}
-            value={message}
-            onChangeText={setMessage}
-            placeholder="Ask me anything about fitness..."
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            maxLength={500}
-          />
-          
-          <TouchableOpacity 
-            style={[
-              styles.sendButton,
-              (!message.trim() || isLoading) && styles.disabledSendButton
-            ]}
-            onPress={handleSendMessage}
-            disabled={!message.trim() || isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Send size={20} color="#FFFFFF" />
-            )}
-          </TouchableOpacity>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Ask me anything about fitness..."
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              maxLength={500}
+            />
+            
+            <TouchableOpacity 
+              style={[
+                styles.sendButton,
+                (!message.trim() || isLoading) && styles.disabledSendButton
+              ]}
+              onPress={handleSendMessage}
+              disabled={!message.trim() || isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Send size={20} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          </View>
         </KeyboardAvoidingView>
       )}
     </View>
@@ -401,11 +403,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   inputContainer: {
-    flexDirection: "row",
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.card,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   input: {
     flex: 1,
@@ -416,6 +421,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     maxHeight: 100,
+    minHeight: 40,
   },
   sendButton: {
     width: 40,

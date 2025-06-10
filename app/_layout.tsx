@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGamificationStore } from '@/store/gamificationStore';
 import { useMacroStore } from '@/store/macroStore';
 import { useWorkoutStore } from '@/store/workoutStore';
-import { Zap, Award, Trophy, X, User, Weight, Ruler, Calendar, Activity, ArrowRight, ChevronRight, Brain, Sparkles } from 'lucide-react-native';
+import { Zap, Award, Trophy, X, User, Weight, Ruler, Calendar, Activity, ArrowRight, ChevronRight, Brain, Sparkles, Heart, AlertTriangle } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { Picker } from '@react-native-picker/picker';
 import Button from '@/components/Button';
@@ -40,6 +40,9 @@ export default function RootLayout() {
   const [activityLevel, setActivityLevel] = useState(userProfile.activityLevel || "moderate");
   const [fitnessGoal, setFitnessGoal] = useState(userProfile.fitnessGoal || "maintain");
   const [fitnessLevel, setFitnessLevel] = useState(userProfile.fitnessLevel || "beginner");
+  
+  // Health disclaimer acceptance
+  const [healthDisclaimerAccepted, setHealthDisclaimerAccepted] = useState(false);
   
   // Form validation state
   const [nameError, setNameError] = useState("");
@@ -238,6 +241,18 @@ export default function RootLayout() {
       const isBirthYearValid = validateBirthYear(birthYear);
       
       if (!isWeightValid || !isHeightValid || !isBirthYearValid) {
+        return;
+      }
+    }
+    
+    // If we're on the health disclaimer step, check if it's accepted
+    if (currentOnboardingStep === 8) {
+      if (!healthDisclaimerAccepted) {
+        Alert.alert(
+          "Health Disclaimer Required",
+          "You must accept the health disclaimer to continue.",
+          [{ text: "OK" }]
+        );
         return;
       }
     }
@@ -581,6 +596,61 @@ export default function RootLayout() {
           </TouchableOpacity>
         </View>
       ),
+    },
+    // Health Disclaimer Step
+    {
+      title: "Health Disclaimer",
+      description: "Before you begin your fitness journey with us, please read and acknowledge our health disclaimer.",
+      icon: <AlertTriangle size={80} color="#FF9500" />,
+      content: (
+        <View style={styles.healthDisclaimerContainer}>
+          <ScrollView style={styles.healthDisclaimerScroll}>
+            <Text style={styles.healthDisclaimerText}>
+              The information provided by {APP_NAME} is for general informational and educational purposes only. It is not intended to be a substitute for professional medical advice, diagnosis, or treatment.
+            </Text>
+            
+            <Text style={styles.healthDisclaimerText}>
+              Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition or before beginning any new exercise program.
+            </Text>
+            
+            <Text style={styles.healthDisclaimerText}>
+              Stop exercising immediately if you experience faintness, dizziness, pain or shortness of breath at any time while exercising and consult with your physician.
+            </Text>
+            
+            <Text style={styles.healthDisclaimerText}>
+              By using {APP_NAME}, you acknowledge that:
+            </Text>
+            
+            <View style={styles.healthDisclaimerBullets}>
+              <Text style={styles.healthDisclaimerBullet}>• You are in good physical condition and have no medical reason or impairment that might prevent you from safely using our app</Text>
+              <Text style={styles.healthDisclaimerBullet}>• You understand that results may vary and depend on factors including genetics, adherence to program, and individual effort</Text>
+              <Text style={styles.healthDisclaimerBullet}>• You assume all risk of injury from using the workouts, nutrition advice, and other content provided in this app</Text>
+            </View>
+            
+            <Text style={styles.healthDisclaimerText}>
+              {APP_NAME} is not responsible for any health problems that may result from training programs, products, or events you learn about through the app.
+            </Text>
+          </ScrollView>
+          
+          <View style={styles.healthDisclaimerCheckbox}>
+            <TouchableOpacity
+              style={[
+                styles.checkbox,
+                healthDisclaimerAccepted && styles.checkboxChecked
+              ]}
+              onPress={() => setHealthDisclaimerAccepted(!healthDisclaimerAccepted)}
+            >
+              {healthDisclaimerAccepted && <Check size={16} color="#FFFFFF" />}
+            </TouchableOpacity>
+            <Text style={styles.healthDisclaimerCheckboxText}>
+              I have read and accept the health disclaimer
+            </Text>
+          </View>
+        </View>
+      ),
+      action: () => handleContinue(),
+      actionText: "Continue",
+      showSkip: false, // Don't allow skipping health disclaimer
     },
   ];
   
@@ -1001,5 +1071,56 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 8,
+  },
+  // Health Disclaimer styles
+  healthDisclaimerContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  healthDisclaimerScroll: {
+    maxHeight: 200,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  healthDisclaimerText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  healthDisclaimerBullets: {
+    marginLeft: 8,
+    marginBottom: 12,
+  },
+  healthDisclaimerBullet: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  healthDisclaimerCheckbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+  },
+  healthDisclaimerCheckboxText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    flex: 1,
   },
 });

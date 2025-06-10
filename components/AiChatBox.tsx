@@ -79,32 +79,34 @@ export default function AiChatBox({ messages, onSendMessage, isLoading }: AiChat
       />
       
       <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Ask about fitness, nutrition, or workouts..."
-          placeholderTextColor={colors.textSecondary}
-          multiline
-          maxLength={500}
-          onSubmitEditing={handleSend}
-          editable={!isLoading}
-        />
-        
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (inputText.trim() === "" || isLoading) && styles.disabledSendButton
-          ]}
-          onPress={handleSend}
-          disabled={inputText.trim() === "" || isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={colors.white} />
-          ) : (
-            <Send size={20} color={colors.white} />
-          )}
-        </TouchableOpacity>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Ask about fitness, nutrition, or workouts..."
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            maxLength={500}
+            onSubmitEditing={handleSend}
+            editable={!isLoading}
+          />
+          
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (inputText.trim() === "" || isLoading) && styles.disabledSendButton
+            ]}
+            onPress={handleSend}
+            disabled={inputText.trim() === "" || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={colors.white} />
+            ) : (
+              <Send size={20} color={colors.white} />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -152,11 +154,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   inputContainer: {
-    flexDirection: "row",
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.card,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   input: {
     flex: 1,
@@ -167,6 +172,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     maxHeight: 120,
+    minHeight: 40,
   },
   sendButton: {
     width: 44,
