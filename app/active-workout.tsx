@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
   BackHandler,
   Vibration,
-  CameraRoll
+  Keyboard
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { 
@@ -33,11 +33,11 @@ import {
   ArrowLeft,
   Watch,
   Zap,
-  ImageIcon
+  ImageIcon,
+  Save
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Speech from 'expo-speech';
-import * as MediaLibrary from 'expo-media-library';
 import { colors } from "@/constants/colors";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { useNotificationStore } from "@/store/notificationStore";
@@ -53,94 +53,18 @@ import { useTheme } from "@/context/ThemeContext";
 import PRCelebrationModal from "@/components/PRCelebrationModal";
 import DraggableExerciseCard from "@/components/DraggableExerciseCard";
 
-// Voice configuration for a more natural British female voice
+// Voice configuration for a more natural female voice
 const voiceConfig = {
-  language: 'en-GB',
-  pitch: 1.1,
+  language: 'en-US',
+  pitch: 1.0,
   rate: 0.9,
 };
 
-// Premium British female voices in order of preference for iOS
-const preferredBritishVoices = [
-  'com.apple.voice.premium.en-GB.Serena',
-  'com.apple.voice.premium.en-GB.Kate',
-  'com.apple.ttsbundle.Serena-compact',
-  'com.apple.ttsbundle.Tessa-compact',
-  'com.apple.voice.compact.en-GB.Serena',
-  'com.apple.voice.compact.en-GB.Kate',
-  'com.apple.eloquence.en-GB.Serena',
-  'en-GB-Standard-A', // Google TTS voice
-  'en-GB-Standard-F', // Google TTS voice
-  'en-GB-Wavenet-C'   // Google TTS voice
-];
-
-// Get available voices on component mount
-let bestBritishFemaleVoice: string | undefined = undefined;
-
-// Function to initialize the best available voice
-const initializeVoice = async () => {
+// Helper function to speak with the default voice
+const speakWithDefaultVoice = (text: string) => {
   if (Platform.OS === 'web') return;
   
-  try {
-    const voices = await Speech.getAvailableVoicesAsync();
-    
-    // First try to find one of our preferred voices
-    for (const preferredVoice of preferredBritishVoices) {
-      if (voices.some(v => v.identifier === preferredVoice)) {
-        bestBritishFemaleVoice = preferredVoice;
-        console.log(`Selected preferred voice: ${preferredVoice}`);
-        return;
-      }
-    }
-    
-    // If no preferred voice found, look for any high-quality British female voice
-    const highQualityBritishVoice = voices.find(v => 
-      v.language.includes('en-GB') && 
-      (v.quality === 'Enhanced' || v.quality === 'Premium') &&
-      (v.name.toLowerCase().includes('female') || 
-       v.name.includes('Kate') || 
-       v.name.includes('Serena') || 
-       v.name.includes('Tessa'))
-    );
-    
-    if (highQualityBritishVoice) {
-      bestBritishFemaleVoice = highQualityBritishVoice.identifier;
-      console.log(`Selected high-quality voice: ${highQualityBritishVoice.identifier}`);
-      return;
-    }
-    
-    // Last resort: any British English voice
-    const anyBritishVoice = voices.find(v => v.language.includes('en-GB'));
-    if (anyBritishVoice) {
-      bestBritishFemaleVoice = anyBritishVoice.identifier;
-      console.log(`Selected fallback British voice: ${anyBritishVoice.identifier}`);
-      return;
-    }
-    
-    // If all else fails, use any English voice
-    const anyEnglishVoice = voices.find(v => v.language.includes('en-'));
-    if (anyEnglishVoice) {
-      bestBritishFemaleVoice = anyEnglishVoice.identifier;
-      console.log(`Selected any English voice: ${anyEnglishVoice.identifier}`);
-    }
-  } catch (err) {
-    console.log('Error getting available voices:', err);
-  }
-};
-
-// Initialize voice when component loads
-initializeVoice();
-
-// Helper function to speak with the best available voice
-const speakWithBestVoice = (text: string) => {
-  if (Platform.OS === 'web') return;
-  
-  const speechOptions = {
-    ...voiceConfig,
-    voice: bestBritishFemaleVoice
-  };
-  
-  Speech.speak(text, speechOptions);
+  Speech.speak(text, voiceConfig);
 };
 
 export default function ActiveWorkoutScreen() {
@@ -204,9 +128,12 @@ export default function ActiveWorkoutScreen() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(-1);
   const [currentSetIndex, setCurrentSetIndex] = useState(-1);
   const [useConnectedDevice, setUseConnectedDevice] = useState(false);
-  const [hasGifsInstalled, setHasGifsInstalled] = useState(false);
-  const [userGifs, setUserGifs] = useState<string[]>([]);
-  const [showGifSelector, setShowGifSelector] = useState(false);
+  const [editingSetData, setEditingSetData] = useState<{
+    exerciseIndex: number;
+    setIndex: number;
+    weight: string;
+    reps: string;
+  } | null>(null);
   
   // State for exercise expansion
   const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
@@ -227,49 +154,6 @@ export default function ActiveWorkoutScreen() {
     device => device.connected && 
     (device.type === "appleWatch" || device.type === "fitbit" || device.type === "garmin")
   );
-  
-  // Check if user has GIFs installed
-  useEffect(() => {
-    const checkForGifs = async () => {
-      if (Platform.OS === 'web') return;
-      
-      try {
-        // Request permissions to access media library
-        const { status } = await MediaLibrary.requestPermissionsAsync();
-        
-        if (status !== 'granted') {
-          console.log('Media library permission not granted');
-          return;
-        }
-        
-        // Try to get some assets to check if user has GIFs
-        const options = {
-          first: 20,
-          mediaType: ['photo'],
-        };
-        
-        const assets = await MediaLibrary.getAssetsAsync(options);
-        
-        // Check if any of the assets are GIFs
-        const gifs = assets.assets.filter(asset => 
-          asset.filename.toLowerCase().endsWith('.gif') || 
-          asset.mediaType === 'image/gif'
-        );
-        
-        setHasGifsInstalled(gifs.length > 0);
-        
-        if (gifs.length > 0) {
-          // Store the URIs of the GIFs
-          const gifUris = gifs.map(gif => gif.uri);
-          setUserGifs(gifUris);
-        }
-      } catch (error) {
-        console.error('Error checking for GIFs:', error);
-      }
-    };
-    
-    checkForGifs();
-  }, []);
   
   // Start a timer to update workout duration
   useEffect(() => {
@@ -300,11 +184,10 @@ export default function ActiveWorkoutScreen() {
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
       if (activeTimer.isResting && activeTimer.isRunning) {
         // Rest started
-        speakWithBestVoice("Rest period started");
+        speakWithDefaultVoice("Rest period started");
       }
-      // Removed the workout timer started announcement
     }
-  }, [activeTimer.isResting, activeTimer.isRunning, activeTimer.elapsedTime]);
+  }, [activeTimer.isResting, activeTimer.isRunning]);
   
   // Handle back button on Android
   useEffect(() => {
@@ -397,8 +280,6 @@ export default function ActiveWorkoutScreen() {
   const handleStartWorkout = () => {
     setWorkoutStarted(true);
     startTimer();
-    
-    // Removed the workout start announcement
   };
   
   const handleCompleteWorkout = () => {
@@ -508,23 +389,39 @@ export default function ActiveWorkoutScreen() {
   };
   
   const handleAddGif = async () => {
-    if (!hasGifsInstalled) {
-      Alert.alert(
-        "No GIFs Found",
-        "We couldn't find any GIFs on your device. Please add some GIFs to your photo library first.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-    
-    // Show GIF selector modal
-    setShowGifSelector(true);
-  };
-  
-  const handleSelectGif = (gifUri: string) => {
-    setRatingMedia(gifUri);
-    setIsGif(true);
-    setShowGifSelector(false);
+    Alert.alert(
+      "Add GIF",
+      "Please use your keyboard's GIF feature to add a GIF. Most modern keyboards like Gboard or iOS keyboard have built-in GIF support.",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            // Show a text input that will trigger the keyboard
+            Alert.prompt(
+              "Add GIF Caption",
+              "Enter a caption for your GIF (optional). Then use your keyboard's GIF button to select a GIF.",
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel"
+                },
+                {
+                  text: "Save",
+                  onPress: (caption) => {
+                    // This would normally save the GIF, but since we can't directly
+                    // access the keyboard's GIF selection, we just show a message
+                    Alert.alert(
+                      "GIF Selection",
+                      "In a real implementation, this would save the GIF you selected from your keyboard."
+                    );
+                  }
+                }
+              ]
+            );
+          }
+        }
+      ]
+    );
   };
   
   const handleAddVideo = () => {
@@ -612,14 +509,29 @@ export default function ActiveWorkoutScreen() {
     }
   };
   
-  const handleUpdateWeight = (exerciseIndex: number, setIndex: number, value: string) => {
-    const weight = parseFloat(value) || 0;
-    updateSetWeight(exerciseIndex, setIndex, weight);
+  const handleEditSet = (exerciseIndex: number, setIndex: number, weight: number, reps: number) => {
+    setEditingSetData({
+      exerciseIndex,
+      setIndex,
+      weight: weight.toString(),
+      reps: reps.toString()
+    });
   };
   
-  const handleUpdateReps = (exerciseIndex: number, setIndex: number, value: string) => {
-    const reps = parseInt(value) || 0;
-    updateSetReps(exerciseIndex, setIndex, reps);
+  const handleSaveSetData = () => {
+    if (!editingSetData) return;
+    
+    const { exerciseIndex, setIndex, weight, reps } = editingSetData;
+    
+    // Update weight and reps
+    updateSetWeight(exerciseIndex, setIndex, parseFloat(weight) || 0);
+    updateSetReps(exerciseIndex, setIndex, parseInt(reps) || 0);
+    
+    // Clear editing state
+    setEditingSetData(null);
+    
+    // Show confirmation
+    Alert.alert("Set Saved", "Your set data has been saved successfully.");
   };
   
   const handleClosePRModal = () => {
@@ -676,7 +588,7 @@ export default function ActiveWorkoutScreen() {
       
       // Provide feedback
       if (timerSettings.voicePrompts && Platform.OS !== 'web') {
-        speakWithBestVoice("Exercise order updated");
+        speakWithDefaultVoice("Exercise order updated");
       }
     }
   };
@@ -693,7 +605,7 @@ export default function ActiveWorkoutScreen() {
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
       const exercise = exercises.find(e => e.id === activeWorkout.exercises[exerciseIndex].exerciseId);
       if (exercise) {
-        speakWithBestVoice(`${exercise.name} completed. Great job!`);
+        speakWithDefaultVoice(`${exercise.name} completed. Great job!`);
       }
     }
     
@@ -713,7 +625,7 @@ export default function ActiveWorkoutScreen() {
     
     // Voice feedback
     if (timerSettings.voicePrompts && Platform.OS !== 'web') {
-      speakWithBestVoice("Starting rest between exercises");
+      speakWithDefaultVoice("Starting rest between exercises");
     }
   };
   
@@ -739,7 +651,10 @@ export default function ActiveWorkoutScreen() {
         }}
       />
       
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        scrollEventThrottle={16} // Prevent excessive scroll events
+      >
         {!workoutStarted ? (
           <View style={styles.startWorkoutContainer}>
             <Text style={styles.startWorkoutTitle}>Ready to start your workout?</Text>
@@ -925,30 +840,67 @@ export default function ActiveWorkoutScreen() {
                           <View key={set.id} style={styles.setRow}>
                             <Text style={[styles.setText, styles.setColumn]}>{setIndex + 1}</Text>
                             
-                            <View style={[styles.inputContainer, styles.weightColumn]}>
-                              <TextInput
-                                style={styles.input}
-                                value={set.weight.toString()}
-                                keyboardType="numeric"
-                                onChangeText={(value) => handleUpdateWeight(exerciseIndex, setIndex, value)}
-                              />
-                            </View>
-                            
-                            <View style={[styles.inputContainer, styles.repsColumn]}>
-                              <TextInput
-                                style={styles.input}
-                                value={set.reps.toString()}
-                                keyboardType="numeric"
-                                onChangeText={(value) => handleUpdateReps(exerciseIndex, setIndex, value)}
-                              />
-                            </View>
-                            
-                            <TouchableOpacity 
-                              style={[styles.notesButton, styles.notesColumn]}
-                              onPress={() => handleOpenSetNote(exerciseIndex, setIndex, set.notes)}
-                            >
-                              <Edit3 size={16} color={colors.textSecondary} />
-                            </TouchableOpacity>
+                            {editingSetData && 
+                             editingSetData.exerciseIndex === exerciseIndex && 
+                             editingSetData.setIndex === setIndex ? (
+                              // Editing mode
+                              <>
+                                <View style={[styles.inputContainer, styles.weightColumn]}>
+                                  <TextInput
+                                    style={styles.input}
+                                    value={editingSetData.weight}
+                                    keyboardType="numeric"
+                                    onChangeText={(value) => setEditingSetData({
+                                      ...editingSetData,
+                                      weight: value
+                                    })}
+                                  />
+                                </View>
+                                
+                                <View style={[styles.inputContainer, styles.repsColumn]}>
+                                  <TextInput
+                                    style={styles.input}
+                                    value={editingSetData.reps}
+                                    keyboardType="numeric"
+                                    onChangeText={(value) => setEditingSetData({
+                                      ...editingSetData,
+                                      reps: value
+                                    })}
+                                  />
+                                </View>
+                                
+                                <TouchableOpacity 
+                                  style={[styles.saveButton, styles.notesColumn]}
+                                  onPress={handleSaveSetData}
+                                >
+                                  <Save size={16} color={colors.secondary} />
+                                </TouchableOpacity>
+                              </>
+                            ) : (
+                              // Display mode
+                              <>
+                                <TouchableOpacity 
+                                  style={[styles.inputContainer, styles.weightColumn]}
+                                  onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
+                                >
+                                  <Text style={styles.setValueText}>{set.weight}</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                  style={[styles.inputContainer, styles.repsColumn]}
+                                  onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
+                                >
+                                  <Text style={styles.setValueText}>{set.reps}</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                  style={[styles.notesButton, styles.notesColumn]}
+                                  onPress={() => handleOpenSetNote(exerciseIndex, setIndex, set.notes)}
+                                >
+                                  <Edit3 size={16} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                              </>
+                            )}
                           </View>
                         ))}
                       </View>
@@ -1125,62 +1077,6 @@ export default function ActiveWorkoutScreen() {
               onPress={handleSubmitRating}
               disabled={rating === 0}
               style={styles.submitButton}
-            />
-          </View>
-        </View>
-      </Modal>
-      
-      {/* GIF Selector Modal */}
-      <Modal
-        visible={showGifSelector}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => setShowGifSelector(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.gifSelectorModal}>
-            <View style={styles.gifSelectorHeader}>
-              <Text style={styles.gifSelectorTitle}>Select a GIF</Text>
-              <TouchableOpacity 
-                onPress={() => setShowGifSelector(false)}
-                style={styles.closeButton}
-              >
-                <X size={20} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-            
-            {userGifs.length > 0 ? (
-              <ScrollView style={styles.gifList}>
-                <View style={styles.gifGrid}>
-                  {userGifs.map((gifUri, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.gifItem}
-                      onPress={() => handleSelectGif(gifUri)}
-                    >
-                      <Image
-                        source={{ uri: gifUri }}
-                        style={styles.gifThumbnail}
-                        resizeMode="cover"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            ) : (
-              <View style={styles.noGifsContainer}>
-                <Text style={styles.noGifsText}>
-                  No GIFs found on your device. Please add some GIFs to your photo library first.
-                </Text>
-              </View>
-            )}
-            
-            <Button
-              title="Cancel"
-              onPress={() => setShowGifSelector(false)}
-              variant="outline"
-              style={styles.cancelGifButton}
             />
           </View>
         </View>
@@ -1679,6 +1575,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     justifyContent: "center",
     width: "100%",
+    height: 36,
   },
   input: {
     backgroundColor: colors.background,
@@ -1690,9 +1587,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: "100%",
   },
+  setValueText: {
+    fontSize: 14,
+    color: colors.text,
+    textAlign: "center",
+  },
   notesButton: {
     alignItems: "center",
     justifyContent: "center",
+    height: 36,
+  },
+  saveButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 36,
+    backgroundColor: "rgba(80, 200, 120, 0.1)",
+    borderRadius: 4,
   },
   exerciseActions: {
     flexDirection: "row",
@@ -1844,67 +1754,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitButton: {
-    width: "100%",
-  },
-  
-  // GIF Selector Modal Styles
-  gifSelectorModal: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    width: "90%",
-    maxWidth: 400,
-    height: "70%",
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  gifSelectorHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  gifSelectorTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  gifList: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  gifGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  gifItem: {
-    width: "48%",
-    height: 120,
-    marginBottom: 12,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  gifThumbnail: {
-    width: "100%",
-    height: "100%",
-  },
-  noGifsContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  noGifsText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  cancelGifButton: {
     width: "100%",
   },
   

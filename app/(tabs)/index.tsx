@@ -58,94 +58,18 @@ import ChallengeCard from "@/components/ChallengeCard";
 import AchievementModal from "@/components/AchievementModal";
 import { APP_NAME } from "@/app/_layout";
 
-// Voice configuration for a more natural British female voice
+// Voice configuration for a more natural female voice
 const voiceConfig = {
-  language: 'en-GB',
-  pitch: 1.1,
+  language: 'en-US',
+  pitch: 1.0,
   rate: 0.9,
 };
 
-// Premium British female voices in order of preference for iOS
-const preferredBritishVoices = [
-  'com.apple.voice.premium.en-GB.Serena',
-  'com.apple.voice.premium.en-GB.Kate',
-  'com.apple.ttsbundle.Serena-compact',
-  'com.apple.ttsbundle.Tessa-compact',
-  'com.apple.voice.compact.en-GB.Serena',
-  'com.apple.voice.compact.en-GB.Kate',
-  'com.apple.eloquence.en-GB.Serena',
-  'en-GB-Standard-A', // Google TTS voice
-  'en-GB-Standard-F', // Google TTS voice
-  'en-GB-Wavenet-C'   // Google TTS voice
-];
-
-// Get available voices on component mount
-let bestBritishFemaleVoice: string | undefined = undefined;
-
-// Function to initialize the best available voice
-const initializeVoice = async () => {
+// Helper function to speak with the default voice
+const speakWithDefaultVoice = (text: string) => {
   if (Platform.OS === 'web') return;
   
-  try {
-    const voices = await Speech.getAvailableVoicesAsync();
-    
-    // First try to find one of our preferred voices
-    for (const preferredVoice of preferredBritishVoices) {
-      if (voices.some(v => v.identifier === preferredVoice)) {
-        bestBritishFemaleVoice = preferredVoice;
-        console.log(`Selected preferred voice: ${preferredVoice}`);
-        return;
-      }
-    }
-    
-    // If no preferred voice found, look for any high-quality British female voice
-    const highQualityBritishVoice = voices.find(v => 
-      v.language.includes('en-GB') && 
-      (v.quality === 'Enhanced' || v.quality === 'Premium') &&
-      (v.name.toLowerCase().includes('female') || 
-       v.name.includes('Kate') || 
-       v.name.includes('Serena') || 
-       v.name.includes('Tessa'))
-    );
-    
-    if (highQualityBritishVoice) {
-      bestBritishFemaleVoice = highQualityBritishVoice.identifier;
-      console.log(`Selected high-quality voice: ${highQualityBritishVoice.identifier}`);
-      return;
-    }
-    
-    // Last resort: any British English voice
-    const anyBritishVoice = voices.find(v => v.language.includes('en-GB'));
-    if (anyBritishVoice) {
-      bestBritishFemaleVoice = anyBritishVoice.identifier;
-      console.log(`Selected fallback British voice: ${anyBritishVoice.identifier}`);
-      return;
-    }
-    
-    // If all else fails, use any English voice
-    const anyEnglishVoice = voices.find(v => v.language.includes('en-'));
-    if (anyEnglishVoice) {
-      bestBritishFemaleVoice = anyEnglishVoice.identifier;
-      console.log(`Selected any English voice: ${anyEnglishVoice.identifier}`);
-    }
-  } catch (err) {
-    console.log('Error getting available voices:', err);
-  }
-};
-
-// Initialize voice when component loads
-initializeVoice();
-
-// Helper function to speak with the best available voice
-const speakWithBestVoice = (text: string) => {
-  if (Platform.OS === 'web') return;
-  
-  const speechOptions = {
-    ...voiceConfig,
-    voice: bestBritishFemaleVoice
-  };
-  
-  Speech.speak(text, speechOptions);
+  Speech.speak(text, voiceConfig);
 };
 
 // Daily fitness tips
@@ -374,7 +298,7 @@ export default function HomeScreen() {
     
     // Speak the tip if voice is enabled
     if (voiceEnabled && Platform.OS !== 'web') {
-      speakWithBestVoice(`Fitness tip: ${newTip}`);
+      speakWithDefaultVoice(`Fitness tip: ${newTip}`);
     }
   };
   
@@ -434,7 +358,7 @@ export default function HomeScreen() {
         : "Welcome! Ready for a great workout today?";
       
       if (voiceEnabled && Platform.OS !== 'web') {
-        speakWithBestVoice(welcomeMessage);
+        speakWithDefaultVoice(welcomeMessage);
       }
     }
   }, [userName, voiceEnabled, welcomeShown]);
@@ -506,7 +430,7 @@ export default function HomeScreen() {
       
       // Speak confirmation if voice is enabled
       if (voiceEnabled && Platform.OS !== 'web') {
-        speakWithBestVoice(`${timeframe === "weekly" ? "Weekly" : "Monthly"} goal set successfully! I'll help you achieve it.`);
+        speakWithDefaultVoice(`${timeframe === "weekly" ? "Weekly" : "Monthly"} goal set successfully! I'll help you achieve it.`);
       }
       
       // Schedule default reminders based on goal category
@@ -746,7 +670,7 @@ export default function HomeScreen() {
         }
       }
       
-      speakWithBestVoice(response);
+      speakWithDefaultVoice(response);
     }
   };
   
@@ -754,7 +678,7 @@ export default function HomeScreen() {
     setVoiceEnabled(!voiceEnabled);
     
     if (!voiceEnabled && Platform.OS !== 'web') {
-      speakWithBestVoice("Voice assistant enabled. I'm here to help with your fitness journey.");
+      speakWithDefaultVoice("Voice assistant enabled. I'm here to help with your fitness journey.");
     }
   };
   
@@ -767,7 +691,7 @@ export default function HomeScreen() {
     
     // Speak analysis if voice is enabled
     if (voiceEnabled && Platform.OS !== 'web' && analysis.recommendations.timeOptimization.length > 0) {
-      speakWithBestVoice(`Based on your workout history, here's a tip: ${analysis.recommendations.timeOptimization[0]}`);
+      speakWithDefaultVoice(`Based on your workout history, here's a tip: ${analysis.recommendations.timeOptimization[0]}`);
     }
   };
   
@@ -775,6 +699,7 @@ export default function HomeScreen() {
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]} 
       contentContainerStyle={styles.content}
+      scrollEventThrottle={16} // Prevent excessive scroll events
     >
       <View style={styles.header}>
         <View style={styles.headerTop}>

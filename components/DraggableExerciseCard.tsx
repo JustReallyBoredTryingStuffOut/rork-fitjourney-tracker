@@ -55,6 +55,8 @@ export default function DraggableExerciseCard({
   const pan = useRef(new Animated.ValueXY()).current;
   const cardRef = useRef<View>(null);
   const cardPositionY = useRef(0);
+  const initialTouchY = useRef(0);
+  const lastReportedDropZone = useRef<number | null>(null);
   
   // Get screen dimensions
   const screenHeight = Dimensions.get('window').height;
@@ -62,16 +64,14 @@ export default function DraggableExerciseCard({
   // Calculate possible drop positions
   const getDropIndex = (gestureY: number) => {
     // Calculate the relative position from the card's original position
-    const relativeY = gestureY - cardPositionY.current;
+    const relativeY = gestureY - initialTouchY.current;
     
-    // Determine direction (up or down)
-    const direction = relativeY > 0 ? 1 : -1;
-    
-    // Calculate how many positions to move
-    const positions = Math.floor(Math.abs(relativeY) / CARD_HEIGHT);
+    // Calculate how many positions to move based on the distance moved
+    // and the height of each card
+    const positions = Math.round(relativeY / CARD_HEIGHT);
     
     // Calculate new index
-    let newIndex = index + (positions * direction);
+    let newIndex = index + positions;
     
     // Ensure the new index is within bounds
     newIndex = Math.max(0, Math.min(totalExercises - 1, newIndex));
@@ -81,12 +81,15 @@ export default function DraggableExerciseCard({
   
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true, // Changed to true to respond immediately to touch
+      onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         // Only respond to vertical movements that are significant
         return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
       },
-      onPanResponderGrant: () => {
+      onPanResponderGrant: (_, gestureState) => {
+        // Store the initial touch position
+        initialTouchY.current = gestureState.y0;
+        
         // Measure the card's position on the screen
         cardRef.current?.measure((x, y, width, height, pageX, pageY) => {
           cardPositionY.current = pageY;
@@ -100,6 +103,9 @@ export default function DraggableExerciseCard({
         if (Platform.OS !== 'web') {
           Vibration.vibrate(50);
         }
+        
+        // Reset the last reported drop zone
+        lastReportedDropZone.current = null;
         
         // Store the initial position
         pan.setOffset({
@@ -116,8 +122,11 @@ export default function DraggableExerciseCard({
         
         // Calculate potential drop index
         const potentialDropIndex = getDropIndex(gestureState.moveY);
-        if (potentialDropIndex !== dropZoneIndex) {
+        
+        // Only update and provide feedback if the drop zone has changed
+        if (potentialDropIndex !== lastReportedDropZone.current) {
           setDropZoneIndex(potentialDropIndex);
+          lastReportedDropZone.current = potentialDropIndex;
           
           // Provide light haptic feedback when crossing threshold to a new position
           if (potentialDropIndex !== null && Platform.OS !== 'web') {
