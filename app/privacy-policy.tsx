@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
           headerLeft: () => (
             <TouchableOpacity 
               onPress={handleGoBack} 
-              style={[styles.backButton, { backgroundColor: colors.cardBackground }]}
+              style={styles.backButton}
               accessibilityLabel="Go back"
             >
               <ArrowLeft size={24} color={colors.primary} />
@@ -133,18 +133,6 @@ export default function PrivacyPolicy() {
           </Text>
         </View>
       </ScrollView>
-      
-      {/* Additional back button at the bottom for better UX */}
-      <TouchableOpacity 
-        onPress={handleGoBack}
-        style={[
-          styles.floatingBackButton, 
-          { backgroundColor: colors.primary }
-        ]}
-        accessibilityLabel="Go back"
-      >
-        <ArrowLeft size={24} color="white" />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -188,23 +176,8 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
   },
   backButton: {
-    padding: 10,
+    padding: 8,
     borderRadius: 8,
     marginLeft: 8,
-  },
-  floatingBackButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
 });
