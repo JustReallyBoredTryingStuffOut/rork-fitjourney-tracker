@@ -34,12 +34,12 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
           <Text style={[styles.compactTitle, { color: colors.text }]} numberOfLines={1}>{exercise.name}</Text>
           <View style={styles.compactTags}>
             {exercise.muscleGroups.slice(0, 1).map(group => (
-              <View key={group} style={styles.compactTag}>
-                <Text style={styles.compactTagText}>{group}</Text>
+              <View key={group} style={[styles.compactTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+                <Text style={[styles.compactTagText, { color: "#3498db" }]}>{group}</Text>
               </View>
             ))}
             {exercise.equipment.length > 0 && (
-              <View style={styles.compactEquipment}>
+              <View style={[styles.compactEquipment, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
                 <Dumbbell size={10} color={colors.textSecondary} />
                 <Text style={[styles.compactEquipmentText, { color: colors.textSecondary }]}>
                   {exercise.equipment[0]}
@@ -73,15 +73,15 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
         
         <View style={styles.tags}>
           {exercise.muscleGroups.map(group => (
-            <View key={group} style={styles.tag}>
-              <Text style={styles.tagText}>{group}</Text>
+            <View key={group} style={[styles.tag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+              <Text style={[styles.tagText, { color: "#3498db" }]}>{group}</Text>
             </View>
           ))}
         </View>
         
         <View style={styles.equipment}>
           {exercise.equipment.map(item => (
-            <View key={item} style={styles.equipmentItem}>
+            <View key={item} style={[styles.equipmentItem, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
               <Dumbbell size={12} color={colors.textSecondary} />
               <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>{item}</Text>
             </View>
@@ -167,7 +167,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tag: {
-    backgroundColor: "rgba(52, 152, 219, 0.1)",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -176,7 +175,6 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12,
-    color: "#3498db",
   },
   equipment: {
     flexDirection: "row",
@@ -185,7 +183,6 @@ const styles = StyleSheet.create({
   equipmentItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -234,7 +231,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   compactTag: {
-    backgroundColor: "rgba(52, 152, 219, 0.1)",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -242,12 +238,10 @@ const styles = StyleSheet.create({
   },
   compactTagText: {
     fontSize: 12,
-    color: "#3498db",
   },
   compactEquipment: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,

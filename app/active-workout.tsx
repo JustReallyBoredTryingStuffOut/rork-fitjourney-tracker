@@ -152,6 +152,8 @@ export default function ActiveWorkoutScreen() {
   
   // Sound effect for set completion
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [soundLoaded, setSoundLoaded] = useState(false);
+  const [soundError, setSoundError] = useState<Error | null>(null);
   
   // Ref to track if long workout notification has been shown
   const longWorkoutNotificationShown = useRef(false);
@@ -166,12 +168,22 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     async function loadSound() {
       try {
+        if (Platform.OS === 'web') {
+          // Skip sound loading on web
+          setSoundLoaded(true);
+          return;
+        }
+        
         const { sound } = await Audio.Sound.createAsync(
           require('@/assets/sounds/complete.mp3')
         );
         setSound(sound);
+        setSoundLoaded(true);
       } catch (error) {
         console.log('Error loading sound', error);
+        setSoundError(error instanceof Error ? error : new Error('Unknown error loading sound'));
+        // Still mark as loaded so the app can continue without sound
+        setSoundLoaded(true);
       }
     }
     
@@ -179,7 +191,7 @@ export default function ActiveWorkoutScreen() {
     
     return () => {
       if (sound) {
-        sound.unloadAsync();
+        sound.unloadAsync().catch(err => console.log('Error unloading sound', err));
       }
     };
   }, []);
@@ -667,9 +679,9 @@ export default function ActiveWorkoutScreen() {
   // New function to handle set completion
   const handleCompleteSet = (exerciseIndex: number, setIndex: number) => {
     // Play sound effect
-    if (sound) {
+    if (sound && soundLoaded && !soundError) {
       try {
-        sound.replayAsync();
+        sound.replayAsync().catch(err => console.log('Error playing sound', err));
       } catch (error) {
         console.log('Error playing sound', error);
       }
@@ -744,6 +756,147 @@ export default function ActiveWorkoutScreen() {
         reps: newReps.toString()
       });
     }
+  };
+  
+  // Custom numeric keyboard component
+  const renderCustomNumericKeyboard = () => {
+    if (!editingSetData) return null;
+    
+    const handleKeyPress = (key: string) => {
+      const field = editingSetData.exerciseIndex !== undefined ? 'weight' : 'reps';
+      let currentValue = field === 'weight' ? editingSetData.weight : editingSetData.reps;
+      
+      if (key === 'backspace') {
+        // Remove the last character
+        currentValue = currentValue.slice(0, -1);
+      } else if (key === '+') {
+        // Increment the value
+        const numValue = parseFloat(currentValue) || 0;
+        currentValue = field === 'weight' 
+          ? (numValue + 2.5).toString() 
+          : (numValue + 1).toString();
+      } else if (key === '-') {
+        // Decrement the value
+        const numValue = parseFloat(currentValue) || 0;
+        const newValue = field === 'weight' 
+          ? Math.max(0, numValue - 2.5) 
+          : Math.max(0, numValue - 1);
+        currentValue = newValue.toString();
+      } else if (key === '.') {
+        // Only add decimal point if there isn't one already and we're editing weight
+        if (field === 'weight' && !currentValue.includes('.')) {
+          currentValue += '.';
+        }
+      } else {
+        // Add the number
+        currentValue += key;
+      }
+      
+      // Update the state
+      if (field === 'weight') {
+        setEditingSetData({
+          ...editingSetData,
+          weight: currentValue
+        });
+      } else {
+        setEditingSetData({
+          ...editingSetData,
+          reps: currentValue
+        });
+      }
+    };
+    
+    return (
+      <View style={styles.customKeyboard}>
+        <View style={styles.keyboardHeader}>
+          <Text style={styles.keyboardTitle}>
+            {editingSetData.exerciseIndex !== undefined ? 'Enter Weight (kg)' : 'Enter Reps'}
+          </Text>
+          <TouchableOpacity 
+            style={styles.keyboardCloseButton}
+            onPress={() => {
+              Keyboard.dismiss();
+              handleSaveSetData();
+            }}
+          >
+            <X size={20} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.keyboardRow}>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('1')}>
+            <Text style={styles.keyboardKeyText}>1</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('2')}>
+            <Text style={styles.keyboardKeyText}>2</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('3')}>
+            <Text style={styles.keyboardKeyText}>3</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.keyboardRow}>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('4')}>
+            <Text style={styles.keyboardKeyText}>4</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('5')}>
+            <Text style={styles.keyboardKeyText}>5</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('6')}>
+            <Text style={styles.keyboardKeyText}>6</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.keyboardRow}>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('7')}>
+            <Text style={styles.keyboardKeyText}>7</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('8')}>
+            <Text style={styles.keyboardKeyText}>8</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('9')}>
+            <Text style={styles.keyboardKeyText}>9</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.keyboardRow}>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('.')}>
+            <Text style={styles.keyboardKeyText}>.</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('0')}>
+            <Text style={styles.keyboardKeyText}>0</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.keyboardKey} onPress={() => handleKeyPress('backspace')}>
+            <Text style={styles.keyboardKeyText}>⌫</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.keyboardRow}>
+          <TouchableOpacity 
+            style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
+            onPress={() => handleKeyPress('-')}
+          >
+            <Minus size={20} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
+            onPress={() => handleKeyPress('+')}
+          >
+            <Plus size={20} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.keyboardDoneButton}
+          onPress={() => {
+            Keyboard.dismiss();
+            handleSaveSetData();
+          }}
+        >
+          <Text style={styles.keyboardDoneButtonText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
   
   return (
@@ -975,63 +1128,33 @@ export default function ActiveWorkoutScreen() {
                                 // Editing mode
                                 <>
                                   <View style={[styles.inputContainer, styles.weightColumn]}>
-                                    <View style={styles.inputWithControls}>
-                                      <TouchableOpacity 
-                                        style={styles.inputControl}
-                                        onPress={() => handleDecrement('weight')}
-                                      >
-                                        <Minus size={16} color={colors.text} />
-                                      </TouchableOpacity>
-                                      
-                                      <TextInput
-                                        style={styles.input}
-                                        value={editingSetData.weight}
-                                        keyboardType="numeric"
-                                        onChangeText={(value) => setEditingSetData({
-                                          ...editingSetData,
-                                          weight: value
-                                        })}
-                                        onSubmitEditing={handleSetDataSubmit}
-                                        returnKeyType="done"
-                                      />
-                                      
-                                      <TouchableOpacity 
-                                        style={styles.inputControl}
-                                        onPress={() => handleIncrement('weight')}
-                                      >
-                                        <Plus size={16} color={colors.text} />
-                                      </TouchableOpacity>
-                                    </View>
+                                    <TextInput
+                                      style={styles.input}
+                                      value={editingSetData.weight}
+                                      keyboardType="numeric"
+                                      onChangeText={(value) => setEditingSetData({
+                                        ...editingSetData,
+                                        weight: value
+                                      })}
+                                      onSubmitEditing={handleSetDataSubmit}
+                                      returnKeyType="done"
+                                      showSoftInputOnFocus={false}
+                                    />
                                   </View>
                                   
                                   <View style={[styles.inputContainer, styles.repsColumn]}>
-                                    <View style={styles.inputWithControls}>
-                                      <TouchableOpacity 
-                                        style={styles.inputControl}
-                                        onPress={() => handleDecrement('reps')}
-                                      >
-                                        <Minus size={16} color={colors.text} />
-                                      </TouchableOpacity>
-                                      
-                                      <TextInput
-                                        style={styles.input}
-                                        value={editingSetData.reps}
-                                        keyboardType="numeric"
-                                        onChangeText={(value) => setEditingSetData({
-                                          ...editingSetData,
-                                          reps: value
-                                        })}
-                                        onSubmitEditing={handleSetDataSubmit}
-                                        returnKeyType="done"
-                                      />
-                                      
-                                      <TouchableOpacity 
-                                        style={styles.inputControl}
-                                        onPress={() => handleIncrement('reps')}
-                                      >
-                                        <Plus size={16} color={colors.text} />
-                                      </TouchableOpacity>
-                                    </View>
+                                    <TextInput
+                                      style={styles.input}
+                                      value={editingSetData.reps}
+                                      keyboardType="numeric"
+                                      onChangeText={(value) => setEditingSetData({
+                                        ...editingSetData,
+                                        reps: value
+                                      })}
+                                      onSubmitEditing={handleSetDataSubmit}
+                                      returnKeyType="done"
+                                      showSoftInputOnFocus={false}
+                                    />
                                   </View>
                                   
                                   <TouchableOpacity 
@@ -1137,6 +1260,9 @@ export default function ActiveWorkoutScreen() {
           </View>
         </View>
       )}
+      
+      {/* Custom Numeric Keyboard */}
+      {editingSetData && renderCustomNumericKeyboard()}
       
       {/* Rest Timer Modal */}
       <RestTimerModal
@@ -1756,29 +1882,15 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 36,
   },
-  inputWithControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.background,
-    borderRadius: 4,
-    height: 36,
-    paddingHorizontal: 4,
-  },
-  inputControl: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   input: {
     flex: 1,
     paddingHorizontal: 4,
     fontSize: 14,
     color: colors.text,
     textAlign: "center",
+    backgroundColor: colors.background,
+    borderRadius: 4,
+    height: 36,
   },
   setValueText: {
     fontSize: 14,
@@ -1845,6 +1957,72 @@ const styles = StyleSheet.create({
     color: colors.error,
     textAlign: "center",
     marginTop: 24,
+  },
+  
+  // Custom Numeric Keyboard Styles
+  customKeyboard: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    zIndex: 1000,
+  },
+  keyboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  keyboardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  keyboardCloseButton: {
+    padding: 8,
+  },
+  keyboardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  keyboardKey: {
+    width: '30%',
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  keyboardSpecialKey: {
+    width: '48%',
+    backgroundColor: colors.highlight,
+  },
+  keyboardKeyText: {
+    fontSize: 20,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  keyboardDoneButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    marginHorizontal: 12,
+  },
+  keyboardDoneButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   
   // Rating Modal Styles
