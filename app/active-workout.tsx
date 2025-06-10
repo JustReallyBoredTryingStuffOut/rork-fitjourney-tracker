@@ -11,7 +11,8 @@ import {
   Image,
   Platform,
   ActivityIndicator,
-  BackHandler
+  BackHandler,
+  Vibration
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { 
@@ -981,6 +982,24 @@ export default function ActiveWorkoutScreen() {
                 <View style={[
                   styles.toggleKnob,
                   timerSettings.voicePrompts && styles.toggleKnobActive
+                ]} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Countdown beep</Text>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  timerSettings.countdownBeep && styles.toggleButtonActive
+                ]}
+                onPress={() => handleUpdateTimerSettings({ 
+                  countdownBeep: !timerSettings.countdownBeep 
+                })}
+              >
+                <View style={[
+                  styles.toggleKnob,
+                  timerSettings.countdownBeep && styles.toggleKnobActive
                 ]} />
               </TouchableOpacity>
             </View>

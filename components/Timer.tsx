@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration } from "react-native";
 import { Play, Pause, RotateCcw, SkipForward, Settings } from "lucide-react-native";
 import * as Speech from 'expo-speech';
 import { colors } from "@/constants/colors";
@@ -28,6 +28,7 @@ export default function Timer({
   } = useWorkoutStore();
   
   const [displayTime, setDisplayTime] = useState("00:00");
+  const [lastSpokenSecond, setLastSpokenSecond] = useState(-1);
   
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -42,17 +43,27 @@ export default function Timer({
           const timeElapsed = (currentTime - activeTimer.startTime) / 1000;
           const timeRemaining = Math.max(0, activeTimer.restDuration - timeElapsed);
           
-          // Voice prompt when rest is almost over
-          if (timerSettings.voicePrompts && Platform.OS !== 'web' && 
-              timeRemaining <= 5 && timeRemaining > 4) {
-            Speech.speak("5 seconds left", {
-              language: 'en',
-              pitch: 1.0,
-              rate: 0.9
-            });
+          // Voice countdown for the last 10 seconds
+          if (timerSettings.voicePrompts && Platform.OS !== 'web') {
+            const secondsRemaining = Math.floor(timeRemaining);
+            
+            // Only speak if we haven't spoken this second yet
+            if (secondsRemaining <= 10 && secondsRemaining >= 1 && secondsRemaining !== lastSpokenSecond) {
+              Speech.speak(secondsRemaining.toString(), {
+                language: 'en',
+                pitch: 1.0,
+                rate: 0.9
+              });
+              setLastSpokenSecond(secondsRemaining);
+            }
           }
           
           if (timeRemaining <= 0) {
+            // Vibrate when timer reaches zero
+            if (Platform.OS !== 'web') {
+              Vibration.vibrate([0, 500, 200, 500]);
+            }
+            
             if (timerSettings.voicePrompts && Platform.OS !== 'web') {
               Speech.speak("Rest complete. Ready for next set.", {
                 language: 'en',
@@ -86,10 +97,13 @@ export default function Timer({
         
         setDisplayTime(formatTime(elapsedTime));
       }, 100);
+    } else {
+      // Reset the last spoken second when timer is not running
+      setLastSpokenSecond(-1);
     }
     
     return () => clearInterval(interval);
-  }, [activeTimer, timerSettings.voicePrompts]);
+  }, [activeTimer, timerSettings.voicePrompts, lastSpokenSecond]);
   
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

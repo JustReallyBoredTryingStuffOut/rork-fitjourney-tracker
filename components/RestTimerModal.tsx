@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Switch,
-  Platform
+  Platform,
+  Vibration
 } from "react-native";
 import { X, Clock, Volume2, VolumeX } from "lucide-react-native";
 import { colors } from "@/constants/colors";
@@ -37,6 +38,7 @@ export default function RestTimerModal({
   const [selectedTime, setSelectedTime] = useState(defaultTime);
   const [voiceEnabled, setVoiceEnabled] = useState(timerSettings.voicePrompts);
   const [autoStart, setAutoStart] = useState(timerSettings.autoStartRest);
+  const [countdownBeep, setCountdownBeep] = useState(timerSettings.countdownBeep);
   
   // Update selected time when defaultTime changes
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function RestTimerModal({
   useEffect(() => {
     setVoiceEnabled(timerSettings.voicePrompts);
     setAutoStart(timerSettings.autoStartRest);
+    setCountdownBeep(timerSettings.countdownBeep);
   }, [timerSettings]);
   
   const handleStartRest = () => {
@@ -55,13 +58,20 @@ export default function RestTimerModal({
     // Update timer settings if they've changed
     if (voiceEnabled !== timerSettings.voicePrompts || 
         autoStart !== timerSettings.autoStartRest ||
+        countdownBeep !== timerSettings.countdownBeep ||
         selectedTime !== timerSettings.defaultRestTime) {
       setTimerSettings({
         ...timerSettings,
         voicePrompts: voiceEnabled,
         autoStartRest: autoStart,
+        countdownBeep: countdownBeep,
         defaultRestTime: selectedTime
       });
+    }
+    
+    // Provide haptic feedback when starting timer
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(100);
     }
     
     onClose();
@@ -174,6 +184,35 @@ export default function RestTimerModal({
                       />
                     )}
                   </View>
+                  
+                  <View style={styles.settingRow}>
+                    <View style={styles.settingLabelContainer}>
+                      <Volume2 size={20} color={colors.text} style={styles.settingIcon} />
+                      <Text style={styles.settingLabel}>Countdown beep</Text>
+                    </View>
+                    
+                    {Platform.OS === 'web' ? (
+                      <TouchableOpacity
+                        style={[
+                          styles.toggleButton,
+                          countdownBeep && styles.toggleButtonActive
+                        ]}
+                        onPress={() => setCountdownBeep(!countdownBeep)}
+                      >
+                        <View style={[
+                          styles.toggleKnob,
+                          countdownBeep && styles.toggleKnobActive
+                        ]} />
+                      </TouchableOpacity>
+                    ) : (
+                      <Switch
+                        value={countdownBeep}
+                        onValueChange={setCountdownBeep}
+                        trackColor={{ false: colors.border, true: `${colors.primary}80` }}
+                        thumbColor={countdownBeep ? colors.primary : "#f4f3f4"}
+                      />
+                    )}
+                  </View>
                 </View>
                 
                 <View style={styles.buttonContainer}>
@@ -183,7 +222,6 @@ export default function RestTimerModal({
                     style={styles.startButton}
                   />
                   
-                  {/* Added CLOSE button */}
                   <Button
                     title="Close"
                     onPress={onClose}
