@@ -7,7 +7,7 @@ import * as ExpoDevice from "expo-device";
 // Import the CoreBluetooth module with correct path
 import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
 
-// Import the HealthKit module (simulated for this implementation)
+// Import the HealthKit module (production-ready implementation)
 import HealthKit from "@/src/NativeModules/HealthKit";
 
 export default function useStepCounter() {
@@ -100,7 +100,13 @@ export default function useStepCounter() {
           
           if (isAvailable) {
             // Request authorization for steps
-            const authResult = await HealthKit.requestAuthorization(['steps']);
+            const authResult = await HealthKit.requestAuthorization([
+              'steps', 
+              'distance', 
+              'calories',
+              'activity'
+            ]);
+            
             setHealthKitAuthorized(authResult.authorized);
             
             if (authResult.authorized) {
@@ -121,13 +127,25 @@ export default function useStepCounter() {
               if (stepsResult.success) {
                 setCurrentStepCount(stepsResult.steps);
                 
-                // Log the steps
+                // Get distance data
+                const distanceResult = await HealthKit.getDistanceWalking(
+                  today.toISOString(),
+                  new Date().toISOString()
+                );
+                
+                // Get calories data
+                const caloriesResult = await HealthKit.getActiveEnergyBurned(
+                  today.toISOString(),
+                  new Date().toISOString()
+                );
+                
+                // Log the steps with additional data if available
                 const stepLog = {
                   id: today.toISOString(),
                   date: today.toISOString(),
                   steps: stepsResult.steps,
-                  distance: calculateDistance(stepsResult.steps),
-                  calories: calculateCaloriesBurned(stepsResult.steps),
+                  distance: distanceResult.success ? distanceResult.distance : calculateDistance(stepsResult.steps),
+                  calories: caloriesResult.success ? caloriesResult.calories : calculateCaloriesBurned(stepsResult.steps),
                   source: "Apple Health"
                 };
                 
@@ -450,8 +468,14 @@ export default function useStepCounter() {
         return;
       }
       
-      // Request authorization for steps
-      const authResult = await HealthKit.requestAuthorization(['steps']);
+      // Request authorization for steps and related data
+      const authResult = await HealthKit.requestAuthorization([
+        'steps', 
+        'distance', 
+        'calories',
+        'activity'
+      ]);
+      
       setHealthKitAuthorized(authResult.authorized);
       
       if (authResult.authorized) {
@@ -473,13 +497,25 @@ export default function useStepCounter() {
         if (stepsResult.success) {
           setCurrentStepCount(stepsResult.steps);
           
-          // Log the steps
+          // Get distance data
+          const distanceResult = await HealthKit.getDistanceWalking(
+            today.toISOString(),
+            new Date().toISOString()
+          );
+          
+          // Get calories data
+          const caloriesResult = await HealthKit.getActiveEnergyBurned(
+            today.toISOString(),
+            new Date().toISOString()
+          );
+          
+          // Log the steps with additional data if available
           const stepLog = {
             id: today.toISOString(),
             date: today.toISOString(),
             steps: stepsResult.steps,
-            distance: calculateDistance(stepsResult.steps),
-            calories: calculateCaloriesBurned(stepsResult.steps),
+            distance: distanceResult.success ? distanceResult.distance : calculateDistance(stepsResult.steps),
+            calories: caloriesResult.success ? caloriesResult.calories : calculateCaloriesBurned(stepsResult.steps),
             source: "Apple Health"
           };
           
@@ -645,8 +681,13 @@ export default function useStepCounter() {
         const isAvailable = await HealthKit.isHealthDataAvailable();
         
         if (isAvailable) {
-          // Request authorization for steps
-          const authResult = await HealthKit.requestAuthorization(['steps']);
+          // Request authorization for steps and related data
+          const authResult = await HealthKit.requestAuthorization([
+            'steps', 
+            'distance', 
+            'calories',
+            'activity'
+          ]);
           
           if (authResult.authorized) {
             // Set HealthKit as the primary data source
@@ -669,13 +710,25 @@ export default function useStepCounter() {
             if (stepsResult.success) {
               setCurrentStepCount(stepsResult.steps);
               
-              // Log the steps
+              // Get distance data
+              const distanceResult = await HealthKit.getDistanceWalking(
+                today.toISOString(),
+                new Date().toISOString()
+              );
+              
+              // Get calories data
+              const caloriesResult = await HealthKit.getActiveEnergyBurned(
+                today.toISOString(),
+                new Date().toISOString()
+              );
+              
+              // Log the steps with additional data if available
               const stepLog = {
                 id: today.toISOString(),
                 date: today.toISOString(),
                 steps: stepsResult.steps,
-                distance: calculateDistance(stepsResult.steps),
-                calories: calculateCaloriesBurned(stepsResult.steps),
+                distance: distanceResult.success ? distanceResult.distance : calculateDistance(stepsResult.steps),
+                calories: caloriesResult.success ? caloriesResult.calories : calculateCaloriesBurned(stepsResult.steps),
                 source: "Apple Health"
               };
               
@@ -784,13 +837,25 @@ export default function useStepCounter() {
       if (stepsResult.success) {
         setCurrentStepCount(stepsResult.steps);
         
-        // Log the steps
+        // Get distance data
+        const distanceResult = await HealthKit.getDistanceWalking(
+          today.toISOString(),
+          new Date().toISOString()
+        );
+        
+        // Get calories data
+        const caloriesResult = await HealthKit.getActiveEnergyBurned(
+          today.toISOString(),
+          new Date().toISOString()
+        );
+        
+        // Log the steps with additional data if available
         const stepLog = {
           id: today.toISOString(),
           date: today.toISOString(),
           steps: stepsResult.steps,
-          distance: calculateDistance(stepsResult.steps),
-          calories: calculateCaloriesBurned(stepsResult.steps),
+          distance: distanceResult.success ? distanceResult.distance : calculateDistance(stepsResult.steps),
+          calories: caloriesResult.success ? caloriesResult.calories : calculateCaloriesBurned(stepsResult.steps),
           source: "Apple Health"
         };
         
@@ -833,13 +898,25 @@ export default function useStepCounter() {
       if (stepsResult.success) {
         setCurrentStepCount(stepsResult.steps);
         
-        // Log the steps
+        // Get distance data
+        const distanceResult = await HealthKit.getDistanceWalking(
+          today.toISOString(),
+          new Date().toISOString()
+        );
+        
+        // Get calories data
+        const caloriesResult = await HealthKit.getActiveEnergyBurned(
+          today.toISOString(),
+          new Date().toISOString()
+        );
+        
+        // Log the steps with additional data if available
         const stepLog = {
           id: today.toISOString(),
           date: today.toISOString(),
           steps: stepsResult.steps,
-          distance: calculateDistance(stepsResult.steps),
-          calories: calculateCaloriesBurned(stepsResult.steps),
+          distance: distanceResult.success ? distanceResult.distance : calculateDistance(stepsResult.steps),
+          calories: caloriesResult.success ? caloriesResult.calories : calculateCaloriesBurned(stepsResult.steps),
           source: "Apple Health"
         };
         

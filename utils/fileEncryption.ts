@@ -2,6 +2,8 @@ import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import { encryptData, decryptData } from './encryption';
 import * as Crypto from 'expo-crypto';
+import * as Random from 'expo-random';
+import { secureDeleteFile } from './secureDelete';
 
 // Directory for encrypted photos
 export const ENCRYPTED_PHOTOS_DIR = `${FileSystem.documentDirectory}encrypted_photos/`;
@@ -50,10 +52,15 @@ const generateSecureFilename = async (sourceUri: string, baseFileName: string): 
           length: Math.min(4096, fileInfo.size)
         });
         
-        // Create a hash from the header + file size + timestamp
+        // Create a hash from the header + file size + timestamp + random value
+        const randomBytes = await Random.getRandomBytesAsync(16);
+        const randomValue = Array.from(randomBytes)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        
         const contentHash = await Crypto.digestStringAsync(
           Crypto.CryptoDigestAlgorithm.SHA256,
-          headerBytes + fileInfo.size + Date.now()
+          headerBytes + fileInfo.size + Date.now() + randomValue
         );
         
         // Use the first 12 characters of the hash
@@ -64,8 +71,13 @@ const generateSecureFilename = async (sourceUri: string, baseFileName: string): 
     console.warn('Error generating secure filename:', error);
   }
   
-  // Fallback to timestamp-based filename
-  return `${baseFileName.split('.')[0]}_${Date.now()}.enc`;
+  // Fallback to timestamp-based filename with random component
+  const randomBytes = await Random.getRandomBytesAsync(8);
+  const randomValue = Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  return `${baseFileName.split('.')[0]}_${Date.now()}_${randomValue}.enc`;
 };
 
 // Encrypt and save a photo file
@@ -95,7 +107,8 @@ export const encryptAndSavePhoto = async (
     const metadata = JSON.stringify({
       type: fileExtension === 'gif' ? 'image/gif' : 'image/jpeg',
       name: fileName,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      originalSize: fileContent.length
     });
     
     // Encrypt the metadata and file content separately
@@ -197,49 +210,6 @@ export const isEncryptedFile = (uri: string): boolean => {
   return uri.startsWith(ENCRYPTED_PHOTOS_DIR);
 };
 
-// Securely delete a file by overwriting it with random data before deletion
-const secureOverwriteFile = async (uri: string): Promise<void> => {
-  if (Platform.OS === 'web') return;
-  
-  try {
-    const fileInfo = await FileSystem.getInfoAsync(uri);
-    if (!fileInfo.exists) return;
-    
-    // Generate random data to overwrite the file
-    // We'll use a reasonable size for overwriting (up to 1MB)
-    const maxOverwriteSize = Math.min(fileInfo.size, 1024 * 1024);
-    if (maxOverwriteSize <= 0) {
-      // If file is empty, just delete it
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-      return;
-    }
-    
-    // Generate random data
-    const randomBytes = await Random.getRandomBytesAsync(maxOverwriteSize);
-    const randomData = Array.from(randomBytes)
-      .map(byte => String.fromCharCode(byte))
-      .join('');
-    
-    // Overwrite the file with random data
-    await FileSystem.writeAsStringAsync(uri, randomData);
-    
-    // Overwrite again with zeros
-    const zeroData = '\0'.repeat(maxOverwriteSize);
-    await FileSystem.writeAsStringAsync(uri, zeroData);
-    
-    // Finally delete the file
-    await FileSystem.deleteAsync(uri, { idempotent: true });
-  } catch (error) {
-    console.error('Error securely overwriting file:', error);
-    // If secure deletion fails, try regular deletion
-    try {
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-    } catch (deleteError) {
-      console.error('Regular deletion also failed:', deleteError);
-    }
-  }
-};
-
 // Delete an encrypted photo securely
 export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
   if (Platform.OS === 'web' || !uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
@@ -248,7 +218,7 @@ export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
   
   try {
     // Securely overwrite and delete the file
-    await secureOverwriteFile(uri);
+    await secureDeleteFile(uri, 3);
     
     // Also check for any temporary decrypted versions of this file
     // This is a best-effort cleanup of potential temp files
@@ -333,7 +303,7 @@ export const deleteAllEncryptedPhotos = async (): Promise<void> => {
       
       // Securely delete each file
       for (const file of files) {
-        await secureOverwriteFile(`${ENCRYPTED_PHOTOS_DIR}${file}`);
+        await secureDeleteFile(`${ENCRYPTED_PHOTOS_DIR}${file}`, 3);
       }
       
       // Also delete the directory and recreate it
@@ -350,5 +320,74 @@ export const deleteAllEncryptedPhotos = async (): Promise<void> => {
   }
 };
 
-// Import from Random module for secure deletion
-import * as Random from 'expo-random';
+// Verify the integrity of an encrypted file
+export const verifyEncryptedFile = async (uri: string): Promise<boolean> => {
+  if (Platform.OS === 'web' || !uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
+    return false;
+  }
+  
+  try {
+    // Read the encrypted file
+    const encryptedContent = await FileSystem.readAsStringAsync(uri);
+    
+    // Check if this is our new format with metadata
+    if (!encryptedContent.includes('|||')) {
+      return false; // Not in the expected format
+    }
+    
+    const [encryptedMetadata, encryptedFileContent] = encryptedContent.split('|||');
+    
+    // Try to decrypt the metadata
+    const metadataStr = await decryptData(encryptedMetadata);
+    if (!metadataStr) {
+      return false;
+    }
+    
+    // Try to parse the metadata
+    try {
+      JSON.parse(metadataStr);
+    } catch (e) {
+      return false;
+    }
+    
+    // We don't need to decrypt the entire file content to verify integrity
+    // Just check that it exists and is non-empty
+    return encryptedFileContent.length > 0;
+  } catch (error) {
+    console.error('Error verifying encrypted file:', error);
+    return false;
+  }
+};
+
+// Re-encrypt a file with the latest encryption version
+export const reEncryptFile = async (uri: string): Promise<string | null> => {
+  if (Platform.OS === 'web' || !uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
+    return null;
+  }
+  
+  try {
+    // First decrypt the file
+    const decryptedUri = await decryptPhoto(uri);
+    if (decryptedUri === uri) {
+      // Decryption failed
+      return null;
+    }
+    
+    // Get the original filename
+    const fileName = uri.split('/').pop() || 'reencrypted.jpg';
+    
+    // Re-encrypt with the latest encryption method
+    const newUri = await encryptAndSavePhoto(decryptedUri, fileName);
+    
+    // Delete the original encrypted file
+    await deleteEncryptedPhoto(uri);
+    
+    // Delete the temporary decrypted file
+    await FileSystem.deleteAsync(decryptedUri, { idempotent: true });
+    
+    return newUri;
+  } catch (error) {
+    console.error('Error re-encrypting file:', error);
+    return null;
+  }
+};

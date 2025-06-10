@@ -1,6 +1,3 @@
-// This file provides information about the encryption implementation
-// for documentation purposes
-
 /**
  * Encryption Implementation Details
  * 
@@ -30,7 +27,12 @@
  *    - Uses unique filenames based on content hashes
  *    - Stores encrypted files in a dedicated directory
  * 
- * 6. Fallback Mechanisms:
+ * 6. Secure Deletion:
+ *    - Implements secure overwriting before deletion
+ *    - Uses multiple passes with random data and zeros
+ *    - Cleans up temporary files and metadata
+ * 
+ * 7. Fallback Mechanisms:
  *    - Implements progressive fallbacks for different platforms
  *    - Ensures functionality across web and native environments
  *    - Maintains security even in limited environments
@@ -59,6 +61,18 @@ export const encryptionInfo = {
     on your device, and encryption keys are never transmitted over the network.
     
     For photos and media, both the content and metadata are encrypted
-    separately to ensure maximum privacy.
+    separately to ensure maximum privacy. When you delete data, it is
+    securely overwritten before being removed from your device.
+  `,
+  
+  // For GDPR compliance documentation
+  getGdprInfo: () => `
+    Data Protection Information:
+    
+    1. All sensitive data is encrypted using AES-GCM 256-bit encryption
+    2. Encryption keys are stored securely on your device
+    3. When you delete data, it is securely overwritten before deletion
+    4. You can export or delete all your data at any time
+    5. No personal data is transmitted without your explicit consent
   `
 };

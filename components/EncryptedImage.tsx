@@ -8,6 +8,7 @@ interface EncryptedImageProps extends Omit<ImageProps, 'source'> {
   fallbackUri?: string;
   onLoadStart?: () => void;
   onLoadEnd?: (success: boolean) => void;
+  onDecryptionError?: (error: Error) => void;
 }
 
 export default function EncryptedImage({ 
@@ -16,6 +17,7 @@ export default function EncryptedImage({
   style, 
   onLoadStart,
   onLoadEnd,
+  onDecryptionError,
   ...props 
 }: EncryptedImageProps) {
   const [decryptedUri, setDecryptedUri] = useState<string | null>(null);
@@ -83,9 +85,10 @@ export default function EncryptedImage({
           setHasError(true);
           setIsLoading(false);
           if (onLoadEnd) onLoadEnd(false);
+          if (onDecryptionError && error instanceof Error) onDecryptionError(error);
           
-          // Use original URI as fallback if decryption fails
-          setDecryptedUri(uri);
+          // Use fallback URI or original URI if decryption fails
+          setDecryptedUri(fallbackUri || uri);
         }
       }
     };
@@ -97,7 +100,7 @@ export default function EncryptedImage({
       isCancelled = true;
       cleanupTempFile();
     };
-  }, [uri, onLoadStart, onLoadEnd]);
+  }, [uri, onLoadStart, onLoadEnd, onDecryptionError, fallbackUri]);
   
   const handleImageError = () => {
     setHasError(true);
