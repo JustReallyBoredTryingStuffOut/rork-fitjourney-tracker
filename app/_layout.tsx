@@ -354,8 +354,8 @@ export default function RootLayout() {
       showSkip: false, // Don't allow skipping
     },
     {
-      title: "Enable Gamification?",
-      description: "Would you like to enable the gamification features? You can always change this later in your profile settings.",
+      title: "Enable Achievement System?",
+      description: "Would you like to enable the achievement system features? You can always change this later in your profile settings.",
       icon: <Zap size={80} color={colors.primary} />,
       action: null, // No single action, we have two buttons
       actionText: "",
