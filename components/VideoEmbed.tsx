@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
+    marginTop: 12,
   },
   fallbackButtonText: {
     color: "#FFFFFF",

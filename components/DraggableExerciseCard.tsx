@@ -81,10 +81,10 @@ export default function DraggableExerciseCard({
   
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponder: () => true, // Changed to true to respond immediately to touch
       onMoveShouldSetPanResponder: (_, gestureState) => {
         // Only respond to vertical movements that are significant
-        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
+        return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
       },
       onPanResponderGrant: () => {
         // Measure the card's position on the screen
@@ -118,6 +118,11 @@ export default function DraggableExerciseCard({
         const potentialDropIndex = getDropIndex(gestureState.moveY);
         if (potentialDropIndex !== dropZoneIndex) {
           setDropZoneIndex(potentialDropIndex);
+          
+          // Provide light haptic feedback when crossing threshold to a new position
+          if (potentialDropIndex !== null && Platform.OS !== 'web') {
+            Vibration.vibrate(20);
+          }
         }
       },
       onPanResponderRelease: (_, gestureState) => {
@@ -139,6 +144,11 @@ export default function DraggableExerciseCard({
           // Only call onDragEnd if we have a valid drop index
           if (finalDropIndex !== null) {
             onDragEnd(finalDropIndex);
+            
+            // Provide haptic feedback when drop completes
+            if (Platform.OS !== 'web') {
+              Vibration.vibrate(100);
+            }
           }
         });
       }

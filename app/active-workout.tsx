@@ -12,7 +12,8 @@ import {
   Platform,
   ActivityIndicator,
   BackHandler,
-  Vibration
+  Vibration,
+  CameraRoll
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { 
@@ -31,10 +32,12 @@ import {
   StopCircle,
   ArrowLeft,
   Watch,
-  Zap
+  Zap,
+  ImageIcon
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Speech from 'expo-speech';
+import * as MediaLibrary from 'expo-media-library';
 import { colors } from "@/constants/colors";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { useNotificationStore } from "@/store/notificationStore";
@@ -201,6 +204,9 @@ export default function ActiveWorkoutScreen() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(-1);
   const [currentSetIndex, setCurrentSetIndex] = useState(-1);
   const [useConnectedDevice, setUseConnectedDevice] = useState(false);
+  const [hasGifsInstalled, setHasGifsInstalled] = useState(false);
+  const [userGifs, setUserGifs] = useState<string[]>([]);
+  const [showGifSelector, setShowGifSelector] = useState(false);
   
   // State for exercise expansion
   const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
@@ -221,6 +227,49 @@ export default function ActiveWorkoutScreen() {
     device => device.connected && 
     (device.type === "appleWatch" || device.type === "fitbit" || device.type === "garmin")
   );
+  
+  // Check if user has GIFs installed
+  useEffect(() => {
+    const checkForGifs = async () => {
+      if (Platform.OS === 'web') return;
+      
+      try {
+        // Request permissions to access media library
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        
+        if (status !== 'granted') {
+          console.log('Media library permission not granted');
+          return;
+        }
+        
+        // Try to get some assets to check if user has GIFs
+        const options = {
+          first: 20,
+          mediaType: ['photo'],
+        };
+        
+        const assets = await MediaLibrary.getAssetsAsync(options);
+        
+        // Check if any of the assets are GIFs
+        const gifs = assets.assets.filter(asset => 
+          asset.filename.toLowerCase().endsWith('.gif') || 
+          asset.mediaType === 'image/gif'
+        );
+        
+        setHasGifsInstalled(gifs.length > 0);
+        
+        if (gifs.length > 0) {
+          // Store the URIs of the GIFs
+          const gifUris = gifs.map(gif => gif.uri);
+          setUserGifs(gifUris);
+        }
+      } catch (error) {
+        console.error('Error checking for GIFs:', error);
+      }
+    };
+    
+    checkForGifs();
+  }, []);
   
   // Start a timer to update workout duration
   useEffect(() => {
@@ -459,33 +508,23 @@ export default function ActiveWorkoutScreen() {
   };
   
   const handleAddGif = async () => {
-    setIsLoadingGif(true);
-    
-    try {
-      // In a real app, you would integrate with a GIF API like Giphy or Tenor
-      // For this example, we'll use a mock GIF URL
-      const gifOptions = [
-        "https://media.giphy.com/media/3oKIPavRPgJYaNI97W/giphy.gif", // Workout success
-        "https://media.giphy.com/media/3o7TKGMZHi73yzCumQ/giphy.gif", // Tired
-        "https://media.giphy.com/media/l2JdXY0zQv7uN0jeU/giphy.gif", // Strong
-        "https://media.giphy.com/media/3o7TKRwpns23QMNNiE/giphy.gif", // Flexing
-        "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif"  // Exhausted
-      ];
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Pick a random GIF
-      const randomGif = gifOptions[Math.floor(Math.random() * gifOptions.length)];
-      
-      setRatingMedia(randomGif);
-      setIsGif(true);
-    } catch (error) {
-      console.error("Error adding GIF:", error);
-      Alert.alert("Error", "Failed to add GIF. Please try again.");
-    } finally {
-      setIsLoadingGif(false);
+    if (!hasGifsInstalled) {
+      Alert.alert(
+        "No GIFs Found",
+        "We couldn't find any GIFs on your device. Please add some GIFs to your photo library first.",
+        [{ text: "OK" }]
+      );
+      return;
     }
+    
+    // Show GIF selector modal
+    setShowGifSelector(true);
+  };
+  
+  const handleSelectGif = (gifUri: string) => {
+    setRatingMedia(gifUri);
+    setIsGif(true);
+    setShowGifSelector(false);
   };
   
   const handleAddVideo = () => {
@@ -1056,16 +1095,9 @@ export default function ActiveWorkoutScreen() {
               <TouchableOpacity 
                 style={styles.mediaButton}
                 onPress={handleAddGif}
-                disabled={isLoadingGif}
               >
-                {isLoadingGif ? (
-                  <ActivityIndicator size="small" color={colors.warning} />
-                ) : (
-                  <>
-                    <Video size={24} color={colors.warning} />
-                    <Text style={[styles.mediaButtonText, { color: colors.warning }]}>Add GIF</Text>
-                  </>
-                )}
+                <ImageIcon size={24} color={colors.warning} />
+                <Text style={[styles.mediaButtonText, { color: colors.warning }]}>Add GIF</Text>
               </TouchableOpacity>
             </View>
             
@@ -1093,6 +1125,62 @@ export default function ActiveWorkoutScreen() {
               onPress={handleSubmitRating}
               disabled={rating === 0}
               style={styles.submitButton}
+            />
+          </View>
+        </View>
+      </Modal>
+      
+      {/* GIF Selector Modal */}
+      <Modal
+        visible={showGifSelector}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setShowGifSelector(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.gifSelectorModal}>
+            <View style={styles.gifSelectorHeader}>
+              <Text style={styles.gifSelectorTitle}>Select a GIF</Text>
+              <TouchableOpacity 
+                onPress={() => setShowGifSelector(false)}
+                style={styles.closeButton}
+              >
+                <X size={20} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            {userGifs.length > 0 ? (
+              <ScrollView style={styles.gifList}>
+                <View style={styles.gifGrid}>
+                  {userGifs.map((gifUri, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.gifItem}
+                      onPress={() => handleSelectGif(gifUri)}
+                    >
+                      <Image
+                        source={{ uri: gifUri }}
+                        style={styles.gifThumbnail}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            ) : (
+              <View style={styles.noGifsContainer}>
+                <Text style={styles.noGifsText}>
+                  No GIFs found on your device. Please add some GIFs to your photo library first.
+                </Text>
+              </View>
+            )}
+            
+            <Button
+              title="Cancel"
+              onPress={() => setShowGifSelector(false)}
+              variant="outline"
+              style={styles.cancelGifButton}
             />
           </View>
         </View>
@@ -1756,6 +1844,67 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitButton: {
+    width: "100%",
+  },
+  
+  // GIF Selector Modal Styles
+  gifSelectorModal: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    width: "90%",
+    maxWidth: 400,
+    height: "70%",
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  gifSelectorHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  gifSelectorTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  gifList: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  gifGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  gifItem: {
+    width: "48%",
+    height: 120,
+    marginBottom: 12,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  gifThumbnail: {
+    width: "100%",
+    height: "100%",
+  },
+  noGifsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  noGifsText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  cancelGifButton: {
     width: "100%",
   },
   
