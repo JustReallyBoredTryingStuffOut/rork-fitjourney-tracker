@@ -37,7 +37,7 @@ type DraggableExerciseCardProps = {
 };
 
 const { height } = Dimensions.get('window');
-const CARD_HEIGHT = 60; // Reduced height for collapsed card
+const CARD_HEIGHT = 60; // Height for collapsed card
 
 export default function DraggableExerciseCard({
   exercise,
@@ -57,8 +57,7 @@ export default function DraggableExerciseCard({
   const { colors } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
-  const translateY = useRef(new Animated.Value(0)).current;
-
+  
   // Calculate possible positions for snapping
   const getSnapPoints = () => {
     const points = [];
@@ -89,19 +88,15 @@ export default function DraggableExerciseCard({
   const panResponder = Platform.OS !== 'web' ? PanResponder.create({
     onStartShouldSetPanResponder: (_, gestureState) => {
       // Only respond to touches on the drag handle area
-      return gestureState.dx < 40; // Approximate width of drag handle
+      return true;
     },
     onMoveShouldSetPanResponder: (_, gestureState) => {
       // Only respond to vertical movements
-      return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dx) < 10;
+      return Math.abs(gestureState.dy) > 5;
     },
     onPanResponderGrant: () => {
       setIsDragging(true);
       onDragStart();
-      pan.setOffset({
-        x: 0,
-        y: translateY._value
-      });
       pan.setValue({ x: 0, y: 0 });
     },
     onPanResponderMove: Animated.event(
@@ -109,8 +104,6 @@ export default function DraggableExerciseCard({
       { useNativeDriver: false }
     ),
     onPanResponderRelease: (_, gestureState) => {
-      pan.flattenOffset();
-      
       // Calculate the new index based on the gesture
       const newIndex = getClosestSnapPoint(index * CARD_HEIGHT + gestureState.dy);
       

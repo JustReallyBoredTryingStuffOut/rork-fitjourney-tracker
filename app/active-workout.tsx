@@ -781,17 +781,17 @@ export default function ActiveWorkoutScreen() {
                     {exerciseLog.sets.length > 0 && (
                       <View style={styles.setsContainer}>
                         <View style={styles.setsHeader}>
-                          <Text style={styles.setsHeaderText}>SET</Text>
-                          <Text style={styles.setsHeaderText}>KG</Text>
-                          <Text style={styles.setsHeaderText}>REPS</Text>
-                          <Text style={styles.setsHeaderText}>NOTES</Text>
+                          <Text style={[styles.setsHeaderText, styles.setColumn]}>SET</Text>
+                          <Text style={[styles.setsHeaderText, styles.weightColumn]}>KG</Text>
+                          <Text style={[styles.setsHeaderText, styles.repsColumn]}>REPS</Text>
+                          <Text style={[styles.setsHeaderText, styles.notesColumn]}>NOTES</Text>
                         </View>
                         
                         {exerciseLog.sets.map((set, setIndex) => (
                           <View key={set.id} style={styles.setRow}>
-                            <Text style={styles.setText}>{setIndex + 1}</Text>
+                            <Text style={[styles.setText, styles.setColumn]}>{setIndex + 1}</Text>
                             
-                            <View style={styles.inputContainer}>
+                            <View style={[styles.inputContainer, styles.weightColumn]}>
                               <TextInput
                                 style={styles.input}
                                 value={set.weight.toString()}
@@ -800,7 +800,7 @@ export default function ActiveWorkoutScreen() {
                               />
                             </View>
                             
-                            <View style={styles.inputContainer}>
+                            <View style={[styles.inputContainer, styles.repsColumn]}>
                               <TextInput
                                 style={styles.input}
                                 value={set.reps.toString()}
@@ -810,7 +810,7 @@ export default function ActiveWorkoutScreen() {
                             </View>
                             
                             <TouchableOpacity 
-                              style={styles.notesButton}
+                              style={[styles.notesButton, styles.notesColumn]}
                               onPress={() => handleOpenSetNote(exerciseIndex, setIndex, set.notes)}
                             >
                               <Edit3 size={16} color={colors.textSecondary} />
@@ -1446,9 +1446,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: colors.textSecondary,
-    flex: 1,
     textAlign: "center",
-    marginHorizontal: 4,
   },
   setRow: {
     flexDirection: "row",
@@ -1458,15 +1456,32 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   setText: {
-    width: 30,
     fontSize: 14,
     fontWeight: "500",
     color: colors.text,
     textAlign: "center",
   },
-  inputContainer: {
+  // Column layout styles
+  setColumn: {
+    width: 40,
+    textAlign: "center",
+  },
+  weightColumn: {
     flex: 1,
     marginHorizontal: 4,
+    alignItems: "center",
+  },
+  repsColumn: {
+    flex: 1,
+    marginHorizontal: 4,
+    alignItems: "center",
+  },
+  notesColumn: {
+    width: 40,
+    alignItems: "center",
+  },
+  inputContainer: {
+    justifyContent: "center",
   },
   input: {
     backgroundColor: colors.background,
@@ -1476,10 +1491,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     textAlign: "center",
+    width: "100%",
   },
   notesButton: {
-    width: 40,
     alignItems: "center",
+    justifyContent: "center",
   },
   exerciseActions: {
     flexDirection: "row",
