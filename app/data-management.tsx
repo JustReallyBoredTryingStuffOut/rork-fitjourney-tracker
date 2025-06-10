@@ -180,11 +180,13 @@ export default function DataManagement() {
       <Stack.Screen 
         options={{ 
           title: "Data Management",
+          headerShown: true,
           headerLeft: () => (
             <TouchableOpacity 
               onPress={handleGoBack} 
               style={styles.backButton}
               accessibilityLabel="Go back"
+              accessibilityRole="button"
             >
               <ArrowLeft size={24} color={colors.primary} />
             </TouchableOpacity>
@@ -196,6 +198,19 @@ export default function DataManagement() {
         }} 
       />
       
+      {/* Manual back button at the top for extra visibility */}
+      <View style={styles.manualBackButtonContainer}>
+        <TouchableOpacity 
+          onPress={handleGoBack}
+          style={[styles.manualBackButton, { backgroundColor: colors.card }]}
+          accessibilityLabel="Go back to previous screen"
+          accessibilityRole="button"
+        >
+          <ArrowLeft size={20} color={colors.primary} />
+          <Text style={[styles.backButtonText, { color: colors.primary }]}>Back</Text>
+        </TouchableOpacity>
+      </View>
+      
       <ScrollView style={styles.scrollContent}>
         <View style={styles.section}>
           <Text style={[styles.title, { color: colors.text }]}>Data Management</Text>
@@ -203,7 +218,7 @@ export default function DataManagement() {
             Manage your personal data stored in this app. You can export your data or delete all data.
           </Text>
           
-          <View style={[styles.card, { borderColor: colors.border }]}>
+          <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Export Your Data</Text>
             <Text style={[styles.cardDescription, { color: colors.text }]}>
               Export all your data in JSON format. This includes your profile, workouts, nutrition logs, and health data.
@@ -222,7 +237,7 @@ export default function DataManagement() {
             </TouchableOpacity>
           </View>
           
-          <View style={[styles.card, styles.dangerCard, { borderColor: colors.error }]}>
+          <View style={[styles.card, styles.dangerCard, { borderColor: colors.error, backgroundColor: colors.card }]}>
             <Text style={[styles.cardTitle, { color: colors.error }]}>Delete All Data</Text>
             <Text style={[styles.cardDescription, { color: colors.text }]}>
               Permanently delete all your data from this app. This action cannot be undone.
@@ -324,5 +339,23 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     borderRadius: 8,
+  },
+  manualBackButtonContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  manualBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    marginLeft: 4,
+    fontWeight: '500',
+    fontSize: 16,
   },
 });
