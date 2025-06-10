@@ -3,11 +3,13 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { secureStore } from "@/utils/encryption";
+import { secureStore, generateEncryptionKey, storeEncryptionKey } from "@/utils/encryption";
+import * as Crypto from 'expo-crypto';
 
 interface SecureStoreState {
   hasInitializedEncryption: boolean;
   userConsent: boolean;
+  encryptionVersion: number;
   
   // Actions
   setUserConsent: (consent: boolean) => void;
@@ -66,17 +68,63 @@ export const useSecureStore = create<SecureStoreState>()(
     (set, get) => ({
       hasInitializedEncryption: false,
       userConsent: false,
+      encryptionVersion: 2, // Track encryption version for potential future upgrades
       
       setUserConsent: (consent) => set({ userConsent: consent }),
       
       initializeEncryption: async () => {
         try {
+          // Generate a device identifier for additional security
+          let deviceId = await secureStore.getItem('device-id');
+          
+          if (!deviceId) {
+            // Create a unique device identifier
+            if (Platform.OS === 'web') {
+              // For web, create a fingerprint based on available browser info
+              const fingerprint = navigator.userAgent + 
+                                  screen.width + 
+                                  screen.height + 
+                                  navigator.language;
+              
+              deviceId = await Crypto.digestStringAsync(
+                Crypto.CryptoDigestAlgorithm.SHA256,
+                fingerprint
+              );
+            } else {
+              // For native, generate a random ID
+              const randomBytes = await Crypto.getRandomBytesAsync(32);
+              deviceId = Array.from(randomBytes)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+            }
+            
+            await secureStore.setItem('device-id', deviceId);
+          }
+          
           // Check if encryption key exists, if not create one
           const key = await secureStore.getItem('encryption-key');
+          
           if (!key) {
-            // This would generate and store a new encryption key
-            // In a real implementation, this would be more complex
-            await secureStore.setItem('encryption-key', 'initialized');
+            // Generate and store a new encryption key
+            const newKey = await generateEncryptionKey();
+            await storeEncryptionKey(newKey);
+            
+            // Store the encryption version
+            await secureStore.setItem('encryption-version', get().encryptionVersion.toString());
+          } else {
+            // Check if we need to upgrade encryption
+            const storedVersion = await secureStore.getItem('encryption-version');
+            const currentVersion = storedVersion ? parseInt(storedVersion, 10) : 1;
+            
+            if (currentVersion < get().encryptionVersion) {
+              // In a real app, you would implement migration logic here
+              // to re-encrypt data with the new encryption method
+              console.log('Encryption upgrade needed from version', currentVersion, 
+                         'to', get().encryptionVersion);
+              
+              // Update the stored version
+              await secureStore.setItem('encryption-version', get().encryptionVersion.toString());
+            }
           }
           
           set({ hasInitializedEncryption: true });
@@ -104,10 +152,11 @@ export const useSecureStore = create<SecureStoreState>()(
         // For this example, we'll just return a placeholder
         const userData = {
           exportDate: new Date().toISOString(),
+          encryptionVersion: get().encryptionVersion,
           message: "This would contain all user data in a real implementation"
         };
         
-        return JSON.stringify(userData);
+        return JSON.stringify(userData, null, 2);
       },
       
       deleteUserData: async () => {
@@ -121,6 +170,8 @@ export const useSecureStore = create<SecureStoreState>()(
         if (Platform.OS !== 'web') {
           const keysToDelete = [
             'encryption-key',
+            'encryption-version',
+            'device-id',
             'user-profile',
             'health-data',
             'workout-data',
@@ -135,7 +186,8 @@ export const useSecureStore = create<SecureStoreState>()(
         // Reset the store state
         set({
           hasInitializedEncryption: false,
-          userConsent: false
+          userConsent: false,
+          encryptionVersion: get().encryptionVersion // Keep the version number
         });
       }
     }),
