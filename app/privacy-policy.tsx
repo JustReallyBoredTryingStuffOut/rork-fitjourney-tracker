@@ -34,7 +34,7 @@ export default function PrivacyPolicy() {
         
         <Text style={[styles.section, { color: colors.text }]}>1. Introduction</Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          Welcome to our fitness app. We are committed to protecting your privacy and handling your data in an open and transparent manner. This privacy policy explains how we collect, use, share, and protect your personal information.
+          Welcome to our fitness app. We are committed to protecting your privacy and handling your data, including your photos and fitness data, in an open and transparent manner. This privacy policy explains how we collect, use, share, protect, and store your personal information.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>2. Information We Collect</Text>
@@ -42,16 +42,16 @@ export default function PrivacyPolicy() {
           We collect the following types of information:
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Personal Information: Name, email address, age, gender, height, weight
+          • Personal Information: Name, age (18 and over), gender, height, weight
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
           • Health and Fitness Data: Workout records, nutrition logs, step counts, weight logs
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Photos: Progress photos and food photos that you choose to upload
+          • Photos: Progress photos and food photos that you choose to upload. These photos are stored locally on your device and are encrypted to ensure your privacy.
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Usage Data: How you interact with the app, features you use, and time spent
+          • Usage Data: How you interact with the app, features you use, and time spent.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>3. How We Use Your Information</Text>
@@ -59,21 +59,21 @@ export default function PrivacyPolicy() {
           We use your information for the following purposes:
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • To provide and improve our services
+          • To provide and improve our services, including personalized workout and nutrition recommendations
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • To personalize your experience
+          • To track your progress through health and fitness data, including photos that you upload
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • To track your progress and provide insights
+          • To analyze your nutrition through photos of meals that you upload
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • To send notifications and reminders that you've requested
+          • To send notifications and reminders that you have requested
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>4. Data Storage and Security</Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          Your data is primarily stored locally on your device. Sensitive data is encrypted to protect your privacy. We implement appropriate technical and organizational measures to protect your personal data against unauthorized or unlawful processing, accidental loss, destruction, or damage.
+          Your data, including photos, is stored locally on your device. Sensitive data, including photos, is encrypted using industry-standard encryption techniques to protect your privacy. We implement appropriate technical and organizational measures to protect your personal data against unauthorized or unlawful processing, accidental loss, destruction, or damage. No personal data is uploaded to the cloud or shared with third parties.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>5. Your Rights</Text>
@@ -81,43 +81,43 @@ export default function PrivacyPolicy() {
           Under the General Data Protection Regulation (GDPR) and other applicable data protection laws, you have the following rights:
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Right to access your personal data
+          • Right to access your personal data, including any photos uploaded
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
           • Right to rectification of inaccurate data
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Right to erasure ("right to be forgotten")
+          • Right to erasure ("right to be forgotten"), including the ability to delete all photos
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Right to data portability
+          • Right to data portability, allowing you to export your personal data and photos
         </Text>
         <Text style={[styles.bulletPoint, { color: colors.text }]}>
-          • Right to withdraw consent
+          • Right to withdraw consent at any time
         </Text>
         
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          You can exercise these rights through the app's Data Management section, where you can export or delete all your data.
+          You can exercise these rights through the app's Data Management section, where you can view, export, or delete all your data and photos.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>6. Data Retention</Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          We will retain your personal data only for as long as necessary to fulfill the purposes for which it was collected. You can delete your data at any time through the app's Data Management section.
+          We will retain your personal data, including photos, only for as long as necessary to fulfill the purposes for which it was collected. You can delete your data and photos at any time through the app's Data Management section.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>7. Children's Privacy</Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          Our app is not intended for children under the age of 16. We do not knowingly collect personal information from children under 16. If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
+          Our app is not intended for children under the age of 18. We do not knowingly collect personal information from children under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>8. Changes to This Privacy Policy</Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date.
+          We may update our Privacy Policy from time to time. We will notify you of any significant changes by posting the new Privacy Policy within the app and updating the 'Last Updated' date.
         </Text>
         
         <Text style={[styles.section, { color: colors.text }]}>9. Contact Us</Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
-          If you have any questions about this Privacy Policy or our data practices, please contact us at:
+          If you have any questions about this Privacy Policy or our data practices, or to exercise your GDPR rights, please contact us at:
         </Text>
         <Text style={[styles.paragraph, { color: colors.text }]}>
           privacy@fitnessapp.example.com

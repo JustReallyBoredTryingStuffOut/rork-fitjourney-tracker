@@ -137,7 +137,6 @@ export default function NotificationsScreen() {
               accessibilityHint="Returns to the previous screen"
             >
               <ArrowLeft size={24} color={colors.text} />
-              <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           ),
         }}
@@ -417,10 +416,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   backButton: {
-    flexDirection: "row",
-    alignItems: "center",
     padding: 8,
-    marginLeft: -4,
   },
   backButtonText: {
     color: colors.text,
