@@ -93,7 +93,7 @@ export default function ProfileScreen() {
           <View style={styles.gamificationIconContainer}>
             <Trophy size={20} color={colors.primary} />
           </View>
-          <View>
+          <View style={styles.gamificationTextContainer}>
             <Text style={styles.gamificationTitle}>Enable Achievement System</Text>
             <Text style={styles.gamificationDescription}>
               Turn on achievements, challenges, and rewards
@@ -187,6 +187,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    marginRight: 12,
   },
   gamificationIconContainer: {
     width: 40,
@@ -197,6 +198,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
+  gamificationTextContainer: {
+    flex: 1,
+    paddingRight: 8,
+  },
   gamificationTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -206,6 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
+    flexWrap: "wrap",
   },
   section: {
     padding: 16,
