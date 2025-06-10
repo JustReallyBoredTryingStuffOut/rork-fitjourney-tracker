@@ -18,6 +18,7 @@ import Button from '@/components/Button';
 import { Award, X, Check, Calendar, Clock, Target, ArrowLeft, Lock, Filter, Search } from 'lucide-react-native';
 import { APP_NAME } from '@/app/_layout';
 import { TextInput } from 'react-native';
+import ChallengeCelebrationModal from '@/components/ChallengeCelebrationModal';
 
 export default function ChallengesScreen() {
   const { colors } = useTheme();
@@ -29,7 +30,10 @@ export default function ChallengesScreen() {
     updateChallengeProgress,
     initializeAchievements,
     gamificationEnabled,
-    toggleGamification
+    toggleGamification,
+    showChallengeCelebration,
+    celebrationChallenge,
+    clearChallengeCelebration
   } = useGamificationStore();
   
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
@@ -683,6 +687,15 @@ export default function ChallengesScreen() {
             </Pressable>
           </Pressable>
         </Modal>
+      )}
+      
+      {/* Challenge Celebration Modal */}
+      {celebrationChallenge && (
+        <ChallengeCelebrationModal
+          visible={showChallengeCelebration}
+          onClose={clearChallengeCelebration}
+          challenge={celebrationChallenge}
+        />
       )}
     </View>
   );

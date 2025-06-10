@@ -97,6 +97,8 @@ interface GamificationState {
   recentlyUnlocked: Achievement[];
   showCelebration: boolean;
   celebrationAchievement: Achievement | null;
+  showChallengeCelebration: boolean;
+  celebrationChallenge: Challenge | null;
   
   // Actions
   toggleGamification: (enabled: boolean) => void;
@@ -123,6 +125,7 @@ interface GamificationState {
   completeDailyQuest: (questId: string) => void;
   
   clearCelebration: () => void;
+  clearChallengeCelebration: () => void;
   
   // Getters
   getAchievementsByCategory: (category: AchievementCategory) => Achievement[];
@@ -3219,6 +3222,274 @@ const defaultChallenges: Challenge[] = [
     points: 250,
     reward: "Cheat Day Reward",
     difficulty: "medium"
+  },
+  
+  // New Challenges
+  {
+    id: "challenge-push-pull-legs",
+    title: "Push-Pull-Legs Week",
+    description: "Complete a push, pull, and legs workout in a single week",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 3,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 120,
+    reward: "40 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-no-sugar-week",
+    title: "Sugar Detox",
+    description: "Avoid added sugars for 7 consecutive days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "nutrition",
+    points: 200,
+    reward: "70 bonus points",
+    difficulty: "hard"
+  },
+  {
+    id: "challenge-meditation-week",
+    title: "Mindfulness Week",
+    description: "Meditate for at least 10 minutes daily for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "special",
+    points: 100,
+    reward: "30 bonus points",
+    difficulty: "easy"
+  },
+  {
+    id: "challenge-stairs-only",
+    title: "Stair Master",
+    description: "Use only stairs (no elevators) for 7 consecutive days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "steps",
+    points: 120,
+    reward: "40 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-sleep-8-hours",
+    title: "Sleep Optimizer",
+    description: "Get 8 hours of sleep for 7 consecutive nights",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "special",
+    points: 150,
+    reward: "50 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-plank-progression",
+    title: "Plank Progression",
+    description: "Increase your plank time by 10 seconds each day for 10 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 10,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 150,
+    reward: "50 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-pushup-ladder",
+    title: "Push-Up Ladder",
+    description: "Complete a push-up ladder (1-10-1) daily for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 120,
+    reward: "40 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-squat-century",
+    title: "Squat Century",
+    description: "Complete 100 squats daily for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 200,
+    reward: "70 bonus points",
+    difficulty: "hard"
+  },
+  {
+    id: "challenge-vegetarian-week",
+    title: "Vegetarian Week",
+    description: "Follow a vegetarian diet for 7 consecutive days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "nutrition",
+    points: 150,
+    reward: "50 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-morning-stretch",
+    title: "Morning Stretch",
+    description: "Complete a 10-minute morning stretch routine for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 100,
+    reward: "30 bonus points",
+    difficulty: "easy"
+  },
+  {
+    id: "challenge-digital-detox",
+    title: "Digital Detox",
+    description: "Limit screen time to 2 hours daily for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "special",
+    points: 150,
+    reward: "50 bonus points",
+    difficulty: "hard"
+  },
+  {
+    id: "challenge-active-commute",
+    title: "Active Commute",
+    description: "Walk, bike, or run to work/school for 5 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 5,
+    progress: 0,
+    completed: false,
+    category: "steps",
+    points: 150,
+    reward: "50 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-cold-shower",
+    title: "Cold Shower Challenge",
+    description: "End your shower with 30 seconds of cold water for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "special",
+    points: 120,
+    reward: "40 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-gratitude-journal",
+    title: "Gratitude Practice",
+    description: "Write down 3 things you're grateful for daily for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "special",
+    points: 100,
+    reward: "30 bonus points",
+    difficulty: "easy"
+  },
+  {
+    id: "challenge-hiit-week",
+    title: "HIIT Week",
+    description: "Complete 4 HIIT workouts in a week",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 4,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 200,
+    reward: "70 bonus points",
+    difficulty: "hard"
+  },
+  {
+    id: "challenge-burpee-master",
+    title: "Burpee Master",
+    description: "Complete 50 burpees daily for 5 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 5,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 250,
+    reward: "80 bonus points",
+    difficulty: "hard"
+  },
+  {
+    id: "challenge-intermittent-fasting",
+    title: "Intermittent Fasting",
+    description: "Follow a 16:8 intermittent fasting schedule for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "nutrition",
+    points: 200,
+    reward: "70 bonus points",
+    difficulty: "hard"
+  },
+  {
+    id: "challenge-yoga-week",
+    title: "Yoga Week",
+    description: "Complete a 20-minute yoga session daily for 7 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 7,
+    progress: 0,
+    completed: false,
+    category: "workout",
+    points: 150,
+    reward: "50 bonus points",
+    difficulty: "medium"
+  },
+  {
+    id: "challenge-posture-check",
+    title: "Posture Perfect",
+    description: "Set hourly reminders to check and correct your posture for 5 days",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    target: 5,
+    progress: 0,
+    completed: false,
+    category: "special",
+    points: 100,
+    reward: "30 bonus points",
+    difficulty: "easy"
   }
 ];
 
@@ -3289,6 +3560,8 @@ export const useGamificationStore = create<GamificationState>()(
       recentlyUnlocked: [],
       showCelebration: false,
       celebrationAchievement: null,
+      showChallengeCelebration: false,
+      celebrationChallenge: null,
       
       // New action to toggle gamification
       toggleGamification: (enabled) => set({ gamificationEnabled: enabled }),
@@ -3689,11 +3962,16 @@ export const useGamificationStore = create<GamificationState>()(
           // Calculate new level
           const newLevel = get().calculateLevel(newPoints);
           
+          // Get the completed challenge for celebration
+          const completedChallenge = updatedChallenges.find(c => c.id === challengeId);
+          
           return {
             challenges: updatedChallenges,
             points: newPoints,
             level: newLevel,
-            activeChallenge: null
+            activeChallenge: null,
+            showChallengeCelebration: true,
+            celebrationChallenge: completedChallenge
           };
         });
       },
@@ -3719,16 +3997,19 @@ export const useGamificationStore = create<GamificationState>()(
               : c
           );
           
-          // If challenge is completed, add points
+          // If challenge is completed, add points and show celebration
           if (progress >= challenge.target && !challenge.completed) {
             const newPoints = state.points + challenge.points;
             const newLevel = get().calculateLevel(newPoints);
+            const completedChallenge = updatedChallenges.find(c => c.id === challengeId);
             
             return {
               challenges: updatedChallenges,
               points: newPoints,
               level: newLevel,
-              activeChallenge: null
+              activeChallenge: null,
+              showChallengeCelebration: true,
+              celebrationChallenge: completedChallenge
             };
           }
           
@@ -3932,6 +4213,11 @@ export const useGamificationStore = create<GamificationState>()(
       clearCelebration: () => set({
         showCelebration: false,
         celebrationAchievement: null
+      }),
+      
+      clearChallengeCelebration: () => set({
+        showChallengeCelebration: false,
+        celebrationChallenge: null
       }),
       
       getAchievementsByCategory: (category) => {
