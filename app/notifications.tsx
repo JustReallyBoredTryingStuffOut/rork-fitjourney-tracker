@@ -80,20 +80,20 @@ export default function NotificationsScreen() {
           {
             text: "Discard",
             style: "destructive",
-            onPress: () => router.navigate("/(tabs)"),
+            onPress: () => router.back(),
           },
           {
             text: "Save",
             onPress: () => {
               saveSettings();
-              router.navigate("/(tabs)");
+              router.back();
             },
           },
         ],
         { cancelable: true }
       );
     } else {
-      router.navigate("/(tabs)");
+      router.back();
     }
   };
   
