@@ -4,7 +4,8 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity
+  TouchableOpacity,
+  Switch
 } from "react-native";
 import { useRouter } from "expo-router";
 import { 
@@ -15,14 +16,17 @@ import {
   Award, 
   Camera, 
   Lock,
-  ChevronRight 
+  ChevronRight,
+  Trophy
 } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useThemeStore } from "@/store/themeStore";
+import { useGamificationStore } from "@/store/gamificationStore";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { isDarkMode } = useThemeStore();
+  const { gamificationEnabled, toggleGamification } = useGamificationStore();
   
   const profileSections = [
     {
@@ -89,6 +93,27 @@ export default function ProfileScreen() {
         <Text style={styles.profileName}>John Doe</Text>
       </View>
       
+      {/* Gamification Toggle */}
+      <View style={styles.gamificationContainer}>
+        <View style={styles.gamificationLeft}>
+          <View style={styles.gamificationIconContainer}>
+            <Trophy size={20} color={colors.primary} />
+          </View>
+          <View>
+            <Text style={styles.gamificationTitle}>Enable Gamification</Text>
+            <Text style={styles.gamificationDescription}>
+              Turn on achievements, challenges, and rewards
+            </Text>
+          </View>
+        </View>
+        <Switch
+          value={gamificationEnabled}
+          onValueChange={toggleGamification}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor="#fff"
+        />
+      </View>
+      
       {profileSections.map((section, index) => (
         <View key={index} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -145,10 +170,48 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 16,
   },
-  profileEmail: {
-    fontSize: 14,
+  gamificationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  gamificationLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  gamificationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(74, 144, 226, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  gamificationTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  gamificationDescription: {
+    fontSize: 12,
     color: colors.textSecondary,
-    marginBottom: 16,
+    marginTop: 2,
   },
   section: {
     padding: 16,

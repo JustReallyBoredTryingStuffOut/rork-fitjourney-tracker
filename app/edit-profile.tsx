@@ -46,7 +46,7 @@ export default function EditProfileScreen() {
   };
   
   const handleGoBack = () => {
-    router.navigate("/(tabs)");
+    router.back();
   };
   
   const handleDateChange = (event: any, selectedDate?: Date) => {

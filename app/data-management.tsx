@@ -198,18 +198,16 @@ export default function DataManagement() {
         }} 
       />
       
-      {/* Manual back button at the top for extra visibility */}
-      <View style={styles.manualBackButtonContainer}>
-        <TouchableOpacity 
-          onPress={handleGoBack}
-          style={[styles.manualBackButton, { backgroundColor: colors.card }]}
-          accessibilityLabel="Go back to previous screen"
-          accessibilityRole="button"
-        >
-          <ArrowLeft size={20} color={colors.primary} />
-          <Text style={[styles.backButtonText, { color: colors.primary }]}>Back</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Prominent back button at the top for better visibility */}
+      <TouchableOpacity 
+        onPress={handleGoBack}
+        style={[styles.prominentBackButton, { backgroundColor: colors.primary }]}
+        accessibilityLabel="Go back to previous screen"
+        accessibilityRole="button"
+      >
+        <ArrowLeft size={20} color="#FFFFFF" />
+        <Text style={styles.prominentBackButtonText}>Back to Profile</Text>
+      </TouchableOpacity>
       
       <ScrollView style={styles.scrollContent}>
         <View style={styles.section}>
@@ -340,22 +338,20 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
   },
-  manualBackButtonContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  manualBackButton: {
+  prominentBackButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 8,
+    margin: 16,
+    marginBottom: 0,
   },
-  backButtonText: {
-    marginLeft: 4,
-    fontWeight: '500',
+  prominentBackButtonText: {
+    marginLeft: 8,
+    fontWeight: '600',
     fontSize: 16,
+    color: '#FFFFFF',
   },
 });
