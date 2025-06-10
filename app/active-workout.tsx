@@ -877,7 +877,7 @@ export default function ActiveWorkoutScreen() {
     return (
       <View style={styles.customKeyboard}>
         <View style={styles.keyboardHeader}>
-          <Text style={styles.keyboardTitle}>
+          <Text style={[styles.keyboardTitle, { color: colors.text }]}>
             {editingSetData.field === 'weight' ? 'Enter Weight (kg)' : 'Enter Reps'}
           </Text>
           <TouchableOpacity 
@@ -942,14 +942,12 @@ export default function ActiveWorkoutScreen() {
             onPress={() => handleKeyPress('-')}
           >
             <Minus size={20} color="#000000" />
-            <Text style={[styles.keyboardKeyText, { marginLeft: 5 }]}>-</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
             onPress={() => handleKeyPress('+')}
           >
             <Plus size={20} color="#000000" />
-            <Text style={[styles.keyboardKeyText, { marginLeft: 5 }]}>+</Text>
           </TouchableOpacity>
         </View>
         
@@ -1212,7 +1210,7 @@ export default function ActiveWorkoutScreen() {
                                 <>
                                   <View style={[styles.inputContainer, styles.weightColumn]}>
                                     <TextInput
-                                      style={styles.input}
+                                      style={[styles.input, { color: "#FFFFFF" }]}
                                       value={editingSetData.weight}
                                       keyboardType="numeric"
                                       onChangeText={(value) => setEditingSetData({
@@ -1227,7 +1225,7 @@ export default function ActiveWorkoutScreen() {
                                   
                                   <View style={[styles.inputContainer, styles.repsColumn]}>
                                     <TextInput
-                                      style={styles.input}
+                                      style={[styles.input, { color: "#FFFFFF" }]}
                                       value={editingSetData.reps}
                                       keyboardType="numeric"
                                       onChangeText={(value) => setEditingSetData({
@@ -1254,7 +1252,7 @@ export default function ActiveWorkoutScreen() {
                                     style={[styles.inputContainer, styles.weightColumn]}
                                     onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps, 'weight')}
                                   >
-                                    <Text style={styles.setValueText}>
+                                    <Text style={[styles.setValueText, { color: "#FFFFFF" }]}>
                                       {set.weight ? set.weight.toString() : ""}
                                     </Text>
                                   </TouchableOpacity>
@@ -1263,7 +1261,7 @@ export default function ActiveWorkoutScreen() {
                                     style={[styles.inputContainer, styles.repsColumn]}
                                     onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps, 'reps')}
                                   >
-                                    <Text style={styles.setValueText}>
+                                    <Text style={[styles.setValueText, { color: "#FFFFFF" }]}>
                                       {set.reps ? set.reps.toString() : ""}
                                     </Text>
                                   </TouchableOpacity>
@@ -1966,7 +1964,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     justifyContent: "center",
     height: 40,
-    backgroundColor: colors.background,
+    backgroundColor: colors.primary,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1974,13 +1972,11 @@ const styles = StyleSheet.create({
   input: {
     paddingHorizontal: 8,
     fontSize: 16,
-    color: colors.text,
     textAlign: "center",
     height: 40,
   },
   setValueText: {
     fontSize: 16,
-    color: colors.text,
     textAlign: "center",
   },
   checkButton: {
@@ -2070,7 +2066,6 @@ const styles = StyleSheet.create({
   keyboardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
   },
   keyboardMinimizeButton: {
     padding: 8,

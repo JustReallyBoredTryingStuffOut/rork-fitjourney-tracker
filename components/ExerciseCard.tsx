@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Dumbbell, ChevronRight, Clock, X, BarChart2, History } from "lucide-react-native";
+import { Dumbbell, ChevronRight, Clock, X, BarChart2, History, Info } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { Exercise } from "@/types";
 import { useWorkoutStore } from "@/store/workoutStore";
@@ -16,7 +16,7 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
   const router = useRouter();
   const { colors } = useTheme();
   const [showRecordsModal, setShowRecordsModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'history' | 'records'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'records' | 'about'>('history');
   
   // Get workout data from store
   const { 
@@ -182,8 +182,8 @@ function RecordsHistoryModal({
   visible: boolean; 
   onClose: () => void; 
   exercise: Exercise;
-  activeTab: 'history' | 'records';
-  setActiveTab: (tab: 'history' | 'records') => void;
+  activeTab: 'history' | 'records' | 'about';
+  setActiveTab: (tab: 'history' | 'records' | 'about') => void;
   personalRecord: any;
   exerciseHistory: any[];
 }) {
@@ -241,6 +241,24 @@ function RecordsHistoryModal({
                 Records
               </Text>
             </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.tabButton, 
+                activeTab === 'about' && [styles.activeTabButton, { borderBottomColor: colors.primary }]
+              ]}
+              onPress={() => setActiveTab('about')}
+            >
+              <Info size={16} color={activeTab === 'about' ? colors.primary : colors.textSecondary} />
+              <Text 
+                style={[
+                  styles.tabText, 
+                  { color: activeTab === 'about' ? colors.primary : colors.textSecondary }
+                ]}
+              >
+                About
+              </Text>
+            </TouchableOpacity>
           </View>
           
           <View style={styles.tabContent}>
@@ -293,7 +311,7 @@ function RecordsHistoryModal({
                   </View>
                 )}
               </View>
-            ) : (
+            ) : activeTab === 'records' ? (
               <View style={styles.recordsTab}>
                 {personalRecord ? (
                   <>
@@ -368,6 +386,74 @@ function RecordsHistoryModal({
                     <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>
                       Complete a workout with this exercise to set your first record
                     </Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={styles.aboutTab}>
+                <Text style={[styles.aboutTitle, { color: colors.text }]}>
+                  How to perform
+                </Text>
+                
+                <Text style={[styles.aboutDescription, { color: colors.textSecondary }]}>
+                  {exercise.description}
+                </Text>
+                
+                <View style={styles.aboutDetails}>
+                  <View style={styles.aboutDetailItem}>
+                    <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                      Muscle Groups
+                    </Text>
+                    <View style={styles.aboutDetailTags}>
+                      {exercise.muscleGroups.map((group, idx) => (
+                        <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+                          <Text style={[styles.aboutDetailTagText, { color: "#3498db" }]}>
+                            {group}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                  
+                  <View style={styles.aboutDetailItem}>
+                    <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                      Equipment
+                    </Text>
+                    <View style={styles.aboutDetailTags}>
+                      {exercise.equipment.map((item, idx) => (
+                        <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
+                          <Text style={[styles.aboutDetailTagText, { color: colors.textSecondary }]}>
+                            {item}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                  
+                  <View style={styles.aboutDetailItem}>
+                    <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                      Difficulty
+                    </Text>
+                    <View style={[styles.aboutDifficultyBadge, { backgroundColor: getBadgeColor(exercise.difficulty) }]}>
+                      <Text style={styles.aboutDifficultyText}>
+                        {exercise.difficulty}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                
+                {exercise.imageUrl && (
+                  <View style={styles.aboutImageContainer}>
+                    <Text style={[styles.aboutImageTitle, { color: colors.text }]}>
+                      Reference Image
+                    </Text>
+                    <View style={styles.aboutImage}>
+                      <Image 
+                        source={{ uri: exercise.imageUrl }} 
+                        style={styles.aboutImageContent}
+                        resizeMode="contain"
+                      />
+                    </View>
                   </View>
                 )}
               </View>
@@ -697,6 +783,77 @@ const styles = StyleSheet.create({
   },
   bestPerformanceDetailLabel: {
     fontSize: 12,
+  },
+  
+  // About tab styles
+  aboutTab: {
+    flex: 1,
+  },
+  aboutTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  aboutDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  aboutDetails: {
+    marginBottom: 20,
+  },
+  aboutDetailItem: {
+    marginBottom: 16,
+  },
+  aboutDetailTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  aboutDetailTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  aboutDetailTag: {
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  aboutDetailTagText: {
+    fontSize: 14,
+  },
+  aboutDifficultyBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  aboutDifficultyText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    textTransform: 'capitalize',
+  },
+  aboutImageContainer: {
+    marginTop: 8,
+  },
+  aboutImageTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  aboutImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  aboutImageContent: {
+    width: '100%',
+    height: '100%',
   },
   
   // Empty state styles

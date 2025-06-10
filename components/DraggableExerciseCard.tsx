@@ -11,7 +11,7 @@ import {
   Vibration,
   Modal
 } from 'react-native';
-import { ChevronDown, ChevronUp, Check, Clock, GripVertical, X, BarChart2, History } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Check, Clock, GripVertical, X, BarChart2, History, Info } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Exercise, ExerciseLog } from '@/types';
@@ -62,10 +62,11 @@ export default function DraggableExerciseCard({
   const lastReportedDropZone = useRef<number | null>(null);
   const lastVibrationTime = useRef(0);
   const cardHeight = useRef(CARD_HEIGHT);
+  const allCardsPositions = useRef<number[]>([]);
   
   // State for records/history modal
   const [showRecordsModal, setShowRecordsModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'history' | 'records'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'records' | 'about'>('history');
   
   // Get workout data from store
   const { 
@@ -85,28 +86,47 @@ export default function DraggableExerciseCard({
   
   // Calculate possible drop positions
   const getDropIndex = (gestureY: number) => {
-    // Get the current position of the card in the list
-    const currentIndex = index;
+    // Calculate the absolute position on screen
+    const absoluteY = gestureY;
     
-    // Calculate the relative position from the card's original position
-    const relativeY = gestureY - initialTouchY.current;
+    // Find which position this corresponds to
+    for (let i = 0; i < totalExercises; i++) {
+      // Skip the current card's position
+      if (i === index) continue;
+      
+      // Get the position of this card
+      const cardPosition = i * cardHeight.current + cardHeight.current / 2;
+      
+      // Calculate distance from the center of the dragged card to this position
+      const distance = Math.abs(absoluteY - cardPosition);
+      
+      // If we're close enough to this position, return it as the drop index
+      if (distance < cardHeight.current / 2) {
+        return i;
+      }
+    }
     
-    // Calculate how many positions to move based on the distance moved
-    // and the height of each card
-    const positions = Math.round(relativeY / cardHeight.current);
+    // If we're at the top of the list
+    if (absoluteY < cardHeight.current / 2) {
+      return 0;
+    }
     
-    // Calculate new index
-    let newIndex = currentIndex + positions;
+    // If we're at the bottom of the list
+    if (absoluteY > (totalExercises - 1) * cardHeight.current + cardHeight.current / 2) {
+      return totalExercises - 1;
+    }
     
-    // Ensure the new index is within bounds
-    newIndex = Math.max(0, Math.min(totalExercises - 1, newIndex));
-    
-    return newIndex !== currentIndex ? newIndex : null;
+    // Calculate which position we're closest to
+    const closestIndex = Math.round(absoluteY / cardHeight.current);
+    return Math.max(0, Math.min(totalExercises - 1, closestIndex));
   };
   
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to vertical movements that are significant
+        return Math.abs(gestureState.dy) > 5;
+      },
       onMoveShouldSetPanResponder: (_, gestureState) => {
         // Only respond to vertical movements that are significant
         return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
@@ -187,7 +207,7 @@ export default function DraggableExerciseCard({
           setDropZoneIndex(null);
           
           // Only call onDragEnd if we have a valid drop index
-          if (finalDropIndex !== null) {
+          if (finalDropIndex !== null && finalDropIndex !== index) {
             onDragEnd(finalDropIndex);
             
             // Provide haptic feedback when drop completes
@@ -400,6 +420,24 @@ export default function DraggableExerciseCard({
                   Records
                 </Text>
               </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.tabButton, 
+                  activeTab === 'about' && [styles.activeTabButton, { borderBottomColor: colors.primary }]
+                ]}
+                onPress={() => setActiveTab('about')}
+              >
+                <Info size={16} color={activeTab === 'about' ? colors.primary : colors.textSecondary} />
+                <Text 
+                  style={[
+                    styles.tabText, 
+                    { color: activeTab === 'about' ? colors.primary : colors.textSecondary }
+                  ]}
+                >
+                  About
+                </Text>
+              </TouchableOpacity>
             </View>
             
             <View style={styles.tabContent}>
@@ -452,7 +490,7 @@ export default function DraggableExerciseCard({
                     </View>
                   )}
                 </View>
-              ) : (
+              ) : activeTab === 'records' ? (
                 <View style={styles.recordsTab}>
                   {personalRecord ? (
                     <>
@@ -530,6 +568,74 @@ export default function DraggableExerciseCard({
                     </View>
                   )}
                 </View>
+              ) : (
+                <View style={styles.aboutTab}>
+                  <Text style={[styles.aboutTitle, { color: colors.text }]}>
+                    How to perform
+                  </Text>
+                  
+                  <Text style={[styles.aboutDescription, { color: colors.textSecondary }]}>
+                    {exercise.description}
+                  </Text>
+                  
+                  <View style={styles.aboutDetails}>
+                    <View style={styles.aboutDetailItem}>
+                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                        Muscle Groups
+                      </Text>
+                      <View style={styles.aboutDetailTags}>
+                        {exercise.muscleGroups.map((group, idx) => (
+                          <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+                            <Text style={[styles.aboutDetailTagText, { color: "#3498db" }]}>
+                              {group}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                    
+                    <View style={styles.aboutDetailItem}>
+                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                        Equipment
+                      </Text>
+                      <View style={styles.aboutDetailTags}>
+                        {exercise.equipment.map((item, idx) => (
+                          <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
+                            <Text style={[styles.aboutDetailTagText, { color: colors.textSecondary }]}>
+                              {item}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                    
+                    <View style={styles.aboutDetailItem}>
+                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                        Difficulty
+                      </Text>
+                      <View style={[styles.aboutDifficultyBadge, { backgroundColor: getDifficultyColor(exercise.difficulty) }]}>
+                        <Text style={styles.aboutDifficultyText}>
+                          {exercise.difficulty}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  {exercise.imageUrl && (
+                    <View style={styles.aboutImageContainer}>
+                      <Text style={[styles.aboutImageTitle, { color: colors.text }]}>
+                        Reference Image
+                      </Text>
+                      <View style={styles.aboutImage}>
+                        <Image 
+                          source={{ uri: exercise.imageUrl }} 
+                          style={styles.aboutImageContent}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    </View>
+                  )}
+                </View>
               )}
             </View>
           </View>
@@ -538,6 +644,20 @@ export default function DraggableExerciseCard({
     </Animated.View>
   );
 }
+
+// Helper function to get color based on difficulty
+const getDifficultyColor = (difficulty: "beginner" | "intermediate" | "advanced") => {
+  switch (difficulty) {
+    case "beginner":
+      return "#4CD964";
+    case "intermediate":
+      return "#FFCC00";
+    case "advanced":
+      return "#FF3B30";
+    default:
+      return "#5E5CE6";
+  }
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -831,6 +951,77 @@ const styles = StyleSheet.create({
   },
   bestPerformanceDetailLabel: {
     fontSize: 12,
+  },
+  
+  // About tab styles
+  aboutTab: {
+    flex: 1,
+  },
+  aboutTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  aboutDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  aboutDetails: {
+    marginBottom: 20,
+  },
+  aboutDetailItem: {
+    marginBottom: 16,
+  },
+  aboutDetailTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  aboutDetailTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  aboutDetailTag: {
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  aboutDetailTagText: {
+    fontSize: 14,
+  },
+  aboutDifficultyBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  aboutDifficultyText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    textTransform: 'capitalize',
+  },
+  aboutImageContainer: {
+    marginTop: 8,
+  },
+  aboutImageTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  aboutImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  aboutImageContent: {
+    width: '100%',
+    height: '100%',
   },
   
   // Empty state styles
