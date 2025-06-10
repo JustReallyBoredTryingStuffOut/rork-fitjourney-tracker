@@ -36,7 +36,11 @@ import {
   ImageIcon,
   Save,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  MinusCircle,
+  PlusCircle,
+  ArrowRight,
+  Minimize
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Speech from 'expo-speech';
@@ -780,6 +784,23 @@ export default function ActiveWorkoutScreen() {
     }
   };
   
+  // Function to switch between weight and reps fields
+  const handleSwitchField = () => {
+    if (!editingSetData) return;
+    
+    // Switch to the other field
+    setEditingSetData({
+      ...editingSetData,
+      field: editingSetData.field === 'weight' ? 'reps' : 'weight'
+    });
+  };
+  
+  // Function to minimize the keyboard
+  const handleMinimizeKeyboard = () => {
+    Keyboard.dismiss();
+    // Don't save the data yet, just minimize the keyboard
+  };
+  
   // Custom numeric keyboard component
   const renderCustomNumericKeyboard = () => {
     if (!editingSetData) return null;
@@ -844,15 +865,23 @@ export default function ActiveWorkoutScreen() {
           <Text style={styles.keyboardTitle}>
             {editingSetData.field === 'weight' ? 'Enter Weight (kg)' : 'Enter Reps'}
           </Text>
-          <TouchableOpacity 
-            style={styles.keyboardCloseButton}
-            onPress={() => {
-              Keyboard.dismiss();
-              handleSaveSetData();
-            }}
-          >
-            <X size={20} color={colors.text} />
-          </TouchableOpacity>
+          <View style={styles.keyboardHeaderButtons}>
+            <TouchableOpacity 
+              style={styles.keyboardMinimizeButton}
+              onPress={handleMinimizeKeyboard}
+            >
+              <Minimize size={20} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.keyboardCloseButton}
+              onPress={() => {
+                Keyboard.dismiss();
+                handleSaveSetData();
+              }}
+            >
+              <X size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
         
         <View style={styles.keyboardRow}>
@@ -920,15 +949,29 @@ export default function ActiveWorkoutScreen() {
           </TouchableOpacity>
         </View>
         
-        <TouchableOpacity 
-          style={styles.keyboardDoneButton}
-          onPress={() => {
-            Keyboard.dismiss();
-            handleSaveSetData();
-          }}
-        >
-          <Text style={styles.keyboardDoneButtonText}>Done</Text>
-        </TouchableOpacity>
+        <View style={styles.keyboardFooter}>
+          <TouchableOpacity 
+            style={styles.keyboardNextButton}
+            onPress={handleSwitchField}
+          >
+            <Text style={styles.keyboardNextButtonText}>
+              {editingSetData.field === 'weight' ? 'Next (Reps)' : 'Back (Weight)'}
+            </Text>
+            {editingSetData.field === 'weight' && <ArrowRight size={16} color="#FFFFFF" />}
+            {editingSetData.field === 'reps' && <ArrowLeft size={16} color="#FFFFFF" />}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.keyboardDoneButton}
+            onPress={() => {
+              Keyboard.dismiss();
+              handleSaveSetData();
+            }}
+          >
+            <Text style={styles.keyboardDoneButtonText}>Done</Text>
+            <Check size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -1134,11 +1177,11 @@ export default function ActiveWorkoutScreen() {
                     {exerciseLog.sets.length > 0 && (
                       <View style={styles.setsContainer}>
                         <View style={styles.setsHeader}>
-                          <Text style={[styles.setsHeaderText, styles.setColumn]}>SET</Text>
-                          <Text style={[styles.setsHeaderText, styles.previousColumn]}>PREVIOUS</Text>
-                          <Text style={[styles.setsHeaderText, styles.weightColumn]}>KG</Text>
-                          <Text style={[styles.setsHeaderText, styles.repsColumn]}>REPS</Text>
-                          <Text style={[styles.setsHeaderText, styles.checkColumn]}>✓</Text>
+                          <Text style={[styles.setsHeaderText, styles.setColumn, { color: "#FFFFFF" }]}>SET</Text>
+                          <Text style={[styles.setsHeaderText, styles.previousColumn, { color: "#FFFFFF" }]}>PREVIOUS</Text>
+                          <Text style={[styles.setsHeaderText, styles.weightColumn, { color: "#FFFFFF" }]}>KG</Text>
+                          <Text style={[styles.setsHeaderText, styles.repsColumn, { color: "#FFFFFF" }]}>REPS</Text>
+                          <Text style={[styles.setsHeaderText, styles.checkColumn, { color: "#FFFFFF" }]}>✓</Text>
                         </View>
                         
                         {exerciseLog.sets.map((set, setIndex) => {
@@ -1863,11 +1906,14 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     marginBottom: 8,
     alignItems: "center",
+    backgroundColor: colors.primary,
+    padding: 8,
+    borderRadius: 8,
   },
   setsHeaderText: {
     fontSize: 12,
     fontWeight: "600",
-    color: colors.text,
+    color: "#FFFFFF",
     textAlign: "center",
   },
   setRow: {
@@ -1914,29 +1960,31 @@ const styles = StyleSheet.create({
   inputContainer: {
     justifyContent: "center",
     width: "100%",
-    height: 36,
+    height: 48, // Increased height
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   input: {
     flex: 1,
-    paddingHorizontal: 4,
-    fontSize: 14,
+    paddingHorizontal: 8,
+    fontSize: 16, // Increased font size
     color: colors.text,
     textAlign: "center",
-    backgroundColor: colors.background,
-    borderRadius: 4,
-    height: 36,
+    height: 48, // Increased height
   },
   setValueText: {
-    fontSize: 14,
+    fontSize: 16, // Increased font size
     color: colors.text,
     textAlign: "center",
   },
   checkButton: {
     alignItems: "center",
     justifyContent: "center",
-    height: 36,
-    width: 36,
-    borderRadius: 18,
+    height: 40,
+    width: 40,
+    borderRadius: 20,
     backgroundColor: "rgba(80, 200, 120, 0.1)",
   },
   checkButtonCompleted: {
@@ -1945,9 +1993,9 @@ const styles = StyleSheet.create({
   saveButton: {
     alignItems: "center",
     justifyContent: "center",
-    height: 36,
+    height: 48, // Increased height
     backgroundColor: "rgba(80, 200, 120, 0.1)",
-    borderRadius: 4,
+    borderRadius: 8,
   },
   exerciseActions: {
     flexDirection: "row",
@@ -2013,6 +2061,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 12,
   },
+  keyboardHeaderButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   keyboardTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -2020,6 +2072,10 @@ const styles = StyleSheet.create({
   },
   keyboardCloseButton: {
     padding: 8,
+  },
+  keyboardMinimizeButton: {
+    padding: 8,
+    marginRight: 8,
   },
   keyboardRow: {
     flexDirection: 'row',
@@ -2053,18 +2109,42 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginLeft: 8,
   },
-  keyboardDoneButton: {
+  keyboardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  keyboardNextButton: {
+    flex: 1,
     backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
-    marginTop: 8,
-    marginHorizontal: 12,
+    marginRight: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  keyboardNextButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  keyboardDoneButton: {
+    flex: 1,
+    backgroundColor: colors.secondary,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginLeft: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   keyboardDoneButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+    marginRight: 8,
   },
   
   // Rating Modal Styles
