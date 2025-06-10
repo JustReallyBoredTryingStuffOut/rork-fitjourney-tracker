@@ -4,8 +4,7 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity, 
-  Image 
+  TouchableOpacity
 } from "react-native";
 import { useRouter } from "expo-router";
 import { 
@@ -87,19 +86,6 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.profileImageContainer}>
-          <Image
-            source={{ uri: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }}
-            style={styles.profileImage}
-          />
-          <TouchableOpacity 
-            style={styles.editImageButton}
-            onPress={() => router.push("/edit-profile")}
-          >
-            <Camera size={16} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-        
         <Text style={styles.profileName}>John Doe</Text>
         <Text style={styles.profileEmail}>john.doe@example.com</Text>
       </View>
@@ -153,28 +139,6 @@ const styles = StyleSheet.create({
     padding: 24,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-  },
-  profileImageContainer: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  editImageButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: colors.primary,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: colors.background,
   },
   profileName: {
     fontSize: 20,
