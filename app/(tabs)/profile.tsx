@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     flex: 1,
-    marginRight: 16,
+    marginRight: 24, // Increased right margin to give more space for the switch
   },
   gamificationIconContainer: {
     width: 40,
@@ -207,12 +207,15 @@ const styles = StyleSheet.create({
   },
   gamificationTextContainer: {
     flex: 1,
+    flexShrink: 1,
   },
   gamificationTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
     marginBottom: 4,
+    flexWrap: "nowrap", // Prevent text from wrapping
+    width: "100%", // Ensure the text has enough width
   },
   descriptionContainer: {
     marginTop: 2,
