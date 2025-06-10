@@ -117,6 +117,7 @@ export default function ActiveWorkoutScreen() {
   
   // State for drag and drop
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedExerciseIndex, setDraggedExerciseIndex] = useState<number | null>(null);
   
   // PR celebration state
   const [showPRModal, setShowPRModal] = useState(false);
@@ -524,10 +525,19 @@ export default function ActiveWorkoutScreen() {
   };
   
   const handleDragStart = () => {
+    // Provide haptic feedback when drag starts
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(50);
+    }
     setIsDragging(true);
   };
   
   const handleDragEnd = (fromIndex: number, toIndex: number) => {
+    // Provide haptic feedback when drag ends
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(50);
+    }
+    
     setIsDragging(false);
     
     // Only reorder if the indices are different and valid
@@ -536,14 +546,29 @@ export default function ActiveWorkoutScreen() {
         toIndex >= 0 && 
         fromIndex < activeWorkout.exercises.length && 
         toIndex < activeWorkout.exercises.length) {
+      
+      // Update the expanded state to match the new order
+      const newExpandedState = { ...expandedExercises };
+      const fromExpanded = newExpandedState[fromIndex];
+      const toExpanded = newExpandedState[toIndex];
+      
+      // Swap the expanded states
+      newExpandedState[toIndex] = fromExpanded;
+      newExpandedState[fromIndex] = toExpanded;
+      
+      setExpandedExercises(newExpandedState);
+      
+      // Reorder the exercises in the store
       reorderExercises(fromIndex, toIndex);
       
-      // Update expanded state to match the new order
-      const newExpandedState = { ...expandedExercises };
-      const expandedValue = newExpandedState[fromIndex];
-      delete newExpandedState[fromIndex];
-      newExpandedState[toIndex] = expandedValue;
-      setExpandedExercises(newExpandedState);
+      // Provide feedback
+      if (timerSettings.voicePrompts && Platform.OS !== 'web') {
+        Speech.speak("Exercise order updated", {
+          language: 'en',
+          pitch: 1.0,
+          rate: 0.9
+        });
+      }
     }
   };
   
@@ -745,6 +770,14 @@ export default function ActiveWorkoutScreen() {
             
             <View style={styles.exercisesContainer}>
               <Text style={styles.sectionTitle}>Exercises</Text>
+              
+              {isDragging && (
+                <View style={styles.dragInstructions}>
+                  <Text style={styles.dragInstructionsText}>
+                    Drag up or down to reorder exercises
+                  </Text>
+                </View>
+              )}
               
               {activeWorkout.exercises.map((exerciseLog, exerciseIndex) => {
                 const exercise = exercises.find(e => e.id === exerciseLog.exerciseId);
@@ -1429,6 +1462,18 @@ const styles = StyleSheet.create({
   exercisesContainer: {
     marginBottom: 24,
   },
+  dragInstructions: {
+    backgroundColor: colors.highlight,
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  dragInstructionsText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: "500",
+  },
   exerciseNotesContainer: {
     marginBottom: 16,
   },
@@ -1441,6 +1486,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     marginBottom: 8,
+    alignItems: "center",
   },
   setsHeaderText: {
     fontSize: 12,

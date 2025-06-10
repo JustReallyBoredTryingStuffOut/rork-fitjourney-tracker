@@ -57,6 +57,7 @@ export default function DraggableExerciseCard({
   const { colors } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
+  const cardRef = useRef<View>(null);
   
   // Calculate possible positions for snapping
   const getSnapPoints = () => {
@@ -70,42 +71,42 @@ export default function DraggableExerciseCard({
   // Find the closest snap point
   const getClosestSnapPoint = (y: number) => {
     const snapPoints = getSnapPoints();
-    let closestPoint = snapPoints[index];
-    let minDistance = Math.abs(y - closestPoint);
+    const currentPosition = index * CARD_HEIGHT;
+    const targetPosition = currentPosition + y;
     
-    snapPoints.forEach((point, i) => {
-      const distance = Math.abs(y - point);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPoint = point;
-      }
-    });
+    // Calculate which index this position corresponds to
+    const targetIndex = Math.round(targetPosition / CARD_HEIGHT);
     
-    return snapPoints.indexOf(closestPoint);
+    // Clamp the index to valid range
+    return Math.max(0, Math.min(totalExercises - 1, targetIndex));
   };
 
-  // Only use PanResponder on mobile platforms
+  // Create PanResponder for handling drag gestures
   const panResponder = Platform.OS !== 'web' ? PanResponder.create({
-    onStartShouldSetPanResponder: (_, gestureState) => {
-      // Only respond to touches on the drag handle area
-      return true;
-    },
+    onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (_, gestureState) => {
-      // Only respond to vertical movements
-      return Math.abs(gestureState.dy) > 5;
+      // Only respond to vertical movements greater than threshold
+      return Math.abs(gestureState.dy) > 10;
     },
     onPanResponderGrant: () => {
       setIsDragging(true);
       onDragStart();
       pan.setValue({ x: 0, y: 0 });
+      
+      // Add visual feedback when dragging starts
+      Animated.timing(pan, {
+        toValue: { x: 0, y: 0 },
+        duration: 100,
+        useNativeDriver: false
+      }).start();
     },
-    onPanResponderMove: Animated.event(
-      [null, { dy: pan.y }],
-      { useNativeDriver: false }
-    ),
+    onPanResponderMove: (_, gestureState) => {
+      // Update position based on gesture
+      pan.setValue({ x: 0, y: gestureState.dy });
+    },
     onPanResponderRelease: (_, gestureState) => {
       // Calculate the new index based on the gesture
-      const newIndex = getClosestSnapPoint(index * CARD_HEIGHT + gestureState.dy);
+      const newIndex = getClosestSnapPoint(gestureState.dy);
       
       // Animate back to the original position
       Animated.spring(pan, {
@@ -135,18 +136,24 @@ export default function DraggableExerciseCard({
           shadowOpacity: isDragging ? 0.3 : 0.1,
           height: isExpanded ? 'auto' : CARD_HEIGHT,
         },
+        isDragging && styles.draggingCard,
         isCompleted && styles.completedCard
       ]}
+      ref={cardRef}
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {Platform.OS !== 'web' && (
             <TouchableOpacity 
               {...panResponder.panHandlers} 
-              style={styles.dragHandle}
+              style={[
+                styles.dragHandle,
+                isDragging && styles.activeDragHandle
+              ]}
+              hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
               activeOpacity={0.7}
             >
-              <GripVertical size={20} color={colors.textSecondary} />
+              <GripVertical size={20} color={isDragging ? colors.primary : colors.textSecondary} />
             </TouchableOpacity>
           )}
           <View style={styles.exerciseInfo}>
@@ -233,6 +240,15 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: 'hidden',
   },
+  draggingCard: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
   completedCard: {
     opacity: 0.8,
   },
@@ -252,7 +268,12 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     height: '100%',
     justifyContent: 'center',
-    width: 30,
+    width: 40,
+    alignItems: 'center',
+  },
+  activeDragHandle: {
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 8,
   },
   exerciseInfo: {
     flex: 1,
