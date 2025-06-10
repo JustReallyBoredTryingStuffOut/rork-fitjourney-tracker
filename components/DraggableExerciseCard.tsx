@@ -187,6 +187,14 @@ export default function DraggableExerciseCard({
         cardStyle
       ]}
     >
+      {/* Drag handle - moved to the left side */}
+      <View 
+        style={styles.dragHandleContainer}
+        {...panResponder.panHandlers}
+      >
+        <GripVertical size={20} color={colors.textSecondary} />
+      </View>
+      
       <TouchableOpacity 
         style={[
           styles.header,
@@ -273,14 +281,6 @@ export default function DraggableExerciseCard({
         </View>
       )}
       
-      {/* Drag handle - this is what users will press and hold to drag */}
-      <View 
-        style={styles.dragHandleContainer}
-        {...panResponder.panHandlers}
-      >
-        <GripVertical size={20} color={colors.textSecondary} />
-      </View>
-      
       {isDragging && (
         <View style={styles.dragIndicator}>
           <Text style={[styles.dragIndicatorText, { color: colors.primary }]}>
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    paddingRight: 48, // Make room for the drag handle
+    paddingLeft: 48, // Make room for the drag handle on the left
   },
   completedHeader: {
     opacity: 0.8,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   dragHandleContainer: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    left: 0,
     bottom: 0,
     width: 48,
     justifyContent: 'center',

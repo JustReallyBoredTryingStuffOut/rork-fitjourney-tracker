@@ -34,7 +34,9 @@ import {
   Watch,
   Zap,
   ImageIcon,
-  Save
+  Save,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Speech from 'expo-speech';
@@ -302,6 +304,12 @@ export default function ActiveWorkoutScreen() {
     if (timerSettings.autoStartRest) {
       startRestTimer(timerSettings.defaultRestTime);
     }
+    
+    // Keep the exercise expanded after adding a set
+    setExpandedExercises(prev => ({
+      ...prev,
+      [exerciseIndex]: true
+    }));
   };
   
   const handleStartWorkout = () => {
@@ -698,6 +706,46 @@ export default function ActiveWorkoutScreen() {
     }
   };
   
+  // Function to increment weight or reps
+  const handleIncrement = (field: 'weight' | 'reps') => {
+    if (!editingSetData) return;
+    
+    if (field === 'weight') {
+      const currentWeight = parseFloat(editingSetData.weight) || 0;
+      setEditingSetData({
+        ...editingSetData,
+        weight: (currentWeight + 2.5).toString() // Increment by 2.5 kg
+      });
+    } else {
+      const currentReps = parseInt(editingSetData.reps) || 0;
+      setEditingSetData({
+        ...editingSetData,
+        reps: (currentReps + 1).toString() // Increment by 1 rep
+      });
+    }
+  };
+  
+  // Function to decrement weight or reps
+  const handleDecrement = (field: 'weight' | 'reps') => {
+    if (!editingSetData) return;
+    
+    if (field === 'weight') {
+      const currentWeight = parseFloat(editingSetData.weight) || 0;
+      const newWeight = Math.max(0, currentWeight - 2.5); // Don't go below 0
+      setEditingSetData({
+        ...editingSetData,
+        weight: newWeight.toString()
+      });
+    } else {
+      const currentReps = parseInt(editingSetData.reps) || 0;
+      const newReps = Math.max(0, currentReps - 1); // Don't go below 0
+      setEditingSetData({
+        ...editingSetData,
+        reps: newReps.toString()
+      });
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <Stack.Screen 
@@ -927,31 +975,63 @@ export default function ActiveWorkoutScreen() {
                                 // Editing mode
                                 <>
                                   <View style={[styles.inputContainer, styles.weightColumn]}>
-                                    <TextInput
-                                      style={styles.input}
-                                      value={editingSetData.weight}
-                                      keyboardType="numeric"
-                                      onChangeText={(value) => setEditingSetData({
-                                        ...editingSetData,
-                                        weight: value
-                                      })}
-                                      onSubmitEditing={handleSetDataSubmit}
-                                      returnKeyType="done"
-                                    />
+                                    <View style={styles.inputWithControls}>
+                                      <TouchableOpacity 
+                                        style={styles.inputControl}
+                                        onPress={() => handleDecrement('weight')}
+                                      >
+                                        <Minus size={16} color={colors.text} />
+                                      </TouchableOpacity>
+                                      
+                                      <TextInput
+                                        style={styles.input}
+                                        value={editingSetData.weight}
+                                        keyboardType="numeric"
+                                        onChangeText={(value) => setEditingSetData({
+                                          ...editingSetData,
+                                          weight: value
+                                        })}
+                                        onSubmitEditing={handleSetDataSubmit}
+                                        returnKeyType="done"
+                                      />
+                                      
+                                      <TouchableOpacity 
+                                        style={styles.inputControl}
+                                        onPress={() => handleIncrement('weight')}
+                                      >
+                                        <Plus size={16} color={colors.text} />
+                                      </TouchableOpacity>
+                                    </View>
                                   </View>
                                   
                                   <View style={[styles.inputContainer, styles.repsColumn]}>
-                                    <TextInput
-                                      style={styles.input}
-                                      value={editingSetData.reps}
-                                      keyboardType="numeric"
-                                      onChangeText={(value) => setEditingSetData({
-                                        ...editingSetData,
-                                        reps: value
-                                      })}
-                                      onSubmitEditing={handleSetDataSubmit}
-                                      returnKeyType="done"
-                                    />
+                                    <View style={styles.inputWithControls}>
+                                      <TouchableOpacity 
+                                        style={styles.inputControl}
+                                        onPress={() => handleDecrement('reps')}
+                                      >
+                                        <Minus size={16} color={colors.text} />
+                                      </TouchableOpacity>
+                                      
+                                      <TextInput
+                                        style={styles.input}
+                                        value={editingSetData.reps}
+                                        keyboardType="numeric"
+                                        onChangeText={(value) => setEditingSetData({
+                                          ...editingSetData,
+                                          reps: value
+                                        })}
+                                        onSubmitEditing={handleSetDataSubmit}
+                                        returnKeyType="done"
+                                      />
+                                      
+                                      <TouchableOpacity 
+                                        style={styles.inputControl}
+                                        onPress={() => handleIncrement('reps')}
+                                      >
+                                        <Plus size={16} color={colors.text} />
+                                      </TouchableOpacity>
+                                    </View>
                                   </View>
                                   
                                   <TouchableOpacity 
@@ -1672,15 +1752,29 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 36,
   },
-  input: {
+  inputWithControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: colors.background,
     borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    height: 36,
+    paddingHorizontal: 4,
+  },
+  inputControl: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.border,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 4,
     fontSize: 14,
     color: colors.text,
     textAlign: "center",
-    width: "100%",
   },
   setValueText: {
     fontSize: 14,
