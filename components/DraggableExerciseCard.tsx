@@ -61,6 +61,7 @@ export default function DraggableExerciseCard({
   const initialTouchY = useRef(0);
   const lastReportedDropZone = useRef<number | null>(null);
   const lastVibrationTime = useRef(0);
+  const cardHeight = useRef(CARD_HEIGHT);
   
   // State for records/history modal
   const [showRecordsModal, setShowRecordsModal] = useState(false);
@@ -84,20 +85,23 @@ export default function DraggableExerciseCard({
   
   // Calculate possible drop positions
   const getDropIndex = (gestureY: number) => {
+    // Get the current position of the card in the list
+    const currentIndex = index;
+    
     // Calculate the relative position from the card's original position
     const relativeY = gestureY - initialTouchY.current;
     
     // Calculate how many positions to move based on the distance moved
     // and the height of each card
-    const positions = Math.round(relativeY / CARD_HEIGHT);
+    const positions = Math.round(relativeY / cardHeight.current);
     
     // Calculate new index
-    let newIndex = index + positions;
+    let newIndex = currentIndex + positions;
     
     // Ensure the new index is within bounds
     newIndex = Math.max(0, Math.min(totalExercises - 1, newIndex));
     
-    return newIndex !== index ? newIndex : null;
+    return newIndex !== currentIndex ? newIndex : null;
   };
   
   const panResponder = useRef(
@@ -111,9 +115,13 @@ export default function DraggableExerciseCard({
         // Store the initial touch position
         initialTouchY.current = gestureState.y0;
         
-        // Measure the card's position on the screen
+        // Measure the card's position and height on the screen
         cardRef.current?.measure((x, y, width, height, pageX, pageY) => {
           cardPositionY.current = pageY;
+          // Update card height if it's different from our default
+          if (height > 0) {
+            cardHeight.current = height;
+          }
         });
         
         // Start dragging
