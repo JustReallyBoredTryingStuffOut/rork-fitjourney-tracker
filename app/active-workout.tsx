@@ -548,8 +548,8 @@ export default function ActiveWorkoutScreen() {
     setEditingSetData({
       exerciseIndex,
       setIndex,
-      weight: weight.toString(),
-      reps: reps.toString()
+      weight: weight ? weight.toString() : "",
+      reps: reps ? reps.toString() : ""
     });
   };
   
@@ -1048,14 +1048,18 @@ export default function ActiveWorkoutScreen() {
                                     style={[styles.inputContainer, styles.weightColumn]}
                                     onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
                                   >
-                                    <Text style={styles.setValueText}>{set.weight}</Text>
+                                    <Text style={styles.setValueText}>
+                                      {set.weight ? set.weight.toString() : ""}
+                                    </Text>
                                   </TouchableOpacity>
                                   
                                   <TouchableOpacity 
                                     style={[styles.inputContainer, styles.repsColumn]}
                                     onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
                                   >
-                                    <Text style={styles.setValueText}>{set.reps}</Text>
+                                    <Text style={styles.setValueText}>
+                                      {set.reps ? set.reps.toString() : ""}
+                                    </Text>
                                   </TouchableOpacity>
                                   
                                   <TouchableOpacity 
