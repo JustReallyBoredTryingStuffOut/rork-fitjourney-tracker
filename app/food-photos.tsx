@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -6,7 +6,9 @@ import {
   ScrollView, 
   TouchableOpacity, 
   Modal,
-  Alert
+  Alert,
+  AppState,
+  AppStateStatus
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Camera, Plus, Trash2, X, ArrowLeft } from "lucide-react-native";
@@ -14,12 +16,38 @@ import { colors } from "@/constants/colors";
 import { usePhotoStore, FoodPhoto } from "@/store/photoStore";
 import Button from "@/components/Button";
 import EncryptedImage from "@/components/EncryptedImage";
+import { cleanupTempDecryptedFiles } from "@/utils/fileEncryption";
 
 export default function FoodPhotosScreen() {
   const router = useRouter();
   const { foodPhotos, deleteFoodPhoto } = usePhotoStore();
   
   const [selectedPhoto, setSelectedPhoto] = useState<FoodPhoto | null>(null);
+  const [appState, setAppState] = useState(AppState.currentState);
+  
+  // Clean up temp files when app goes to background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+      // Also clean up when component unmounts
+      cleanupTempDecryptedFiles().catch(err => 
+        console.warn('Error cleaning up temp files on unmount:', err)
+      );
+    };
+  }, []);
+  
+  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    if (appState === 'active' && nextAppState.match(/inactive|background/)) {
+      // App is going to background, clean up temp files
+      cleanupTempDecryptedFiles().catch(err => 
+        console.warn('Error cleaning up temp files on background:', err)
+      );
+    }
+    
+    setAppState(nextAppState);
+  };
   
   // Group photos by date
   const photosByDate = foodPhotos.reduce((acc, photo) => {
@@ -39,7 +67,7 @@ export default function FoodPhotosScreen() {
   const handleDeletePhoto = (photo: FoodPhoto) => {
     Alert.alert(
       "Delete Photo",
-      "Are you sure you want to delete this food photo?",
+      "Are you sure you want to delete this food photo? The photo will be securely wiped from your device.",
       [
         {
           text: "Cancel",
@@ -147,6 +175,12 @@ export default function FoodPhotosScreen() {
         visible={!!selectedPhoto}
         transparent
         animationType="fade"
+        onDismiss={() => {
+          // Clean up temp files when modal is dismissed
+          cleanupTempDecryptedFiles().catch(err => 
+            console.warn('Error cleaning up temp files on modal dismiss:', err)
+          );
+        }}
       >
         {selectedPhoto && (
           <View style={styles.photoDetailOverlay}>
@@ -156,7 +190,13 @@ export default function FoodPhotosScreen() {
                   {selectedPhoto.name}
                 </Text>
                 <TouchableOpacity 
-                  onPress={() => setSelectedPhoto(null)}
+                  onPress={() => {
+                    setSelectedPhoto(null);
+                    // Clean up temp files when closing modal
+                    cleanupTempDecryptedFiles().catch(err => 
+                      console.warn('Error cleaning up temp files on modal close:', err)
+                    );
+                  }}
                   style={styles.photoDetailClose}
                 >
                   <X size={24} color={colors.text} />

@@ -7,7 +7,9 @@ import {
   encryptAndSavePhoto, 
   deleteEncryptedPhoto, 
   ENCRYPTED_PHOTOS_DIR,
-  setupEncryptedPhotoDirectory
+  setupEncryptedPhotoDirectory,
+  cleanupTempDecryptedFiles,
+  deleteAllEncryptedPhotos
 } from "@/utils/fileEncryption";
 
 export type FoodPhoto = {
@@ -70,6 +72,10 @@ interface PhotoState {
   getProgressPhotosByCategory: (category: ProgressPhoto["category"]) => ProgressPhoto[];
   getWorkoutMediaByWorkoutId: (workoutId: string) => MediaType[];
   isGifUrl: (url: string) => boolean;
+  
+  // Data management
+  deleteAllPhotos: () => Promise<void>;
+  cleanupTempFiles: () => Promise<void>;
 }
 
 // Create photo directory if it doesn't exist
@@ -109,6 +115,26 @@ const setupPhotoDirectories = async () => {
 if (Platform.OS !== "web") {
   setupPhotoDirectories();
 }
+
+// Helper function to securely delete a file
+const secureDeleteFile = async (uri: string): Promise<void> => {
+  if (Platform.OS === "web" || !uri || uri.startsWith('http')) return;
+  
+  try {
+    if (uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
+      // Use secure deletion for encrypted files
+      await deleteEncryptedPhoto(uri);
+    } else {
+      // For regular files, use standard deletion
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (fileInfo.exists) {
+        await FileSystem.deleteAsync(uri, { idempotent: true });
+      }
+    }
+  } catch (error) {
+    console.error("Error deleting file:", error);
+  }
+};
 
 export const usePhotoStore = create<PhotoState>()(
   persist(
@@ -164,13 +190,7 @@ export const usePhotoStore = create<PhotoState>()(
         
         if (photoToDelete && Platform.OS !== "web") {
           try {
-            if (photoToDelete.uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
-              // Delete encrypted photo
-              await deleteEncryptedPhoto(photoToDelete.uri);
-            } else {
-              // Delete regular photo
-              await FileSystem.deleteAsync(photoToDelete.uri);
-            }
+            await secureDeleteFile(photoToDelete.uri);
           } catch (error) {
             console.error("Error deleting food photo:", error);
           }
@@ -223,13 +243,7 @@ export const usePhotoStore = create<PhotoState>()(
         
         if (photoToDelete && Platform.OS !== "web") {
           try {
-            if (photoToDelete.uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
-              // Delete encrypted photo
-              await deleteEncryptedPhoto(photoToDelete.uri);
-            } else {
-              // Delete regular photo
-              await FileSystem.deleteAsync(photoToDelete.uri);
-            }
+            await secureDeleteFile(photoToDelete.uri);
           } catch (error) {
             console.error("Error deleting progress photo:", error);
           }
@@ -285,13 +299,7 @@ export const usePhotoStore = create<PhotoState>()(
         
         if (mediaToDelete && Platform.OS !== "web" && !mediaToDelete.uri.startsWith("http")) {
           try {
-            if (mediaToDelete.uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
-              // Delete encrypted media
-              await deleteEncryptedPhoto(mediaToDelete.uri);
-            } else {
-              // Delete regular media
-              await FileSystem.deleteAsync(mediaToDelete.uri);
-            }
+            await secureDeleteFile(mediaToDelete.uri);
           } catch (error) {
             console.error("Error deleting workout media:", error);
           }
@@ -332,6 +340,61 @@ export const usePhotoStore = create<PhotoState>()(
                url.includes('giphy.com') || 
                url.includes('tenor.com') ||
                url.includes('gph.is');
+      },
+      
+      // Data management functions
+      deleteAllPhotos: async () => {
+        if (Platform.OS !== "web") {
+          try {
+            // Get all photos to delete
+            const { foodPhotos, progressPhotos, workoutMedia } = get();
+            
+            // Delete all encrypted photos at once
+            await deleteAllEncryptedPhotos();
+            
+            // Delete any non-encrypted photos
+            const allPhotos = [
+              ...foodPhotos.map(p => p.uri),
+              ...progressPhotos.map(p => p.uri),
+              ...workoutMedia.filter(m => !m.uri.startsWith('http')).map(m => m.uri)
+            ];
+            
+            for (const uri of allPhotos) {
+              if (!uri.startsWith(ENCRYPTED_PHOTOS_DIR) && !uri.startsWith('http')) {
+                await FileSystem.deleteAsync(uri, { idempotent: true });
+              }
+            }
+            
+            // Clean up temp files
+            await cleanupTempDecryptedFiles();
+            
+            // Clean up photo directories
+            const photoDir = `${FileSystem.documentDirectory}photos/`;
+            await FileSystem.deleteAsync(photoDir, { idempotent: true });
+            await setupPhotoDirectories();
+            
+            console.log("All photos deleted successfully");
+          } catch (error) {
+            console.error("Error deleting all photos:", error);
+          }
+        }
+        
+        // Clear the store state
+        set({
+          foodPhotos: [],
+          progressPhotos: [],
+          workoutMedia: []
+        });
+      },
+      
+      cleanupTempFiles: async () => {
+        if (Platform.OS !== "web") {
+          try {
+            await cleanupTempDecryptedFiles();
+          } catch (error) {
+            console.error("Error cleaning up temp files:", error);
+          }
+        }
       }
     }),
     {

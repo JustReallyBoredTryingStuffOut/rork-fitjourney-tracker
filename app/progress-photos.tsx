@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -7,7 +7,9 @@ import {
   TouchableOpacity, 
   Modal,
   Alert,
-  Platform
+  Platform,
+  AppState,
+  AppStateStatus
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Camera, Plus, Trash2, X, ArrowLeft, Lock } from "lucide-react-native";
@@ -17,6 +19,7 @@ import { useHealthStore } from "@/store/healthStore";
 import ProgressPhotoCapture from "@/components/ProgressPhotoCapture";
 import Button from "@/components/Button";
 import EncryptedImage from "@/components/EncryptedImage";
+import { cleanupTempDecryptedFiles } from "@/utils/fileEncryption";
 
 export default function ProgressPhotosScreen() {
   const router = useRouter();
@@ -26,8 +29,33 @@ export default function ProgressPhotosScreen() {
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ProgressPhoto["category"]>("front");
   const [selectedPhoto, setSelectedPhoto] = useState<ProgressPhoto | null>(null);
+  const [appState, setAppState] = useState(AppState.currentState);
   
   const weightProgress = calculateWeightProgress();
+  
+  // Clean up temp files when app goes to background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+      // Also clean up when component unmounts
+      cleanupTempDecryptedFiles().catch(err => 
+        console.warn('Error cleaning up temp files on unmount:', err)
+      );
+    };
+  }, []);
+  
+  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    if (appState === 'active' && nextAppState.match(/inactive|background/)) {
+      // App is going to background, clean up temp files
+      cleanupTempDecryptedFiles().catch(err => 
+        console.warn('Error cleaning up temp files on background:', err)
+      );
+    }
+    
+    setAppState(nextAppState);
+  };
   
   // Group photos by date
   const photosByDate = progressPhotos.reduce((acc, photo) => {
@@ -57,7 +85,7 @@ export default function ProgressPhotosScreen() {
   const handleDeletePhoto = (photo: ProgressPhoto) => {
     Alert.alert(
       "Delete Photo",
-      "Are you sure you want to delete this photo? This action cannot be undone.",
+      "Are you sure you want to delete this photo? The photo will be securely wiped from your device.",
       [
         {
           text: "Cancel",
@@ -203,6 +231,12 @@ export default function ProgressPhotosScreen() {
         visible={!!selectedPhoto}
         transparent
         animationType="fade"
+        onDismiss={() => {
+          // Clean up temp files when modal is dismissed
+          cleanupTempDecryptedFiles().catch(err => 
+            console.warn('Error cleaning up temp files on modal dismiss:', err)
+          );
+        }}
       >
         {selectedPhoto && (
           <View style={styles.photoDetailOverlay}>
@@ -212,7 +246,13 @@ export default function ProgressPhotosScreen() {
                   {selectedPhoto.category} View
                 </Text>
                 <TouchableOpacity 
-                  onPress={() => setSelectedPhoto(null)}
+                  onPress={() => {
+                    setSelectedPhoto(null);
+                    // Clean up temp files when closing modal
+                    cleanupTempDecryptedFiles().catch(err => 
+                      console.warn('Error cleaning up temp files on modal close:', err)
+                    );
+                  }}
                   style={styles.photoDetailClose}
                 >
                   <X size={24} color={colors.text} />

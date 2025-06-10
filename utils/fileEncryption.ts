@@ -5,6 +5,8 @@ import * as Crypto from 'expo-crypto';
 
 // Directory for encrypted photos
 export const ENCRYPTED_PHOTOS_DIR = `${FileSystem.documentDirectory}encrypted_photos/`;
+// Directory for temporary decrypted files
+export const TEMP_DECRYPTED_DIR = `${FileSystem.cacheDirectory}temp_decrypted/`;
 
 // Ensure encrypted photos directory exists
 export const setupEncryptedPhotoDirectory = async (): Promise<void> => {
@@ -14,6 +16,12 @@ export const setupEncryptedPhotoDirectory = async (): Promise<void> => {
     const dirInfo = await FileSystem.getInfoAsync(ENCRYPTED_PHOTOS_DIR);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(ENCRYPTED_PHOTOS_DIR, { intermediates: true });
+    }
+    
+    // Also create temp directory for decrypted files
+    const tempDirInfo = await FileSystem.getInfoAsync(TEMP_DECRYPTED_DIR);
+    if (!tempDirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(TEMP_DECRYPTED_DIR, { intermediates: true });
     }
   } catch (error) {
     console.error('Error setting up encrypted photo directory:', error);
@@ -149,7 +157,8 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
       
       // Create a temporary file for the decrypted content
       const fileExtension = metadata.type === 'image/gif' ? 'gif' : 'jpg';
-      const tempFilePath = `${FileSystem.cacheDirectory}temp_${Date.now()}.${fileExtension}`;
+      const tempFileName = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExtension}`;
+      const tempFilePath = `${TEMP_DECRYPTED_DIR}${tempFileName}`;
       
       // Write the decrypted content to the temp file
       await FileSystem.writeAsStringAsync(tempFilePath, decryptedContent, {
@@ -166,7 +175,8 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
       }
       
       // Create a temporary file for the decrypted content
-      const tempFilePath = `${FileSystem.cacheDirectory}temp_${Date.now()}.jpg`;
+      const tempFileName = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 10)}.jpg`;
+      const tempFilePath = `${TEMP_DECRYPTED_DIR}${tempFileName}`;
       
       // Write the decrypted content to the temp file
       await FileSystem.writeAsStringAsync(tempFilePath, decryptedContent, {
@@ -187,14 +197,80 @@ export const isEncryptedFile = (uri: string): boolean => {
   return uri.startsWith(ENCRYPTED_PHOTOS_DIR);
 };
 
-// Delete an encrypted photo
+// Securely delete a file by overwriting it with random data before deletion
+const secureOverwriteFile = async (uri: string): Promise<void> => {
+  if (Platform.OS === 'web') return;
+  
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    if (!fileInfo.exists) return;
+    
+    // Generate random data to overwrite the file
+    // We'll use a reasonable size for overwriting (up to 1MB)
+    const maxOverwriteSize = Math.min(fileInfo.size, 1024 * 1024);
+    if (maxOverwriteSize <= 0) {
+      // If file is empty, just delete it
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+      return;
+    }
+    
+    // Generate random data
+    const randomBytes = await Random.getRandomBytesAsync(maxOverwriteSize);
+    const randomData = Array.from(randomBytes)
+      .map(byte => String.fromCharCode(byte))
+      .join('');
+    
+    // Overwrite the file with random data
+    await FileSystem.writeAsStringAsync(uri, randomData);
+    
+    // Overwrite again with zeros
+    const zeroData = '\0'.repeat(maxOverwriteSize);
+    await FileSystem.writeAsStringAsync(uri, zeroData);
+    
+    // Finally delete the file
+    await FileSystem.deleteAsync(uri, { idempotent: true });
+  } catch (error) {
+    console.error('Error securely overwriting file:', error);
+    // If secure deletion fails, try regular deletion
+    try {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+    } catch (deleteError) {
+      console.error('Regular deletion also failed:', deleteError);
+    }
+  }
+};
+
+// Delete an encrypted photo securely
 export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
   if (Platform.OS === 'web' || !uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
     return;
   }
   
   try {
-    await FileSystem.deleteAsync(uri);
+    // Securely overwrite and delete the file
+    await secureOverwriteFile(uri);
+    
+    // Also check for any temporary decrypted versions of this file
+    // This is a best-effort cleanup of potential temp files
+    const fileName = uri.split('/').pop();
+    if (fileName) {
+      const baseFileName = fileName.split('.')[0];
+      
+      try {
+        const tempDirContents = await FileSystem.readDirectoryAsync(TEMP_DECRYPTED_DIR);
+        const relatedTempFiles = tempDirContents.filter(file => 
+          file.includes(baseFileName) || file.includes(uri.substring(uri.length - 20))
+        );
+        
+        // Delete any related temp files
+        for (const tempFile of relatedTempFiles) {
+          await FileSystem.deleteAsync(`${TEMP_DECRYPTED_DIR}${tempFile}`, { idempotent: true });
+        }
+      } catch (tempError) {
+        // Ignore errors with temp cleanup
+        console.warn('Error cleaning up temp files:', tempError);
+      }
+    }
   } catch (error) {
     console.error('Error deleting encrypted photo:', error);
   }
@@ -222,3 +298,57 @@ export const getEncryptedPhotoInfo = async (uri: string): Promise<{
     return null;
   }
 };
+
+// Clean up all temporary decrypted files
+export const cleanupTempDecryptedFiles = async (): Promise<void> => {
+  if (Platform.OS === 'web') return;
+  
+  try {
+    const tempDirInfo = await FileSystem.getInfoAsync(TEMP_DECRYPTED_DIR);
+    if (tempDirInfo.exists) {
+      // Get all files in the temp directory
+      const tempFiles = await FileSystem.readDirectoryAsync(TEMP_DECRYPTED_DIR);
+      
+      // Delete each file
+      for (const file of tempFiles) {
+        await FileSystem.deleteAsync(`${TEMP_DECRYPTED_DIR}${file}`, { idempotent: true });
+      }
+      
+      console.log(`Cleaned up ${tempFiles.length} temporary decrypted files`);
+    }
+  } catch (error) {
+    console.error('Error cleaning up temporary decrypted files:', error);
+  }
+};
+
+// Delete all encrypted photos
+export const deleteAllEncryptedPhotos = async (): Promise<void> => {
+  if (Platform.OS === 'web') return;
+  
+  try {
+    const dirInfo = await FileSystem.getInfoAsync(ENCRYPTED_PHOTOS_DIR);
+    if (dirInfo.exists) {
+      // Get all files in the encrypted photos directory
+      const files = await FileSystem.readDirectoryAsync(ENCRYPTED_PHOTOS_DIR);
+      
+      // Securely delete each file
+      for (const file of files) {
+        await secureOverwriteFile(`${ENCRYPTED_PHOTOS_DIR}${file}`);
+      }
+      
+      // Also delete the directory and recreate it
+      await FileSystem.deleteAsync(ENCRYPTED_PHOTOS_DIR, { idempotent: true });
+      await FileSystem.makeDirectoryAsync(ENCRYPTED_PHOTOS_DIR, { intermediates: true });
+      
+      // Clean up temp files too
+      await cleanupTempDecryptedFiles();
+      
+      console.log(`Securely deleted ${files.length} encrypted photos`);
+    }
+  } catch (error) {
+    console.error('Error deleting all encrypted photos:', error);
+  }
+};
+
+// Import from Random module for secure deletion
+import * as Random from 'expo-random';

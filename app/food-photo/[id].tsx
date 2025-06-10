@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -20,6 +20,7 @@ import { colors } from "@/constants/colors";
 import { usePhotoStore } from "@/store/photoStore";
 import Button from "@/components/Button";
 import EncryptedImage from "@/components/EncryptedImage";
+import { cleanupTempDecryptedFiles } from "@/utils/fileEncryption";
 
 export default function FoodPhotoDetailScreen() {
   const router = useRouter();
@@ -27,6 +28,15 @@ export default function FoodPhotoDetailScreen() {
   const { foodPhotos, deleteFoodPhoto } = usePhotoStore();
   
   const photo = foodPhotos.find(photo => photo.id === id);
+  
+  // Clean up temp files when component unmounts
+  useEffect(() => {
+    return () => {
+      cleanupTempDecryptedFiles().catch(err => 
+        console.warn('Error cleaning up temp files on unmount:', err)
+      );
+    };
+  }, []);
   
   if (!photo) {
     return (
@@ -55,6 +65,10 @@ export default function FoodPhotoDetailScreen() {
   }
   
   const handleGoBack = () => {
+    // Clean up temp files when navigating away
+    cleanupTempDecryptedFiles().catch(err => 
+      console.warn('Error cleaning up temp files on navigation:', err)
+    );
     router.back();
   };
   
@@ -79,7 +93,7 @@ export default function FoodPhotoDetailScreen() {
   const handleDelete = () => {
     Alert.alert(
       "Delete Photo",
-      "Are you sure you want to delete this food photo?",
+      "Are you sure you want to delete this food photo? The photo will be securely wiped from your device.",
       [
         {
           text: "Cancel",

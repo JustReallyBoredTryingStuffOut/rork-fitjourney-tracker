@@ -9,11 +9,10 @@ import { useMacroStore } from '@/store/macroStore';
 import { usePhotoStore } from '@/store/photoStore';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useSecureStore } from '@/store/secureStore';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import { secureStore } from '@/utils/encryption';
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, Shield, AlertTriangle } from "lucide-react-native";
 
 // Handle conditional import for expo-sharing (not available on web)
 let Sharing: any = null;
@@ -33,6 +32,7 @@ export default function DataManagement() {
   
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCleaningCache, setIsCleaningCache] = useState(false);
   
   // Get all stores
   const aiStore = useAiStore();
@@ -42,6 +42,7 @@ export default function DataManagement() {
   const workoutStore = useWorkoutStore();
   const notificationStore = useNotificationStore();
   const themeStore = useThemeStore();
+  const secureStore = useSecureStore();
   
   const exportData = async () => {
     if (Platform.OS === 'web') {
@@ -84,7 +85,15 @@ export default function DataManagement() {
       };
       
       // Create a JSON file
-      const fileUri = `${FileSystem.documentDirectory}fitness_data_export.json`;
+      const exportDir = `${FileSystem.documentDirectory}exports/`;
+      const exportDirInfo = await FileSystem.getInfoAsync(exportDir);
+      if (!exportDirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(exportDir, { intermediates: true });
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileUri = `${exportDir}fitness_data_export_${timestamp}.json`;
+      
       await FileSystem.writeAsStringAsync(
         fileUri,
         JSON.stringify(exportData, null, 2),
@@ -108,7 +117,7 @@ export default function DataManagement() {
   const deleteAllData = () => {
     Alert.alert(
       'Delete All Data',
-      'Are you sure you want to delete all your data? This action cannot be undone.',
+      'Are you sure you want to delete all your data? This action cannot be undone and will securely wipe all your personal information.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -124,35 +133,15 @@ export default function DataManagement() {
     setIsDeleting(true);
     
     try {
-      // Clear all stores
-      await AsyncStorage.clear();
+      // Use the secure wipe function from secureStore
+      await secureStore.secureWipeAllData();
       
-      // Clear secure storage if available
-      if (Platform.OS !== 'web') {
-        const secureKeys = [
-          'user-profile-secure',
-          'health-data-secure',
-          'workout-data-secure'
-        ];
-        
-        for (const key of secureKeys) {
-          await SecureStore.deleteItemAsync(key);
-        }
-      }
-      
-      // Clear photo directories if available
-      if (Platform.OS !== 'web') {
-        const photoDir = `${FileSystem.documentDirectory}photos/`;
-        const photoDirInfo = await FileSystem.getInfoAsync(photoDir);
-        
-        if (photoDirInfo.exists) {
-          await FileSystem.deleteAsync(photoDir, { idempotent: true });
-        }
-      }
+      // Also delete all photos
+      await photoStore.deleteAllPhotos();
       
       Alert.alert(
         'Data Deleted',
-        'All your data has been deleted. The app will now restart.',
+        'All your data has been securely deleted. The app will now restart.',
         [
           { 
             text: 'OK',
@@ -168,6 +157,48 @@ export default function DataManagement() {
       Alert.alert('Delete Failed', 'There was an error deleting your data.');
     } finally {
       setIsDeleting(false);
+    }
+  };
+  
+  const cleanupCache = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Not Available', 'Cache cleanup is not available on web.');
+      return;
+    }
+    
+    setIsCleaningCache(true);
+    
+    try {
+      // Clean up temporary decrypted files
+      await photoStore.cleanupTempFiles();
+      
+      // Clean up cache directory
+      if (FileSystem.cacheDirectory) {
+        const cacheContents = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory);
+        let deletedCount = 0;
+        
+        for (const item of cacheContents) {
+          // Skip system files and directories
+          if (item.startsWith('.') || item === 'temp_decrypted') continue;
+          
+          try {
+            await FileSystem.deleteAsync(`${FileSystem.cacheDirectory}${item}`, { idempotent: true });
+            deletedCount++;
+          } catch (error) {
+            console.warn(`Could not delete cache item ${item}:`, error);
+          }
+        }
+        
+        Alert.alert(
+          'Cache Cleaned',
+          `Successfully cleaned up ${deletedCount} cached files and temporary decrypted images.`
+        );
+      }
+    } catch (error) {
+      console.error('Error cleaning cache:', error);
+      Alert.alert('Cleanup Failed', 'There was an error cleaning the cache.');
+    } finally {
+      setIsCleaningCache(false);
     }
   };
   
@@ -213,8 +244,22 @@ export default function DataManagement() {
         <View style={styles.section}>
           <Text style={[styles.title, { color: colors.text }]}>Data Management</Text>
           <Text style={[styles.description, { color: colors.text }]}>
-            Manage your personal data stored in this app. You can export your data or delete all data.
+            Manage your personal data stored in this app. Your data is encrypted and stored locally on your device.
           </Text>
+          
+          <View style={[styles.securityInfoCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+            <Shield size={24} color={colors.primary} style={styles.securityIcon} />
+            <Text style={[styles.securityTitle, { color: colors.text }]}>Your Data Privacy</Text>
+            <Text style={[styles.securityText, { color: colors.textSecondary }]}>
+              • All photos are encrypted using AES-GCM encryption
+            </Text>
+            <Text style={[styles.securityText, { color: colors.textSecondary }]}>
+              • Data is stored locally on your device only
+            </Text>
+            <Text style={[styles.securityText, { color: colors.textSecondary }]}>
+              • When you delete data, it is securely wiped
+            </Text>
+          </View>
           
           <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Export Your Data</Text>
@@ -235,11 +280,32 @@ export default function DataManagement() {
             </TouchableOpacity>
           </View>
           
+          <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Clean Temporary Files</Text>
+            <Text style={[styles.cardDescription, { color: colors.text }]}>
+              Remove temporary decrypted photos and cached files to free up space. This won't delete your actual data.
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.secondary }]}
+              onPress={cleanupCache}
+              disabled={isCleaningCache}
+            >
+              {isCleaningCache ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Clean Cache</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          
           <View style={[styles.card, styles.dangerCard, { borderColor: colors.error, backgroundColor: colors.card }]}>
-            <Text style={[styles.cardTitle, { color: colors.error }]}>Delete All Data</Text>
+            <View style={styles.dangerHeaderContainer}>
+              <AlertTriangle size={24} color={colors.error} />
+              <Text style={[styles.cardTitle, styles.dangerTitle, { color: colors.error }]}>Delete All Data</Text>
+            </View>
             <Text style={[styles.cardDescription, { color: colors.text }]}>
               Permanently delete all your data from this app. This action cannot be undone.
-              All your profile information, workouts, logs, and photos will be deleted.
+              All your profile information, workouts, logs, and photos will be securely wiped.
             </Text>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: colors.error }]}
@@ -284,8 +350,29 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    marginBottom: 24,
+    marginBottom: 16,
     lineHeight: 22,
+  },
+  securityInfoCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  securityIcon: {
+    marginBottom: 8,
+  },
+  securityTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  securityText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   card: {
     padding: 16,
@@ -304,10 +391,19 @@ const styles = StyleSheet.create({
   dangerCard: {
     marginTop: 24,
   },
+  dangerHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
+  },
+  dangerTitle: {
+    marginLeft: 8,
+    marginBottom: 0,
   },
   cardDescription: {
     fontSize: 14,

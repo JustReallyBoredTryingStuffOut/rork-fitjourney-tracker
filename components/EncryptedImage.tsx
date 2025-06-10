@@ -33,14 +33,20 @@ export default function EncryptedImage({
       isMounted.current = false;
       
       // Clean up temporary file when component unmounts
-      if (Platform.OS !== 'web' && tempFileRef.current) {
-        import('expo-file-system').then(FileSystem => {
-          FileSystem.deleteAsync(tempFileRef.current!, { idempotent: true })
-            .catch(err => console.log('Error cleaning up temp file:', err));
-        });
-      }
+      cleanupTempFile();
     };
   }, []);
+  
+  // Function to clean up temporary file
+  const cleanupTempFile = () => {
+    if (Platform.OS !== 'web' && tempFileRef.current) {
+      import('expo-file-system').then(FileSystem => {
+        FileSystem.deleteAsync(tempFileRef.current!, { idempotent: true })
+          .catch(err => console.log('Error cleaning up temp file:', err));
+        tempFileRef.current = null;
+      });
+    }
+  };
   
   useEffect(() => {
     let isCancelled = false;
@@ -59,6 +65,9 @@ export default function EncryptedImage({
       setHasError(false);
       
       try {
+        // Clean up previous temporary file if it exists
+        cleanupTempFile();
+        
         const decrypted = await decryptPhoto(uri);
         
         if (isMounted.current && !isCancelled) {
@@ -86,15 +95,7 @@ export default function EncryptedImage({
     // Cleanup function to handle component unmounting or uri changing
     return () => {
       isCancelled = true;
-      
-      // Clean up previous temporary file if it exists
-      if (Platform.OS !== 'web' && tempFileRef.current) {
-        import('expo-file-system').then(FileSystem => {
-          FileSystem.deleteAsync(tempFileRef.current!, { idempotent: true })
-            .catch(err => console.log('Error cleaning up temp file:', err));
-          tempFileRef.current = null;
-        });
-      }
+      cleanupTempFile();
     };
   }, [uri, onLoadStart, onLoadEnd]);
   

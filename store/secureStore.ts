@@ -5,6 +5,8 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { secureStore, generateEncryptionKey, storeEncryptionKey } from "@/utils/encryption";
 import * as Crypto from 'expo-crypto';
+import * as FileSystem from 'expo-file-system';
+import { cleanupTempDecryptedFiles, deleteAllEncryptedPhotos } from "@/utils/fileEncryption";
 
 interface SecureStoreState {
   hasInitializedEncryption: boolean;
@@ -23,6 +25,10 @@ interface SecureStoreState {
   // GDPR compliance
   exportUserData: () => Promise<string>;
   deleteUserData: () => Promise<void>;
+  
+  // Secure deletion
+  secureWipeAllData: () => Promise<void>;
+  secureWipeStorageKeys: (keys: string[]) => Promise<void>;
 }
 
 // Create a secure storage adapter for zustand
@@ -160,28 +166,8 @@ export const useSecureStore = create<SecureStoreState>()(
       },
       
       deleteUserData: async () => {
-        // In a real implementation, this would clear all user data
-        // from all stores and secure storage
-        
-        // Clear AsyncStorage
-        await AsyncStorage.clear();
-        
-        // Clear SecureStore keys (if on native)
-        if (Platform.OS !== 'web') {
-          const keysToDelete = [
-            'encryption-key',
-            'encryption-version',
-            'device-id',
-            'user-profile',
-            'health-data',
-            'workout-data',
-            'notification-settings'
-          ];
-          
-          for (const key of keysToDelete) {
-            await SecureStore.deleteItemAsync(key);
-          }
-        }
+        // Perform a secure wipe of all user data
+        await get().secureWipeAllData();
         
         // Reset the store state
         set({
@@ -189,6 +175,127 @@ export const useSecureStore = create<SecureStoreState>()(
           userConsent: false,
           encryptionVersion: get().encryptionVersion // Keep the version number
         });
+      },
+      
+      secureWipeAllData: async () => {
+        if (Platform.OS === 'web') {
+          // For web, clear localStorage and sessionStorage
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          // Clear AsyncStorage
+          await AsyncStorage.clear();
+          return;
+        }
+        
+        try {
+          // 1. Delete all encrypted photos
+          await deleteAllEncryptedPhotos();
+          
+          // 2. Clean up temporary files
+          await cleanupTempDecryptedFiles();
+          
+          // 3. Clear AsyncStorage
+          await AsyncStorage.clear();
+          
+          // 4. Clear SecureStore keys
+          const keysToDelete = [
+            'encryption-key',
+            'encryption-version',
+            'device-id',
+            'user-profile',
+            'health-data',
+            'workout-data',
+            'notification-settings',
+            'user-profile-secure',
+            'health-data-secure',
+            'workout-data-secure'
+          ];
+          
+          await get().secureWipeStorageKeys(keysToDelete);
+          
+          // 5. Clear app document directory
+          const appDirs = [
+            `${FileSystem.documentDirectory}photos/`,
+            `${FileSystem.documentDirectory}workouts/`,
+            `${FileSystem.documentDirectory}exports/`,
+            `${FileSystem.documentDirectory}logs/`
+          ];
+          
+          for (const dir of appDirs) {
+            const dirInfo = await FileSystem.getInfoAsync(dir);
+            if (dirInfo.exists) {
+              await FileSystem.deleteAsync(dir, { idempotent: true });
+            }
+          }
+          
+          // 6. Clear cache directory
+          const cacheDir = FileSystem.cacheDirectory;
+          if (cacheDir) {
+            try {
+              const cacheContents = await FileSystem.readDirectoryAsync(cacheDir);
+              for (const item of cacheContents) {
+                await FileSystem.deleteAsync(`${cacheDir}${item}`, { idempotent: true });
+              }
+            } catch (error) {
+              console.warn('Error clearing cache directory:', error);
+            }
+          }
+          
+          console.log('All user data securely wiped');
+        } catch (error) {
+          console.error('Error during secure data wipe:', error);
+          throw error;
+        }
+      },
+      
+      secureWipeStorageKeys: async (keys: string[]) => {
+        if (Platform.OS === 'web') {
+          for (const key of keys) {
+            await AsyncStorage.removeItem(key);
+          }
+          return;
+        }
+        
+        try {
+          // For each key, first overwrite with random data, then delete
+          for (const key of keys) {
+            try {
+              // Get the current value to determine if it exists
+              const currentValue = await SecureStore.getItemAsync(key);
+              
+              if (currentValue) {
+                // Generate random data of similar length
+                const randomBytes = await Crypto.getRandomBytesAsync(
+                  Math.max(currentValue.length, 32)
+                );
+                const randomData = Array.from(randomBytes)
+                  .map(b => String.fromCharCode(b % 94 + 32)) // Printable ASCII
+                  .join('');
+                
+                // Overwrite with random data
+                await SecureStore.setItemAsync(key, randomData);
+                
+                // Overwrite again with zeros
+                await SecureStore.setItemAsync(key, '0'.repeat(randomData.length));
+                
+                // Finally delete
+                await SecureStore.deleteItemAsync(key);
+              }
+            } catch (keyError) {
+              console.warn(`Error securely wiping key ${key}:`, keyError);
+              // Try regular deletion as fallback
+              try {
+                await SecureStore.deleteItemAsync(key);
+              } catch (deleteError) {
+                console.error(`Failed to delete key ${key}:`, deleteError);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error during secure key wipe:', error);
+          throw error;
+        }
       }
     }),
     {
