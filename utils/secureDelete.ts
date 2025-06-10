@@ -69,6 +69,30 @@ export const secureDeleteFile = async (uri: string, passes: number = 3): Promise
     // Finally delete the file
     await FileSystem.deleteAsync(uri, { idempotent: true });
     
+    // Also delete any associated metadata files
+    try {
+      const metadataUri = `${uri}.metadata`;
+      const metadataInfo = await FileSystem.getInfoAsync(metadataUri);
+      if (metadataInfo.exists) {
+        await FileSystem.deleteAsync(metadataUri, { idempotent: true });
+      }
+    } catch (metadataError) {
+      // Ignore errors with metadata deletion
+      console.warn('Error deleting metadata file:', metadataError);
+    }
+    
+    // Delete any cache files that might exist
+    try {
+      const cacheUri = `${uri}.cache`;
+      const cacheInfo = await FileSystem.getInfoAsync(cacheUri);
+      if (cacheInfo.exists) {
+        await FileSystem.deleteAsync(cacheUri, { idempotent: true });
+      }
+    } catch (cacheError) {
+      // Ignore errors with cache deletion
+      console.warn('Error deleting cache file:', cacheError);
+    }
+    
   } catch (error) {
     console.error('Error securely deleting file:', error);
     // If secure deletion fails, try regular deletion as fallback
@@ -203,9 +227,83 @@ export const secureWipeAllUserData = async (): Promise<void> => {
     // Clean up cache directory
     await cleanupTemporaryFiles();
     
+    // Also clean up any metadata files in the document directory
+    try {
+      const docContents = await FileSystem.readDirectoryAsync(docDir);
+      for (const item of docContents) {
+        if (item.endsWith('.metadata') || item.endsWith('.cache')) {
+          await FileSystem.deleteAsync(`${docDir}${item}`, { idempotent: true });
+        }
+      }
+    } catch (metadataError) {
+      console.warn('Error cleaning up metadata files:', metadataError);
+    }
+    
     console.log('All user data securely wiped');
   } catch (error) {
     console.error('Error during secure data wipe:', error);
+    throw error;
+  }
+};
+
+/**
+ * Securely delete a specific file and all associated metadata/cache files
+ * 
+ * @param baseUri The base URI of the file to delete
+ * @param passes Number of overwrite passes (default: 3)
+ * @returns Promise resolving when deletion is complete
+ */
+export const secureDeleteFileWithMetadata = async (baseUri: string, passes: number = 3): Promise<void> => {
+  if (Platform.OS === 'web' || !baseUri) return;
+  
+  try {
+    // Delete the main file
+    await secureDeleteFile(baseUri, passes);
+    
+    // Get the directory and filename
+    const lastSlashIndex = baseUri.lastIndexOf('/');
+    const directory = baseUri.substring(0, lastSlashIndex + 1);
+    const filename = baseUri.substring(lastSlashIndex + 1);
+    const filenameWithoutExt = filename.includes('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename;
+    
+    // Look for any related files in the same directory
+    try {
+      const dirContents = await FileSystem.readDirectoryAsync(directory);
+      
+      // Find and delete any files that might be related (metadata, thumbnails, etc.)
+      for (const item of dirContents) {
+        if (item.startsWith(filenameWithoutExt) && item !== filename) {
+          await secureDeleteFile(`${directory}${item}`, passes);
+        }
+      }
+    } catch (dirError) {
+      console.warn('Error searching directory for related files:', dirError);
+    }
+    
+    // Check for specific metadata files
+    const metadataPatterns = [
+      `${baseUri}.metadata`,
+      `${baseUri}.cache`,
+      `${baseUri}.thumb`,
+      `${baseUri}.thumbnail`,
+      `${baseUri}_metadata`,
+      `${baseUri}_thumb`
+    ];
+    
+    for (const metadataUri of metadataPatterns) {
+      try {
+        const metadataInfo = await FileSystem.getInfoAsync(metadataUri);
+        if (metadataInfo.exists) {
+          await secureDeleteFile(metadataUri, passes);
+        }
+      } catch (metadataError) {
+        // Ignore errors with metadata deletion
+        console.warn(`Error checking/deleting metadata file ${metadataUri}:`, metadataError);
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error securely deleting file with metadata:', error);
     throw error;
   }
 };

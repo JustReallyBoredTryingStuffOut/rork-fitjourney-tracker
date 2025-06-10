@@ -13,7 +13,7 @@ import {
   verifyEncryptedFile,
   reEncryptFile
 } from "@/utils/fileEncryption";
-import { secureDeleteFile, secureDeleteDirectory } from "@/utils/secureDelete";
+import { secureDeleteFile, secureDeleteDirectory, secureDeleteFileWithMetadata } from "@/utils/secureDelete";
 
 export type FoodPhoto = {
   id: string;
@@ -182,8 +182,8 @@ export const usePhotoStore = create<PhotoState>()(
               // Use secure deletion for encrypted files
               await deleteEncryptedPhoto(photoToDelete.uri);
             } else {
-              // For regular files, use secure deletion
-              await secureDeleteFile(photoToDelete.uri, 3);
+              // For regular files, use secure deletion with metadata
+              await secureDeleteFileWithMetadata(photoToDelete.uri, 3);
             }
           } catch (error) {
             console.error("Error deleting food photo:", error);
@@ -241,8 +241,8 @@ export const usePhotoStore = create<PhotoState>()(
               // Use secure deletion for encrypted files
               await deleteEncryptedPhoto(photoToDelete.uri);
             } else {
-              // For regular files, use secure deletion
-              await secureDeleteFile(photoToDelete.uri, 3);
+              // For regular files, use secure deletion with metadata
+              await secureDeleteFileWithMetadata(photoToDelete.uri, 3);
             }
           } catch (error) {
             console.error("Error deleting progress photo:", error);
@@ -303,8 +303,8 @@ export const usePhotoStore = create<PhotoState>()(
               // Use secure deletion for encrypted files
               await deleteEncryptedPhoto(mediaToDelete.uri);
             } else {
-              // For regular files, use secure deletion
-              await secureDeleteFile(mediaToDelete.uri, 3);
+              // For regular files, use secure deletion with metadata
+              await secureDeleteFileWithMetadata(mediaToDelete.uri, 3);
             }
           } catch (error) {
             console.error("Error deleting workout media:", error);
@@ -489,7 +489,7 @@ export const usePhotoStore = create<PhotoState>()(
             
             for (const uri of allPhotos) {
               if (!uri.startsWith(ENCRYPTED_PHOTOS_DIR) && !uri.startsWith('http')) {
-                await secureDeleteFile(uri, 3);
+                await secureDeleteFileWithMetadata(uri, 3);
               }
             }
             
@@ -567,6 +567,8 @@ export const usePhotoStore = create<PhotoState>()(
           progressPhotosCount: progressPhotos.length,
           workoutMediaCount: workoutMedia.length,
           encryptionEnabled: get().encryptionEnabled,
+          encryptionVersion: 2, // Current encryption version
+          lastEncryptionCheck: get().lastEncryptionCheck,
           foodPhotos: foodPhotosMeta,
           progressPhotos: progressPhotosMeta,
           workoutMedia: workoutMediaMeta

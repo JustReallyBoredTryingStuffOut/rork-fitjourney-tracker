@@ -1,8 +1,5 @@
 import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 
-// Create a production-ready HealthKit module that bridges to native code
-// This implementation includes both real device communication and a simulation mode for development/testing
-
 /**
  * Production-ready HealthKit module
  * 
@@ -20,16 +17,52 @@ import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
  * - Web compatibility
  */
 
+// Configuration for production vs development
+const CONFIG = {
+  // In a real app, this would be controlled by build configuration
+  USE_SIMULATION_IN_DEV: true,
+  ENABLE_DETAILED_LOGGING: __DEV__,
+  SIMULATION_UPDATE_INTERVAL: 60000, // 1 minute
+};
+
+// Error codes for better error handling
+const ERROR_CODES = {
+  NOT_AVAILABLE: 'HEALTHKIT_NOT_AVAILABLE',
+  PERMISSION_DENIED: 'HEALTHKIT_PERMISSION_DENIED',
+  DATA_FETCH_ERROR: 'HEALTHKIT_DATA_FETCH_ERROR',
+  INVALID_PARAMETERS: 'HEALTHKIT_INVALID_PARAMETERS',
+  UNKNOWN_ERROR: 'HEALTHKIT_UNKNOWN_ERROR',
+};
+
 // Mock implementation for development, testing, and non-iOS platforms
 const mockHealthKitModule = {
-  isHealthDataAvailable: () => Promise.resolve(true),
+  isHealthDataAvailable: () => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log('[HealthKit] Simulation: Checking if health data is available');
+    }
+    return Promise.resolve(true);
+  },
   
-  requestAuthorization: (dataTypes) => Promise.resolve({ 
-    authorized: true, 
-    dataTypes 
-  }),
+  requestAuthorization: (dataTypes) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Requesting authorization for: ${dataTypes.join(', ')}`);
+    }
+    return Promise.resolve({ 
+      authorized: true, 
+      dataTypes 
+    });
+  },
   
   getStepCount: (startDate, endDate) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Getting step count from ${startDate} to ${endDate}`);
+    }
+    
+    // Validate parameters
+    if (!startDate || !endDate) {
+      return Promise.reject(new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`));
+    }
+    
     // Generate realistic step count based on time of day
     const now = new Date();
     const hour = now.getHours();
@@ -69,6 +102,10 @@ const mockHealthKitModule = {
   },
   
   observeStepCount: (callback) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log('[HealthKit] Simulation: Setting up step count observer');
+    }
+    
     // Set up an interval to simulate step count updates
     const intervalId = setInterval(() => {
       // Get current steps
@@ -78,13 +115,27 @@ const mockHealthKitModule = {
       ).then(result => {
         callback(result);
       });
-    }, 60000); // Update every minute
+    }, CONFIG.SIMULATION_UPDATE_INTERVAL);
     
     // Return a function to clear the interval
-    return () => clearInterval(intervalId);
+    return () => {
+      if (CONFIG.ENABLE_DETAILED_LOGGING) {
+        console.log('[HealthKit] Simulation: Removing step count observer');
+      }
+      clearInterval(intervalId);
+    };
   },
   
   getDistanceWalking: (startDate, endDate) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Getting walking distance from ${startDate} to ${endDate}`);
+    }
+    
+    // Validate parameters
+    if (!startDate || !endDate) {
+      return Promise.reject(new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`));
+    }
+    
     // Generate realistic distance based on step count
     return mockHealthKitModule.getStepCount(startDate, endDate)
       .then(result => {
@@ -98,6 +149,15 @@ const mockHealthKitModule = {
   },
   
   getActiveEnergyBurned: (startDate, endDate) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Getting active energy burned from ${startDate} to ${endDate}`);
+    }
+    
+    // Validate parameters
+    if (!startDate || !endDate) {
+      return Promise.reject(new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`));
+    }
+    
     // Generate realistic calories based on step count
     return mockHealthKitModule.getStepCount(startDate, endDate)
       .then(result => {
@@ -111,6 +171,15 @@ const mockHealthKitModule = {
   },
   
   getHeartRateSamples: (startDate, endDate) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Getting heart rate samples from ${startDate} to ${endDate}`);
+    }
+    
+    // Validate parameters
+    if (!startDate || !endDate) {
+      return Promise.reject(new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`));
+    }
+    
     // Generate realistic heart rate samples
     const samples = [];
     const startTime = new Date(startDate).getTime();
@@ -131,6 +200,15 @@ const mockHealthKitModule = {
   },
   
   getSleepAnalysis: (startDate, endDate) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Getting sleep analysis from ${startDate} to ${endDate}`);
+    }
+    
+    // Validate parameters
+    if (!startDate || !endDate) {
+      return Promise.reject(new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`));
+    }
+    
     // Generate realistic sleep data
     const sleepData = {
       inBed: 0,
@@ -158,6 +236,15 @@ const mockHealthKitModule = {
   },
   
   getWorkouts: (startDate, endDate) => {
+    if (CONFIG.ENABLE_DETAILED_LOGGING) {
+      console.log(`[HealthKit] Simulation: Getting workouts from ${startDate} to ${endDate}`);
+    }
+    
+    // Validate parameters
+    if (!startDate || !endDate) {
+      return Promise.reject(new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`));
+    }
+    
     // Generate sample workouts
     const workouts = [];
     const workoutTypes = ['walking', 'running', 'cycling', 'swimming', 'strength_training'];
@@ -207,10 +294,21 @@ const mockHealthKitModule = {
  * and proper platform-specific implementations.
  */
 
+// Determine if we should use the mock module
+const shouldUseMock = () => {
+  // In production, only use mock if native module is not available
+  if (!__DEV__ || !CONFIG.USE_SIMULATION_IN_DEV) {
+    return !NativeModules.HealthKitModule;
+  }
+  
+  // In development, use mock for non-iOS platforms or if native module is not available
+  return Platform.OS !== 'ios' || !NativeModules.HealthKitModule;
+};
+
 // Use the native module if available, otherwise use the mock
-const HealthKitModule = Platform.OS === 'ios' && NativeModules.HealthKitModule 
-  ? NativeModules.HealthKitModule 
-  : mockHealthKitModule;
+const HealthKitModule = shouldUseMock() 
+  ? mockHealthKitModule 
+  : NativeModules.HealthKitModule;
 
 // Create an event emitter for the module
 const healthKitEmitter = new NativeEventEmitter(HealthKitModule);
@@ -223,7 +321,7 @@ const healthKitEmitter = new NativeEventEmitter(HealthKitModule);
 class HealthKit {
   constructor() {
     this.listeners = {};
-    this.simulationMode = !NativeModules.HealthKitModule || Platform.OS !== 'ios';
+    this.simulationMode = shouldUseMock();
     
     // Log whether we're using simulation mode
     if (__DEV__) {
@@ -237,10 +335,6 @@ class HealthKit {
    */
   async isHealthDataAvailable() {
     try {
-      if (this.simulationMode) {
-        return true;
-      }
-      
       return await HealthKitModule.isHealthDataAvailable();
     } catch (error) {
       console.error("Error checking HealthKit availability:", error);
@@ -255,10 +349,6 @@ class HealthKit {
    */
   async requestAuthorization(dataTypes) {
     try {
-      if (this.simulationMode) {
-        return { authorized: true, dataTypes };
-      }
-      
       return await HealthKitModule.requestAuthorization(dataTypes);
     } catch (error) {
       console.error("Error requesting HealthKit authorization:", error);
@@ -274,6 +364,11 @@ class HealthKit {
    */
   async getStepCount(startDate, endDate) {
     try {
+      // Validate parameters
+      if (!startDate || !endDate) {
+        throw new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`);
+      }
+      
       return await HealthKitModule.getStepCount(startDate, endDate);
     } catch (error) {
       console.error("Error getting step count:", error);
@@ -297,7 +392,7 @@ class HealthKit {
         ).then(result => {
           callback(result);
         });
-      }, 60000); // Update every minute
+      }, CONFIG.SIMULATION_UPDATE_INTERVAL);
       
       // Return a function to clear the interval
       return () => clearInterval(intervalId);
@@ -316,6 +411,11 @@ class HealthKit {
    */
   async getDistanceWalking(startDate, endDate) {
     try {
+      // Validate parameters
+      if (!startDate || !endDate) {
+        throw new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`);
+      }
+      
       return await HealthKitModule.getDistanceWalking(startDate, endDate);
     } catch (error) {
       console.error("Error getting walking distance:", error);
@@ -331,6 +431,11 @@ class HealthKit {
    */
   async getActiveEnergyBurned(startDate, endDate) {
     try {
+      // Validate parameters
+      if (!startDate || !endDate) {
+        throw new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`);
+      }
+      
       return await HealthKitModule.getActiveEnergyBurned(startDate, endDate);
     } catch (error) {
       console.error("Error getting active energy burned:", error);
@@ -346,6 +451,11 @@ class HealthKit {
    */
   async getHeartRateSamples(startDate, endDate) {
     try {
+      // Validate parameters
+      if (!startDate || !endDate) {
+        throw new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`);
+      }
+      
       return await HealthKitModule.getHeartRateSamples(startDate, endDate);
     } catch (error) {
       console.error("Error getting heart rate samples:", error);
@@ -361,6 +471,11 @@ class HealthKit {
    */
   async getSleepAnalysis(startDate, endDate) {
     try {
+      // Validate parameters
+      if (!startDate || !endDate) {
+        throw new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`);
+      }
+      
       return await HealthKitModule.getSleepAnalysis(startDate, endDate);
     } catch (error) {
       console.error("Error getting sleep analysis:", error);
@@ -376,10 +491,170 @@ class HealthKit {
    */
   async getWorkouts(startDate, endDate) {
     try {
+      // Validate parameters
+      if (!startDate || !endDate) {
+        throw new Error(`${ERROR_CODES.INVALID_PARAMETERS}: Start date and end date are required`);
+      }
+      
       return await HealthKitModule.getWorkouts(startDate, endDate);
     } catch (error) {
       console.error("Error getting workouts:", error);
       return { success: false, error: error.message };
+    }
+  }
+  
+  /**
+   * Get the current authorization status for HealthKit
+   * @returns {Promise<{authorized: boolean}>} Promise resolving to authorization status
+   */
+  async getAuthorizationStatus() {
+    try {
+      if (this.simulationMode) {
+        return { authorized: true };
+      }
+      
+      return await HealthKitModule.getAuthorizationStatus();
+    } catch (error) {
+      console.error("Error getting authorization status:", error);
+      return { authorized: false, error: error.message };
+    }
+  }
+  
+  /**
+   * Get the available data types on this device
+   * @returns {Promise<{dataTypes: string[]}>} Promise resolving to available data types
+   */
+  async getAvailableDataTypes() {
+    try {
+      if (this.simulationMode) {
+        return { 
+          dataTypes: [
+            'steps', 
+            'distance', 
+            'calories', 
+            'heartRate', 
+            'sleep', 
+            'workouts'
+          ] 
+        };
+      }
+      
+      return await HealthKitModule.getAvailableDataTypes();
+    } catch (error) {
+      console.error("Error getting available data types:", error);
+      return { dataTypes: [], error: error.message };
+    }
+  }
+  
+  /**
+   * Get the user's biological sex
+   * @returns {Promise<{biologicalSex: string}>} Promise resolving to biological sex
+   */
+  async getBiologicalSex() {
+    try {
+      if (this.simulationMode) {
+        // Randomly return male or female
+        return { 
+          biologicalSex: Math.random() > 0.5 ? 'male' : 'female',
+          success: true 
+        };
+      }
+      
+      return await HealthKitModule.getBiologicalSex();
+    } catch (error) {
+      console.error("Error getting biological sex:", error);
+      return { biologicalSex: 'unknown', success: false, error: error.message };
+    }
+  }
+  
+  /**
+   * Get the user's date of birth
+   * @returns {Promise<{dateOfBirth: string}>} Promise resolving to date of birth
+   */
+  async getDateOfBirth() {
+    try {
+      if (this.simulationMode) {
+        // Return a random date of birth for someone 20-40 years old
+        const now = new Date();
+        const years = 20 + Math.floor(Math.random() * 20);
+        const birthDate = new Date(now.getFullYear() - years, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+        
+        return { 
+          dateOfBirth: birthDate.toISOString(),
+          success: true 
+        };
+      }
+      
+      return await HealthKitModule.getDateOfBirth();
+    } catch (error) {
+      console.error("Error getting date of birth:", error);
+      return { dateOfBirth: null, success: false, error: error.message };
+    }
+  }
+  
+  /**
+   * Get the user's blood type
+   * @returns {Promise<{bloodType: string}>} Promise resolving to blood type
+   */
+  async getBloodType() {
+    try {
+      if (this.simulationMode) {
+        // Return a random blood type
+        const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        return { 
+          bloodType: bloodTypes[Math.floor(Math.random() * bloodTypes.length)],
+          success: true 
+        };
+      }
+      
+      return await HealthKitModule.getBloodType();
+    } catch (error) {
+      console.error("Error getting blood type:", error);
+      return { bloodType: 'unknown', success: false, error: error.message };
+    }
+  }
+  
+  /**
+   * Get the user's height
+   * @returns {Promise<{height: number, unit: string}>} Promise resolving to height
+   */
+  async getHeight() {
+    try {
+      if (this.simulationMode) {
+        // Return a random height between 150-190 cm
+        return { 
+          height: 150 + Math.floor(Math.random() * 40),
+          unit: 'cm',
+          success: true 
+        };
+      }
+      
+      return await HealthKitModule.getHeight();
+    } catch (error) {
+      console.error("Error getting height:", error);
+      return { height: 0, unit: 'cm', success: false, error: error.message };
+    }
+  }
+  
+  /**
+   * Get the user's weight
+   * @returns {Promise<{weight: number, unit: string}>} Promise resolving to weight
+   */
+  async getWeight() {
+    try {
+      if (this.simulationMode) {
+        // Return a random weight between 50-100 kg
+        return { 
+          weight: 50 + Math.floor(Math.random() * 50),
+          unit: 'kg',
+          success: true 
+        };
+      }
+      
+      return await HealthKitModule.getWeight();
+    } catch (error) {
+      console.error("Error getting weight:", error);
+      return { weight: 0, unit: 'kg', success: false, error: error.message };
     }
   }
 }

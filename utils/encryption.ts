@@ -14,6 +14,7 @@ const SALT_LENGTH = 16; // bytes
 const IV_LENGTH = 12; // bytes for AES-GCM
 const ITERATION_COUNT = 100000; // for PBKDF2
 const TAG_LENGTH = 128; // bits for AES-GCM authentication tag
+const ENCRYPTION_VERSION = 2; // Current encryption version
 
 // Generate a secure random encryption key
 export const generateEncryptionKey = async (): Promise<string> => {
@@ -50,11 +51,13 @@ export const storeEncryptionKey = async (key: string): Promise<void> => {
     );
     await AsyncStorage.setItem('encryption-key-hash', keyHash);
     await AsyncStorage.setItem('encryption-key', key);
+    await AsyncStorage.setItem('encryption-version', ENCRYPTION_VERSION.toString());
     return;
   }
   
   // For native platforms, use SecureStore
   await SecureStore.setItemAsync('encryption-key', key);
+  await SecureStore.setItemAsync('encryption-version', ENCRYPTION_VERSION.toString());
 };
 
 // Retrieve the encryption key
@@ -82,6 +85,17 @@ export const getEncryptionKey = async (): Promise<string | null> => {
   }
   
   return SecureStore.getItemAsync('encryption-key');
+};
+
+// Get the current encryption version
+export const getEncryptionVersion = async (): Promise<number> => {
+  if (Platform.OS === 'web') {
+    const version = await AsyncStorage.getItem('encryption-version');
+    return version ? parseInt(version, 10) : 1;
+  }
+  
+  const version = await SecureStore.getItemAsync('encryption-version');
+  return version ? parseInt(version, 10) : 1;
 };
 
 // Helper functions for encoding/decoding
@@ -237,8 +251,9 @@ export const encryptData = async (data: string): Promise<string> => {
           dataBuffer
         );
         
-        // Format: base64(salt) + '.' + base64(iv) + '.' + base64(encryptedData)
-        return bufferToBase64(salt) + '.' + 
+        // Format: version + '.' + base64(salt) + '.' + base64(iv) + '.' + base64(encryptedData)
+        return ENCRYPTION_VERSION + '.' + 
+               bufferToBase64(salt) + '.' + 
                bufferToBase64(iv) + '.' + 
                bufferToBase64(encryptedBuffer);
       }
@@ -258,8 +273,9 @@ export const encryptData = async (data: string): Promise<string> => {
       // This is a simplified version - in production, use a native crypto module
       const encryptedData = await simpleAesEncrypt(data, derivedKey, iv);
       
-      // Format: base64(salt) + '.' + base64(iv) + '.' + base64(encryptedData)
-      return bufferToBase64(salt) + '.' + 
+      // Format: version + '.' + base64(salt) + '.' + base64(iv) + '.' + base64(encryptedData)
+      return ENCRYPTION_VERSION + '.' + 
+             bufferToBase64(salt) + '.' + 
              bufferToBase64(iv) + '.' + 
              encryptedData;
     }
@@ -270,7 +286,8 @@ export const encryptData = async (data: string): Promise<string> => {
   // Last resort fallback to very simple encryption
   // This should almost never be used in production
   console.warn('Using last resort encryption fallback - NOT SECURE FOR PRODUCTION');
-  return 'fallback.' + bufferToBase64(salt) + '.' + 
+  return 'fallback.' + ENCRYPTION_VERSION + '.' + 
+         bufferToBase64(salt) + '.' + 
          bufferToBase64(iv) + '.' + 
          btoa(simpleEncrypt(data, masterKey));
 };
@@ -288,22 +305,23 @@ export const decryptData = async (encryptedData: string): Promise<string | null>
   const parts = encryptedData.split('.');
   
   // Check if this is our fallback format
-  if (parts[0] === 'fallback' && parts.length === 4) {
-    const salt = base64ToBuffer(parts[1]);
+  if (parts[0] === 'fallback' && parts.length === 5) {
+    const salt = base64ToBuffer(parts[2]);
     // We don't use IV in the fallback decryption
-    const encryptedText = atob(parts[3]);
+    const encryptedText = atob(parts[4]);
     return simpleEncrypt(encryptedText, masterKey); // XOR is its own inverse
   }
   
-  // Standard format: base64(salt) + '.' + base64(iv) + '.' + base64(encryptedData)
-  if (parts.length !== 3) {
+  // Standard format: version + '.' + base64(salt) + '.' + base64(iv) + '.' + base64(encryptedData)
+  if (parts.length !== 4) {
     console.error('Invalid encrypted data format');
     return null;
   }
   
-  const salt = base64ToBuffer(parts[0]);
-  const iv = base64ToBuffer(parts[1]);
-  const encryptedContent = parts[2];
+  const version = parseInt(parts[0], 10);
+  const salt = base64ToBuffer(parts[1]);
+  const iv = base64ToBuffer(parts[2]);
+  const encryptedContent = parts[3];
   
   // Web implementation using Web Crypto API
   if (Platform.OS === 'web' && window.crypto && window.crypto.subtle) {

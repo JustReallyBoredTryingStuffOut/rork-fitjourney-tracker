@@ -3,15 +3,17 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { secureStore, generateEncryptionKey, storeEncryptionKey } from "@/utils/encryption";
+import { secureStore, generateEncryptionKey, storeEncryptionKey, getEncryptionVersion } from "@/utils/encryption";
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import { cleanupTempDecryptedFiles, deleteAllEncryptedPhotos } from "@/utils/fileEncryption";
+import { secureDeleteFile, secureWipeAllUserData } from "@/utils/secureDelete";
 
 interface SecureStoreState {
   hasInitializedEncryption: boolean;
   userConsent: boolean;
   encryptionVersion: number;
+  lastEncryptionCheck: string | null;
   
   // Actions
   setUserConsent: (consent: boolean) => void;
@@ -29,6 +31,10 @@ interface SecureStoreState {
   // Secure deletion
   secureWipeAllData: () => Promise<void>;
   secureWipeStorageKeys: (keys: string[]) => Promise<void>;
+  
+  // Encryption management
+  verifyEncryption: () => Promise<boolean>;
+  upgradeEncryption: () => Promise<boolean>;
 }
 
 // Create a secure storage adapter for zustand
@@ -75,6 +81,7 @@ export const useSecureStore = create<SecureStoreState>()(
       hasInitializedEncryption: false,
       userConsent: false,
       encryptionVersion: 2, // Track encryption version for potential future upgrades
+      lastEncryptionCheck: null,
       
       setUserConsent: (consent) => set({ userConsent: consent }),
       
@@ -119,21 +126,28 @@ export const useSecureStore = create<SecureStoreState>()(
             await secureStore.setItem('encryption-version', get().encryptionVersion.toString());
           } else {
             // Check if we need to upgrade encryption
-            const storedVersion = await secureStore.getItem('encryption-version');
-            const currentVersion = storedVersion ? parseInt(storedVersion, 10) : 1;
+            const storedVersion = await getEncryptionVersion();
             
-            if (currentVersion < get().encryptionVersion) {
+            if (storedVersion < get().encryptionVersion) {
               // In a real app, you would implement migration logic here
-              // to re-encrypt data with the new encryption method
-              console.log('Encryption upgrade needed from version', currentVersion, 
+              console.log('Encryption upgrade needed from version', storedVersion, 
                          'to', get().encryptionVersion);
               
               // Update the stored version
               await secureStore.setItem('encryption-version', get().encryptionVersion.toString());
+              
+              // Perform encryption upgrade
+              await get().upgradeEncryption();
             }
           }
           
-          set({ hasInitializedEncryption: true });
+          // Set last encryption check timestamp
+          const now = new Date().toISOString();
+          await secureStore.setItem('last-encryption-check', now);
+          set({ 
+            hasInitializedEncryption: true,
+            lastEncryptionCheck: now
+          });
         } catch (error) {
           console.error('Failed to initialize encryption:', error);
         }
@@ -159,6 +173,7 @@ export const useSecureStore = create<SecureStoreState>()(
         const userData = {
           exportDate: new Date().toISOString(),
           encryptionVersion: get().encryptionVersion,
+          lastEncryptionCheck: get().lastEncryptionCheck,
           message: "This would contain all user data in a real implementation"
         };
         
@@ -173,6 +188,7 @@ export const useSecureStore = create<SecureStoreState>()(
         set({
           hasInitializedEncryption: false,
           userConsent: false,
+          lastEncryptionCheck: null,
           encryptionVersion: get().encryptionVersion // Keep the version number
         });
       },
@@ -189,6 +205,11 @@ export const useSecureStore = create<SecureStoreState>()(
         }
         
         try {
+          // Use the dedicated function for secure data wiping
+          await secureWipeAllUserData();
+          
+          // Additional cleanup specific to this app
+          
           // 1. Delete all encrypted photos
           await deleteAllEncryptedPhotos();
           
@@ -209,38 +230,11 @@ export const useSecureStore = create<SecureStoreState>()(
             'notification-settings',
             'user-profile-secure',
             'health-data-secure',
-            'workout-data-secure'
+            'workout-data-secure',
+            'last-encryption-check'
           ];
           
           await get().secureWipeStorageKeys(keysToDelete);
-          
-          // 5. Clear app document directory
-          const appDirs = [
-            `${FileSystem.documentDirectory}photos/`,
-            `${FileSystem.documentDirectory}workouts/`,
-            `${FileSystem.documentDirectory}exports/`,
-            `${FileSystem.documentDirectory}logs/`
-          ];
-          
-          for (const dir of appDirs) {
-            const dirInfo = await FileSystem.getInfoAsync(dir);
-            if (dirInfo.exists) {
-              await FileSystem.deleteAsync(dir, { idempotent: true });
-            }
-          }
-          
-          // 6. Clear cache directory
-          const cacheDir = FileSystem.cacheDirectory;
-          if (cacheDir) {
-            try {
-              const cacheContents = await FileSystem.readDirectoryAsync(cacheDir);
-              for (const item of cacheContents) {
-                await FileSystem.deleteAsync(`${cacheDir}${item}`, { idempotent: true });
-              }
-            } catch (error) {
-              console.warn('Error clearing cache directory:', error);
-            }
-          }
           
           console.log('All user data securely wiped');
         } catch (error) {
@@ -295,6 +289,64 @@ export const useSecureStore = create<SecureStoreState>()(
         } catch (error) {
           console.error('Error during secure key wipe:', error);
           throw error;
+        }
+      },
+      
+      verifyEncryption: async () => {
+        try {
+          // 1. Check if encryption key exists
+          const key = await secureStore.getItem('encryption-key');
+          if (!key) {
+            console.error('Encryption key not found');
+            return false;
+          }
+          
+          // 2. Check encryption version
+          const storedVersion = await getEncryptionVersion();
+          if (storedVersion < get().encryptionVersion) {
+            console.warn(`Encryption version outdated: ${storedVersion} < ${get().encryptionVersion}`);
+          }
+          
+          // 3. Test encryption/decryption
+          const testData = `Test data ${Date.now()}`;
+          const encrypted = await secureStore.setItem('encryption-test', testData);
+          const decrypted = await secureStore.getItem('encryption-test');
+          
+          if (decrypted !== testData) {
+            console.error('Encryption verification failed: test data mismatch');
+            return false;
+          }
+          
+          // 4. Update last check timestamp
+          const now = new Date().toISOString();
+          await secureStore.setItem('last-encryption-check', now);
+          set({ lastEncryptionCheck: now });
+          
+          return true;
+        } catch (error) {
+          console.error('Error verifying encryption:', error);
+          return false;
+        }
+      },
+      
+      upgradeEncryption: async () => {
+        try {
+          // This would implement logic to re-encrypt data with the new encryption method
+          // For example, you might:
+          // 1. Generate a new encryption key
+          // 2. Decrypt all data with the old key
+          // 3. Re-encrypt with the new key
+          // 4. Update the stored encryption version
+          
+          // For this example, we'll just update the version
+          await secureStore.setItem('encryption-version', get().encryptionVersion.toString());
+          
+          // In a real implementation, you would re-encrypt sensitive data here
+          
+          return true;
+        } catch (error) {
+          console.error('Error upgrading encryption:', error);
+          return false;
         }
       }
     }),

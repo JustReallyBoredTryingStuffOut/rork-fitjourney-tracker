@@ -16,6 +16,7 @@ export default function StepCounter({ compact = false }: StepCounterProps) {
     isPedometerAvailable, 
     isTracking, 
     error, 
+    errorType,
     startTracking, 
     stopTracking,
     manualSync,
@@ -27,10 +28,10 @@ export default function StepCounter({ compact = false }: StepCounterProps) {
     permissionStatus,
     dataSource,
     healthKitAvailable,
-    healthKitAuthorized
+    healthKitAuthorized,
+    isSyncing
   } = useStepCounter();
   
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   
   // Calculate progress percentage
@@ -52,9 +53,17 @@ export default function StepCounter({ compact = false }: StepCounterProps) {
       return;
     }
     
-    setIsSyncing(true);
-    await manualSync();
-    setIsSyncing(false);
+    const success = await manualSync();
+    
+    if (success) {
+      // Success is already handled in the hook
+    } else {
+      Alert.alert(
+        "Sync Failed", 
+        "Could not sync with your health data source. Please try again later.",
+        [{ text: "OK" }]
+      );
+    }
   };
   
   const handleRetry = async () => {

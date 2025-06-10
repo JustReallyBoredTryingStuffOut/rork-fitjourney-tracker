@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { encryptData, decryptData } from './encryption';
 import * as Crypto from 'expo-crypto';
 import * as Random from 'expo-random';
-import { secureDeleteFile } from './secureDelete';
+import { secureDeleteFile, secureDeleteFileWithMetadata } from './secureDelete';
 
 // Directory for encrypted photos
 export const ENCRYPTED_PHOTOS_DIR = `${FileSystem.documentDirectory}encrypted_photos/`;
@@ -108,7 +108,12 @@ export const encryptAndSavePhoto = async (
       type: fileExtension === 'gif' ? 'image/gif' : 'image/jpeg',
       name: fileName,
       timestamp: Date.now(),
-      originalSize: fileContent.length
+      originalSize: fileContent.length,
+      encryptionVersion: 2, // Track encryption version for future upgrades
+      contentHash: await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        fileContent.substring(0, Math.min(fileContent.length, 1024)) // Hash first 1KB for verification
+      )
     });
     
     // Encrypt the metadata and file content separately
@@ -120,6 +125,17 @@ export const encryptAndSavePhoto = async (
     
     // Write the encrypted content to the new file
     await FileSystem.writeAsStringAsync(encryptedFilePath, fullEncryptedContent);
+    
+    // Create a verification file to ensure integrity
+    const verificationHash = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      fullEncryptedContent.substring(0, Math.min(fullEncryptedContent.length, 1024)) // Hash first 1KB
+    );
+    
+    await FileSystem.writeAsStringAsync(
+      `${encryptedFilePath}.verify`,
+      verificationHash
+    );
     
     return encryptedFilePath;
   } catch (error) {
@@ -166,6 +182,18 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
       const decryptedContent = await decryptData(encryptedFileContent);
       if (!decryptedContent) {
         throw new Error('Failed to decrypt file content');
+      }
+      
+      // Verify content integrity if we have a hash in metadata
+      if (metadata.contentHash) {
+        const contentHash = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          decryptedContent.substring(0, Math.min(decryptedContent.length, 1024)) // Hash first 1KB
+        );
+        
+        if (contentHash !== metadata.contentHash) {
+          console.warn('Content hash verification failed, file may be corrupted');
+        }
       }
       
       // Create a temporary file for the decrypted content
@@ -218,7 +246,18 @@ export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
   
   try {
     // Securely overwrite and delete the file
-    await secureDeleteFile(uri, 3);
+    await secureDeleteFileWithMetadata(uri, 3);
+    
+    // Delete verification file if it exists
+    try {
+      const verifyUri = `${uri}.verify`;
+      const verifyInfo = await FileSystem.getInfoAsync(verifyUri);
+      if (verifyInfo.exists) {
+        await FileSystem.deleteAsync(verifyUri, { idempotent: true });
+      }
+    } catch (verifyError) {
+      console.warn('Error deleting verification file:', verifyError);
+    }
     
     // Also check for any temporary decrypted versions of this file
     // This is a best-effort cleanup of potential temp files
@@ -234,7 +273,7 @@ export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
         
         // Delete any related temp files
         for (const tempFile of relatedTempFiles) {
-          await FileSystem.deleteAsync(`${TEMP_DECRYPTED_DIR}${tempFile}`, { idempotent: true });
+          await secureDeleteFile(`${TEMP_DECRYPTED_DIR}${tempFile}`, 1);
         }
       } catch (tempError) {
         // Ignore errors with temp cleanup
@@ -251,6 +290,7 @@ export const getEncryptedPhotoInfo = async (uri: string): Promise<{
   size: number;
   modificationTime: number | undefined;
   exists: boolean;
+  metadata?: any;
 } | null> => {
   if (Platform.OS === 'web' || !uri.startsWith(ENCRYPTED_PHOTOS_DIR)) {
     return null;
@@ -258,10 +298,33 @@ export const getEncryptedPhotoInfo = async (uri: string): Promise<{
   
   try {
     const fileInfo = await FileSystem.getInfoAsync(uri);
+    
+    // Try to extract metadata if the file exists
+    let metadata = undefined;
+    if (fileInfo.exists) {
+      try {
+        const encryptedContent = await FileSystem.readAsStringAsync(uri);
+        
+        // Check if this is our new format with metadata
+        if (encryptedContent.includes('|||')) {
+          const [encryptedMetadata] = encryptedContent.split('|||');
+          
+          // Decrypt the metadata
+          const metadataStr = await decryptData(encryptedMetadata);
+          if (metadataStr) {
+            metadata = JSON.parse(metadataStr);
+          }
+        }
+      } catch (metadataError) {
+        console.warn('Error extracting metadata:', metadataError);
+      }
+    }
+    
     return {
       size: fileInfo.size,
       modificationTime: fileInfo.modificationTime,
-      exists: fileInfo.exists
+      exists: fileInfo.exists,
+      metadata
     };
   } catch (error) {
     console.error('Error getting encrypted photo info:', error);
@@ -281,7 +344,7 @@ export const cleanupTempDecryptedFiles = async (): Promise<void> => {
       
       // Delete each file
       for (const file of tempFiles) {
-        await FileSystem.deleteAsync(`${TEMP_DECRYPTED_DIR}${file}`, { idempotent: true });
+        await secureDeleteFile(`${TEMP_DECRYPTED_DIR}${file}`, 1);
       }
       
       console.log(`Cleaned up ${tempFiles.length} temporary decrypted files`);
@@ -303,7 +366,7 @@ export const deleteAllEncryptedPhotos = async (): Promise<void> => {
       
       // Securely delete each file
       for (const file of files) {
-        await secureDeleteFile(`${ENCRYPTED_PHOTOS_DIR}${file}`, 3);
+        await secureDeleteFileWithMetadata(`${ENCRYPTED_PHOTOS_DIR}${file}`, 3);
       }
       
       // Also delete the directory and recreate it
@@ -327,7 +390,33 @@ export const verifyEncryptedFile = async (uri: string): Promise<boolean> => {
   }
   
   try {
-    // Read the encrypted file
+    // Check if verification file exists
+    const verifyUri = `${uri}.verify`;
+    const verifyInfo = await FileSystem.getInfoAsync(verifyUri);
+    
+    if (verifyInfo.exists) {
+      // Read the verification hash
+      const storedHash = await FileSystem.readAsStringAsync(verifyUri);
+      
+      // Read the encrypted file
+      const encryptedContent = await FileSystem.readAsStringAsync(uri);
+      
+      // Calculate hash of the encrypted content
+      const calculatedHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        encryptedContent.substring(0, Math.min(encryptedContent.length, 1024)) // Hash first 1KB
+      );
+      
+      // Compare hashes
+      if (storedHash === calculatedHash) {
+        return true;
+      }
+      
+      console.warn('Verification hash mismatch for file:', uri);
+      return false;
+    }
+    
+    // If no verification file, check if we can decrypt the metadata
     const encryptedContent = await FileSystem.readAsStringAsync(uri);
     
     // Check if this is our new format with metadata
@@ -383,7 +472,7 @@ export const reEncryptFile = async (uri: string): Promise<string | null> => {
     await deleteEncryptedPhoto(uri);
     
     // Delete the temporary decrypted file
-    await FileSystem.deleteAsync(decryptedUri, { idempotent: true });
+    await secureDeleteFile(decryptedUri, 1);
     
     return newUri;
   } catch (error) {
