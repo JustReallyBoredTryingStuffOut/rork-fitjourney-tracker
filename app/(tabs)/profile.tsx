@@ -16,7 +16,6 @@ import {
   Award, 
   Camera, 
   Lock,
-  LogOut, 
   ChevronRight 
 } from "lucide-react-native";
 import { colors } from "@/constants/colors";
@@ -138,11 +137,6 @@ export default function ProfileScreen() {
         </View>
       ))}
       
-      <TouchableOpacity style={styles.logoutButton}>
-        <LogOut size={20} color={colors.error} />
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-      
       <View style={styles.footer}>
         <Text style={styles.version}>Version 1.0.0</Text>
         <TouchableOpacity onPress={() => router.push("/privacy-policy")}>
@@ -256,26 +250,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    margin: 16,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.error,
-    marginLeft: 8,
-  },
   footer: {
     padding: 16,
     alignItems: "center",
+    marginTop: 16,
+    marginBottom: 32,
   },
   version: {
     fontSize: 12,
