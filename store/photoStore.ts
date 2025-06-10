@@ -116,7 +116,7 @@ export const usePhotoStore = create<PhotoState>()(
       foodPhotos: [],
       progressPhotos: [],
       workoutMedia: [],
-      encryptionEnabled: true, // Enable encryption by default
+      encryptionEnabled: true, // Encryption is enabled by default
       
       toggleEncryption: (enabled) => {
         set({ encryptionEnabled: enabled });

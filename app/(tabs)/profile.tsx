@@ -73,12 +73,6 @@ export default function ProfileScreen() {
       title: "Privacy & Security",
       items: [
         {
-          icon: <Lock size={20} color={colors.primary} />,
-          title: "Privacy Settings",
-          description: "Encryption, data storage, and more",
-          onPress: () => router.push("/privacy-settings"),
-        },
-        {
           icon: <Settings size={20} color={colors.primary} />,
           title: "Data Management",
           onPress: () => router.push("/data-management"),
