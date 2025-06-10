@@ -33,6 +33,7 @@ type DraggableExerciseCardProps = {
 
 const CARD_HEIGHT = 80; // Height of collapsed card
 const DRAG_THRESHOLD = 40; // Distance needed to trigger a reorder
+const VIBRATION_COOLDOWN = 500; // milliseconds between vibrations
 
 export default function DraggableExerciseCard({
   exercise,
@@ -102,12 +103,15 @@ export default function DraggableExerciseCard({
         
         // Provide haptic feedback when drag starts
         if (Platform.OS !== 'web') {
-          Vibration.vibrate(50);
+          const now = Date.now();
+          if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
+            Vibration.vibrate(50);
+            lastVibrationTime.current = now;
+          }
         }
         
         // Reset the last reported drop zone
         lastReportedDropZone.current = null;
-        lastVibrationTime.current = Date.now();
         
         // Store the initial position
         pan.setOffset({
@@ -133,7 +137,7 @@ export default function DraggableExerciseCard({
           // Provide light haptic feedback when crossing threshold to a new position
           // But limit the frequency of vibrations to prevent excessive feedback
           const now = Date.now();
-          if (potentialDropIndex !== null && Platform.OS !== 'web' && now - lastVibrationTime.current > 300) {
+          if (potentialDropIndex !== null && Platform.OS !== 'web' && now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
             Vibration.vibrate(20);
             lastVibrationTime.current = now;
           }
@@ -161,7 +165,11 @@ export default function DraggableExerciseCard({
             
             // Provide haptic feedback when drop completes
             if (Platform.OS !== 'web') {
-              Vibration.vibrate(100);
+              const now = Date.now();
+              if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
+                Vibration.vibrate(100);
+                lastVibrationTime.current = now;
+              }
             }
           }
         });

@@ -137,6 +137,7 @@ export default function ActiveWorkoutScreen() {
     setIndex: number;
     weight: string;
     reps: string;
+    field: 'weight' | 'reps'; // Track which field is being edited
   } | null>(null);
   
   // State for exercise expansion
@@ -157,6 +158,10 @@ export default function ActiveWorkoutScreen() {
   
   // Ref to track if long workout notification has been shown
   const longWorkoutNotificationShown = useRef(false);
+  
+  // Ref to track last vibration time to prevent excessive vibrations
+  const lastVibrationTime = useRef(0);
+  const VIBRATION_COOLDOWN = 500; // milliseconds
   
   // Check if there are connected devices that can track workouts
   const hasConnectedDevices = connectedDevices.some(
@@ -556,12 +561,13 @@ export default function ActiveWorkoutScreen() {
     }
   };
   
-  const handleEditSet = (exerciseIndex: number, setIndex: number, weight: number, reps: number) => {
+  const handleEditSet = (exerciseIndex: number, setIndex: number, weight: number, reps: number, field: 'weight' | 'reps') => {
     setEditingSetData({
       exerciseIndex,
       setIndex,
       weight: weight ? weight.toString() : "",
-      reps: reps ? reps.toString() : ""
+      reps: reps ? reps.toString() : "",
+      field // Track which field is being edited
     });
   };
   
@@ -597,7 +603,11 @@ export default function ActiveWorkoutScreen() {
   const handleDragStart = (index: number) => {
     // Provide haptic feedback when drag starts
     if (Platform.OS !== 'web') {
-      Vibration.vibrate(50);
+      const now = Date.now();
+      if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
+        Vibration.vibrate(50);
+        lastVibrationTime.current = now;
+      }
     }
     setIsDragging(true);
     setDraggedExerciseIndex(index);
@@ -606,7 +616,11 @@ export default function ActiveWorkoutScreen() {
   const handleDragEnd = (fromIndex: number, toIndex: number) => {
     // Provide haptic feedback when drag ends
     if (Platform.OS !== 'web') {
-      Vibration.vibrate(50);
+      const now = Date.now();
+      if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
+        Vibration.vibrate(50);
+        lastVibrationTime.current = now;
+      }
     }
     
     setIsDragging(false);
@@ -645,7 +659,11 @@ export default function ActiveWorkoutScreen() {
     
     // Provide haptic feedback
     if (Platform.OS !== 'web') {
-      Vibration.vibrate(200);
+      const now = Date.now();
+      if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
+        Vibration.vibrate(200);
+        lastVibrationTime.current = now;
+      }
     }
     
     // Voice feedback
@@ -689,7 +707,11 @@ export default function ActiveWorkoutScreen() {
     
     // Provide haptic feedback
     if (Platform.OS !== 'web') {
-      Vibration.vibrate(100);
+      const now = Date.now();
+      if (now - lastVibrationTime.current > VIBRATION_COOLDOWN) {
+        Vibration.vibrate(100);
+        lastVibrationTime.current = now;
+      }
     }
     
     // Start rest timer
@@ -762,29 +784,39 @@ export default function ActiveWorkoutScreen() {
   const renderCustomNumericKeyboard = () => {
     if (!editingSetData) return null;
     
+    // Determine which field is being edited
+    const currentField = editingSetData.field;
+    
     const handleKeyPress = (key: string) => {
-      const field = editingSetData.exerciseIndex !== undefined ? 'weight' : 'reps';
-      let currentValue = field === 'weight' ? editingSetData.weight : editingSetData.reps;
+      // Get the current value based on which field is being edited
+      let currentValue = currentField === 'weight' ? editingSetData.weight : editingSetData.reps;
       
       if (key === 'backspace') {
         // Remove the last character
         currentValue = currentValue.slice(0, -1);
       } else if (key === '+') {
         // Increment the value
-        const numValue = parseFloat(currentValue) || 0;
-        currentValue = field === 'weight' 
-          ? (numValue + 2.5).toString() 
-          : (numValue + 1).toString();
+        if (currentField === 'weight') {
+          const numValue = parseFloat(currentValue) || 0;
+          currentValue = (numValue + 2.5).toString();
+        } else {
+          const numValue = parseInt(currentValue) || 0;
+          currentValue = (numValue + 1).toString();
+        }
       } else if (key === '-') {
         // Decrement the value
-        const numValue = parseFloat(currentValue) || 0;
-        const newValue = field === 'weight' 
-          ? Math.max(0, numValue - 2.5) 
-          : Math.max(0, numValue - 1);
-        currentValue = newValue.toString();
+        if (currentField === 'weight') {
+          const numValue = parseFloat(currentValue) || 0;
+          const newValue = Math.max(0, numValue - 2.5);
+          currentValue = newValue.toString();
+        } else {
+          const numValue = parseInt(currentValue) || 0;
+          const newValue = Math.max(0, numValue - 1);
+          currentValue = newValue.toString();
+        }
       } else if (key === '.') {
         // Only add decimal point if there isn't one already and we're editing weight
-        if (field === 'weight' && !currentValue.includes('.')) {
+        if (currentField === 'weight' && !currentValue.includes('.')) {
           currentValue += '.';
         }
       } else {
@@ -792,8 +824,8 @@ export default function ActiveWorkoutScreen() {
         currentValue += key;
       }
       
-      // Update the state
-      if (field === 'weight') {
+      // Update the state based on which field is being edited
+      if (currentField === 'weight') {
         setEditingSetData({
           ...editingSetData,
           weight: currentValue
@@ -810,7 +842,7 @@ export default function ActiveWorkoutScreen() {
       <View style={styles.customKeyboard}>
         <View style={styles.keyboardHeader}>
           <Text style={styles.keyboardTitle}>
-            {editingSetData.exerciseIndex !== undefined ? 'Enter Weight (kg)' : 'Enter Reps'}
+            {editingSetData.field === 'weight' ? 'Enter Weight (kg)' : 'Enter Reps'}
           </Text>
           <TouchableOpacity 
             style={styles.keyboardCloseButton}
@@ -877,12 +909,14 @@ export default function ActiveWorkoutScreen() {
             onPress={() => handleKeyPress('-')}
           >
             <Minus size={20} color={colors.text} />
+            <Text style={styles.keyboardSpecialKeyText}>Decrease</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.keyboardKey, styles.keyboardSpecialKey]} 
             onPress={() => handleKeyPress('+')}
           >
             <Plus size={20} color={colors.text} />
+            <Text style={styles.keyboardSpecialKeyText}>Increase</Text>
           </TouchableOpacity>
         </View>
         
@@ -1169,7 +1203,7 @@ export default function ActiveWorkoutScreen() {
                                 <>
                                   <TouchableOpacity 
                                     style={[styles.inputContainer, styles.weightColumn]}
-                                    onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
+                                    onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps, 'weight')}
                                   >
                                     <Text style={styles.setValueText}>
                                       {set.weight ? set.weight.toString() : ""}
@@ -1178,7 +1212,7 @@ export default function ActiveWorkoutScreen() {
                                   
                                   <TouchableOpacity 
                                     style={[styles.inputContainer, styles.repsColumn]}
-                                    onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps)}
+                                    onPress={() => handleEditSet(exerciseIndex, setIndex, set.weight, set.reps, 'reps')}
                                   >
                                     <Text style={styles.setValueText}>
                                       {set.reps ? set.reps.toString() : ""}
@@ -1833,7 +1867,7 @@ const styles = StyleSheet.create({
   setsHeaderText: {
     fontSize: 12,
     fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text,
     textAlign: "center",
   },
   setRow: {
@@ -2005,11 +2039,19 @@ const styles = StyleSheet.create({
   keyboardSpecialKey: {
     width: '48%',
     backgroundColor: colors.highlight,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   keyboardKeyText: {
     fontSize: 20,
     color: colors.text,
     fontWeight: '500',
+  },
+  keyboardSpecialKeyText: {
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: 8,
   },
   keyboardDoneButton: {
     backgroundColor: colors.primary,
