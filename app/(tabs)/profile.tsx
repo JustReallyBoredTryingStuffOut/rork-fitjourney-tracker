@@ -77,6 +77,11 @@ export default function ProfileScreen() {
           title: "Data Management",
           onPress: () => router.push("/data-management"),
         },
+        {
+          icon: <Lock size={20} color={colors.primary} />,
+          title: "Terms of Service",
+          onPress: () => router.push("/terms-of-service"),
+        },
       ],
     },
   ];
@@ -95,9 +100,11 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.gamificationTextContainer}>
             <Text style={styles.gamificationTitle}>Enable Achievement System</Text>
-            <Text style={styles.gamificationDescription}>
-              Turn on achievements, challenges, and rewards
-            </Text>
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.gamificationDescription}>
+                Turn on achievements, challenges, and rewards
+              </Text>
+            </View>
           </View>
         </View>
         <Switch
@@ -185,9 +192,9 @@ const styles = StyleSheet.create({
   },
   gamificationLeft: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
   },
   gamificationIconContainer: {
     width: 40,
@@ -200,18 +207,21 @@ const styles = StyleSheet.create({
   },
   gamificationTextContainer: {
     flex: 1,
-    paddingRight: 8,
   },
   gamificationTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
+    marginBottom: 4,
+  },
+  descriptionContainer: {
+    marginTop: 2,
   },
   gamificationDescription: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
     flexWrap: "wrap",
+    lineHeight: 16,
   },
   section: {
     padding: 16,
