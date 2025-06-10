@@ -976,7 +976,6 @@ const styles = StyleSheet.create({
   picker: {
     color: '#FFFFFF',
     height: 50,
-    backgroundColor: 'transparent',
   },
   pickerItemIOS: {
     fontSize: 16,

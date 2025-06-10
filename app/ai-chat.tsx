@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
   },
   input: {
     flex: 1,
@@ -419,11 +419,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
     fontSize: 16,
     color: colors.text,
     minHeight: 40,
+    maxHeight: 100,
   },
   sendButton: {
     width: 40,

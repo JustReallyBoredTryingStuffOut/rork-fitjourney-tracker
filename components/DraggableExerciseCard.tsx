@@ -37,7 +37,7 @@ type DraggableExerciseCardProps = {
 };
 
 const { height } = Dimensions.get('window');
-const CARD_HEIGHT = 200; // Approximate height of collapsed card
+const CARD_HEIGHT = 60; // Reduced height for collapsed card
 
 export default function DraggableExerciseCard({
   exercise,
@@ -87,10 +87,13 @@ export default function DraggableExerciseCard({
 
   // Only use PanResponder on mobile platforms
   const panResponder = Platform.OS !== 'web' ? PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: (_, gestureState) => {
+      // Only respond to touches on the drag handle area
+      return gestureState.dx < 40; // Approximate width of drag handle
+    },
     onMoveShouldSetPanResponder: (_, gestureState) => {
       // Only respond to vertical movements
-      return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < 10;
+      return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dx) < 10;
     },
     onPanResponderGrant: () => {
       setIsDragging(true);
@@ -137,6 +140,7 @@ export default function DraggableExerciseCard({
           zIndex: isDragging ? 999 : 1,
           elevation: isDragging ? 5 : 1,
           shadowOpacity: isDragging ? 0.3 : 0.1,
+          height: isExpanded ? 'auto' : CARD_HEIGHT,
         },
         isCompleted && styles.completedCard
       ]}
@@ -144,21 +148,34 @@ export default function DraggableExerciseCard({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {Platform.OS !== 'web' && (
-            <View {...panResponder.panHandlers} style={styles.dragHandle}>
+            <TouchableOpacity 
+              {...panResponder.panHandlers} 
+              style={styles.dragHandle}
+              activeOpacity={0.7}
+            >
               <GripVertical size={20} color={colors.textSecondary} />
-            </View>
+            </TouchableOpacity>
           )}
           <View style={styles.exerciseInfo}>
-            <Text style={[styles.exerciseName, { color: colors.text }]}>
+            <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={1}>
               {exercise.name}
             </Text>
-            <Text style={[styles.exerciseMuscles, { color: colors.primary }]}>
+            <Text style={[styles.exerciseMuscles, { color: colors.primary }]} numberOfLines={1}>
               {exercise.muscleGroups.join(", ")}
             </Text>
           </View>
         </View>
         
         <View style={styles.headerRight}>
+          {areAllSetsCompleted && !isCompleted && (
+            <TouchableOpacity
+              style={[styles.completeIconButton, { backgroundColor: colors.success }]}
+              onPress={onMarkCompleted}
+            >
+              <Check size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity 
             style={styles.expandButton}
             onPress={onToggleExpand}
@@ -204,7 +221,7 @@ export default function DraggableExerciseCard({
         <View style={[styles.completedOverlay, { backgroundColor: `${colors.success}20` }]}>
           <Check size={24} color={colors.success} />
           <Text style={[styles.completedText, { color: colors.success }]}>
-            Exercise Completed
+            Completed
           </Text>
         </View>
       )}
@@ -215,7 +232,7 @@ export default function DraggableExerciseCard({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -230,7 +247,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
+    height: CARD_HEIGHT,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -238,39 +256,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dragHandle: {
-    paddingRight: 12,
+    paddingRight: 8,
     height: '100%',
     justifyContent: 'center',
+    width: 30,
   },
   exerciseInfo: {
     flex: 1,
   },
   exerciseName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   exerciseMuscles: {
-    fontSize: 14,
+    fontSize: 12,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  completeIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
   expandButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   content: {
-    padding: 16,
+    padding: 12,
     paddingTop: 0,
   },
   footer: {
-    marginTop: 16,
+    marginTop: 12,
   },
   completionActions: {
     flexDirection: 'row',
@@ -281,8 +308,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     flex: 3,
     marginRight: 8,
@@ -291,20 +318,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     marginLeft: 8,
+    fontSize: 14,
   },
   restButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     flex: 1,
   },
   restButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 4,
+    fontSize: 14,
   },
   completedOverlay: {
     position: 'absolute',
@@ -315,10 +344,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(46, 204, 113, 0.1)',
+    flexDirection: 'row',
   },
   completedText: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 8,
+    marginLeft: 8,
   },
 });
