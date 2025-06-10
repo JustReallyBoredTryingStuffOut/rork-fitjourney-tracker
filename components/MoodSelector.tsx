@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import Button from './Button';
-import { X } from 'lucide-react-native';
+import { X, Info } from 'lucide-react-native';
 
 interface MoodSelectorProps {
   visible: boolean;
@@ -54,6 +54,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
   const { colors } = useTheme();
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [selectedPreference, setSelectedPreference] = useState<string | null>(null);
+  const [showRestDayPrompt, setShowRestDayPrompt] = useState(false);
   
   // Filter preferences based on selected mood
   const filteredPreferences = selectedMood 
@@ -63,6 +64,13 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);
     setSelectedPreference(null); // Reset preference when mood changes
+    
+    // Show rest day prompt if mood is "Not Great"
+    if (mood.id === 'bad') {
+      setShowRestDayPrompt(true);
+    } else {
+      setShowRestDayPrompt(false);
+    }
   };
   
   const handlePreferenceSelect = (preferenceId: string) => {
@@ -82,6 +90,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
   const resetAndClose = () => {
     setSelectedMood(null);
     setSelectedPreference(null);
+    setShowRestDayPrompt(false);
     onClose();
   };
   
@@ -142,6 +151,25 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
               </TouchableOpacity>
             ))}
           </View>
+          
+          {/* Rest Day Suggestion Prompt - Only shown when "Not Great" is selected */}
+          {showRestDayPrompt && (
+            <View style={[styles.restDayPrompt, { backgroundColor: `${colors.secondary}15` }]}>
+              <View style={styles.restDayPromptHeader}>
+                <Info size={20} color={colors.secondary} style={styles.restDayPromptIcon} />
+                <Text style={[styles.restDayPromptTitle, { color: colors.text }]}>
+                  Consider taking a rest day
+                </Text>
+              </View>
+              <Text style={[styles.restDayPromptText, { color: colors.textSecondary }]}>
+                It's completely okay to take a rest day when you're not feeling great. 
+                Rest is an essential part of any fitness journey and helps your body recover and grow stronger.
+              </Text>
+              <Text style={[styles.restDayPromptText, { color: colors.textSecondary, marginTop: 8 }]}>
+                You can select "I need a rest day" below for light recovery activities, or choose a lighter workout if you still want to move.
+              </Text>
+            </View>
+          )}
           
           {selectedMood && filteredPreferences.length > 0 && (
             <>
@@ -279,6 +307,28 @@ const styles = StyleSheet.create({
   },
   closePromptButton: {
     marginBottom: 8,
+  },
+  // Rest Day Prompt Styles
+  restDayPrompt: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  restDayPromptHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  restDayPromptIcon: {
+    marginRight: 8,
+  },
+  restDayPromptTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  restDayPromptText: {
+    fontSize: 14,
+    lineHeight: 20,
   }
 });
 
