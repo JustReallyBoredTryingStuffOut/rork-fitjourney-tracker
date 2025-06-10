@@ -41,7 +41,7 @@ const preferences: Preference[] = [
   { id: 'challenging', label: 'I want a challenging workout', forMoods: ['great', 'good'] },
   { id: 'normal', label: 'I want a normal workout', forMoods: ['great', 'good', 'okay'] },
   { id: 'energizing', label: 'I need an energy boost', forMoods: ['okay', 'tired'] },
-  { id: 'shorter', label: 'I want a shorter workout', forMoods: ['tired', 'okay'] },
+  { id: 'shorter', label: 'I want a shorter workout (30 min)', forMoods: ['tired', 'okay'] },
   { id: 'light', label: 'I want a light workout', forMoods: ['tired', 'bad'] },
   { id: 'rest', label: 'I need a rest day', forMoods: ['tired', 'bad'] },
 ];

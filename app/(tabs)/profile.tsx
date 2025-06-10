@@ -100,11 +100,9 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.gamificationTextContainer}>
             <Text style={styles.gamificationTitle}>Enable Achievement System</Text>
-            <View style={styles.descriptionContainer}>
-              <Text style={styles.gamificationDescription}>
-                Turn on achievements, challenges, and rewards
-              </Text>
-            </View>
+            <Text style={styles.gamificationDescription}>
+              Turn on achievements, challenges, and rewards
+            </Text>
           </View>
         </View>
         <Switch
@@ -192,9 +190,9 @@ const styles = StyleSheet.create({
   },
   gamificationLeft: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     flex: 1,
-    marginRight: 24, // Increased right margin to give more space for the switch
+    marginRight: 16,
   },
   gamificationIconContainer: {
     width: 40,
@@ -207,23 +205,16 @@ const styles = StyleSheet.create({
   },
   gamificationTextContainer: {
     flex: 1,
-    flexShrink: 1,
   },
   gamificationTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
     marginBottom: 4,
-    flexWrap: "nowrap", // Prevent text from wrapping
-    width: "100%", // Ensure the text has enough width
-  },
-  descriptionContainer: {
-    marginTop: 2,
   },
   gamificationDescription: {
     fontSize: 12,
     color: colors.textSecondary,
-    flexWrap: "wrap",
     lineHeight: 16,
   },
   section: {

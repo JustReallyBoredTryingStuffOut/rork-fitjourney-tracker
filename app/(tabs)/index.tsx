@@ -712,9 +712,13 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={[styles.greeting, { color: colors.text }]}>{greeting}</Text>
-            <Text style={[styles.subGreeting, { color: colors.textSecondary }]}>{getMotivationMessage()}</Text>
+          <View style={styles.greetingContainer}>
+            <Text style={[styles.greeting, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+              {greeting}
+            </Text>
+            <Text style={[styles.subGreeting, { color: colors.textSecondary }]} numberOfLines={2} ellipsizeMode="tail">
+              {getMotivationMessage()}
+            </Text>
           </View>
           
           {userMood && new Date(userMood.date).toDateString() === new Date().toDateString() && (
@@ -757,7 +761,7 @@ export default function HomeScreen() {
         >
           <View style={styles.activeWorkoutContent}>
             <Text style={styles.activeWorkoutLabel}>WORKOUT IN PROGRESS</Text>
-            <Text style={styles.activeWorkoutTitle}>
+            <Text style={styles.activeWorkoutTitle} numberOfLines={1} ellipsizeMode="tail">
               {workouts.find(w => w.id === activeWorkout.workoutId)?.name || "Current Workout"}
             </Text>
             <View style={styles.activeWorkoutStats}>
@@ -830,7 +834,9 @@ export default function HomeScreen() {
           <View style={[styles.moodAdviceIcon, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
             <Heart size={20} color={colors.primary} />
           </View>
-          <Text style={[styles.moodAdviceText, { color: colors.text }]}>{moodBasedAdvice}</Text>
+          <Text style={[styles.moodAdviceText, { color: colors.text }]} numberOfLines={3} ellipsizeMode="tail">
+            {moodBasedAdvice}
+          </Text>
         </View>
       )}
       
@@ -855,7 +861,9 @@ export default function HomeScreen() {
                   <View style={[styles.restActivityBullet, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
                     <Text style={[styles.restActivityBulletText, { color: colors.primary }]}>{index + 1}</Text>
                   </View>
-                  <Text style={[styles.restActivityText, { color: colors.text }]}>{activity}</Text>
+                  <Text style={[styles.restActivityText, { color: colors.text }]} numberOfLines={2} ellipsizeMode="tail">
+                    {activity}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -902,7 +910,7 @@ export default function HomeScreen() {
                     <Zap size={20} color={colors.primary} />
                     <Text style={[styles.analysisTitle, { color: colors.text }]}>Workout Insight</Text>
                   </View>
-                  <Text style={[styles.analysisTip, { color: colors.textSecondary }]}>
+                  <Text style={[styles.analysisTip, { color: colors.textSecondary }]} numberOfLines={3} ellipsizeMode="tail">
                     {latestAnalysis.recommendations.exerciseRecommendations[0]}
                   </Text>
                   <TouchableOpacity 
@@ -949,7 +957,9 @@ export default function HomeScreen() {
           <View style={[styles.tipIconContainer, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
             <Lightbulb size={24} color={colors.primary} />
           </View>
-          <Text style={[styles.tipText, { color: colors.text }]}>{dailyTip}</Text>
+          <Text style={[styles.tipText, { color: colors.text }]} numberOfLines={4} ellipsizeMode="tail">
+            {dailyTip}
+          </Text>
         </View>
       </View>
       
@@ -1002,7 +1012,9 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.goalContent}>
                     <View style={styles.goalHeader}>
-                      <Text style={[styles.goalText, { color: colors.text }]}>{goal.text}</Text>
+                      <Text style={[styles.goalText, { color: colors.text }]} numberOfLines={2} ellipsizeMode="tail">
+                        {goal.text}
+                      </Text>
                       {goal.timeframe && (
                         <View style={[styles.goalTimeframeBadge, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
                           <Text style={[styles.goalTimeframeText, { color: colors.primary }]}>
@@ -1123,7 +1135,9 @@ export default function HomeScreen() {
             return (
               <View key={log.id} style={[styles.recentWorkout, { backgroundColor: colors.card }]}>
                 <View style={styles.recentWorkoutInfo}>
-                  <Text style={[styles.recentWorkoutName, { color: colors.text }]}>{workout.name}</Text>
+                  <Text style={[styles.recentWorkoutName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                    {workout.name}
+                  </Text>
                   <Text style={[styles.recentWorkoutDate, { color: colors.textSecondary }]}>
                     {new Date(log.date).toLocaleDateString()}
                   </Text>
@@ -1242,7 +1256,9 @@ export default function HomeScreen() {
                       <View style={[styles.analysisBullet, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
                         <Text style={[styles.analysisBulletText, { color: colors.primary }]}>{index + 1}</Text>
                       </View>
-                      <Text style={[styles.analysisTipText, { color: colors.text }]}>{tip}</Text>
+                      <Text style={[styles.analysisTipText, { color: colors.text }]}>
+                        {tip}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -1254,7 +1270,9 @@ export default function HomeScreen() {
                       <View style={[styles.analysisBullet, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
                         <Text style={[styles.analysisBulletText, { color: colors.primary }]}>{index + 1}</Text>
                       </View>
-                      <Text style={[styles.analysisTipText, { color: colors.text }]}>{tip}</Text>
+                      <Text style={[styles.analysisTipText, { color: colors.text }]}>
+                        {tip}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -1266,7 +1284,9 @@ export default function HomeScreen() {
                       <View style={[styles.analysisBullet, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
                         <Text style={[styles.analysisBulletText, { color: colors.primary }]}>{index + 1}</Text>
                       </View>
-                      <Text style={[styles.analysisTipText, { color: colors.text }]}>{tip}</Text>
+                      <Text style={[styles.analysisTipText, { color: colors.text }]}>
+                        {tip}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -1327,7 +1347,9 @@ export default function HomeScreen() {
                   <View style={[styles.restDayActivityBullet, { backgroundColor: "rgba(74, 144, 226, 0.1)" }]}>
                     <Text style={[styles.restDayActivityBulletText, { color: colors.primary }]}>{index + 1}</Text>
                   </View>
-                  <Text style={[styles.restDayActivityText, { color: colors.text }]}>{activity}</Text>
+                  <Text style={[styles.restDayActivityText, { color: colors.text }]}>
+                    {activity}
+                  </Text>
                 </View>
               ))}
               
@@ -1384,6 +1406,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  greetingContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
   greeting: {
     fontSize: 28,
     fontWeight: "700",
@@ -1403,6 +1429,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    marginLeft: 8,
   },
   moodEmoji: {
     fontSize: 20,
@@ -1418,6 +1445,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    marginLeft: 8,
   },
   moodPrompt: {
     borderRadius: 12,
@@ -1536,11 +1564,13 @@ const styles = StyleSheet.create({
   recentWorkoutStats: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
   },
   recentWorkoutStat: {
     flexDirection: "row",
     alignItems: "center",
     marginRight: 16,
+    marginBottom: 4,
   },
   recentWorkoutStatText: {
     fontSize: 14,
@@ -1555,7 +1585,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -1575,7 +1605,7 @@ const styles = StyleSheet.create({
   },
   goalHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     flexWrap: "wrap",
     marginBottom: 4,
   },
@@ -1589,7 +1619,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    marginLeft: 4,
+    marginTop: 2,
   },
   goalTimeframeText: {
     fontSize: 12,
@@ -1624,6 +1654,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: 8,
   },
   goalEditContainer: {
     flex: 1,
@@ -1833,6 +1864,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    flexShrink: 0,
   },
   analysisBulletText: {
     fontSize: 12,
@@ -1862,7 +1894,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 24,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -1876,6 +1908,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    flexShrink: 0,
   },
   moodAdviceText: {
     flex: 1,
@@ -1909,7 +1942,7 @@ const styles = StyleSheet.create({
   },
   restActivity: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   restActivityBullet: {
@@ -1919,6 +1952,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    flexShrink: 0,
   },
   restActivityBulletText: {
     fontSize: 12,
@@ -1980,6 +2014,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    flexShrink: 0,
   },
   restDayActivityBulletText: {
     fontSize: 12,
@@ -2017,7 +2052,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -2031,6 +2066,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
+    flexShrink: 0,
   },
   tipText: {
     flex: 1,
