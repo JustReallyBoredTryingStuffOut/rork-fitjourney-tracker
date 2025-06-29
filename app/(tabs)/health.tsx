@@ -28,6 +28,7 @@ import WeightTracker from "@/components/WeightTracker";
 import WaterTracker from "@/components/WaterTracker";
 import ActivityMap from "@/components/ActivityMap";
 import Button from "@/components/Button";
+import HealthKitService from '../../src/services/HealthKitService';
 
 // Import CoreBluetooth with correct path
 import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";

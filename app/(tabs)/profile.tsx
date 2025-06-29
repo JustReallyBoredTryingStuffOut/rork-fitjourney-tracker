@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
-  Switch
+  Switch,
+  Alert
 } from "react-native";
 import { useRouter } from "expo-router";
 import { 
@@ -24,11 +25,14 @@ import { colors } from "@/constants/colors";
 import { useThemeStore } from "@/store/themeStore";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { useTheme } from '../../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { gamificationEnabled, toggleGamification } = useGamificationStore();
   const { waterTrackingMode, setWaterTrackingMode } = useSettingsStore();
+  const { theme } = useTheme();
   
   const profileSections = [
     {
@@ -87,6 +91,10 @@ export default function ProfileScreen() {
       ],
     },
   ];
+  
+  const quickHealthKitTest = () => {
+    router.push('/health-test');
+  };
   
   return (
     <ScrollView style={styles.container}>
