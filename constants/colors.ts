@@ -12,6 +12,11 @@ export const colors = {
   warning: "#FFC107",
   info: "#17A2B8",
   
+  // Missing colors that are used throughout the app
+  inactive: "#CED4DA",
+  primaryLight: "#E3F2FD",
+  timerBackground: "#F0F4F8",
+  
   // Macro colors
   calorieColor: "#FF6B6B", // Red for calories
   macroProtein: "#4A90E2", // Blue
@@ -265,8 +270,8 @@ export const getColors = (theme: "light" | "dark", colorScheme = "blue") => {
   const baseTheme = theme === "dark" ? { ...darkTheme } : { ...lightTheme };
   
   // Apply color scheme if it exists
-  if (colorSchemes[colorScheme]) {
-    const schemeColors = colorSchemes[colorScheme][theme];
+  if (colorSchemes[colorScheme as keyof typeof colorSchemes]) {
+    const schemeColors = colorSchemes[colorScheme as keyof typeof colorSchemes][theme];
     return {
       ...baseTheme,
       ...schemeColors,

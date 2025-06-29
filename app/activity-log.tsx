@@ -17,6 +17,8 @@ export default function ActivityLogScreen() {
   const [duration, setDuration] = useState("30");
   const [distance, setDistance] = useState("2.5");
   const [calories, setCalories] = useState("150");
+  const [reps, setReps] = useState("100");
+  const [sets, setSets] = useState("3");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState(
     new Date().toTimeString().split(" ")[0].substring(0, 5)
@@ -25,17 +27,22 @@ export default function ActivityLogScreen() {
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   
+  // Check if activity type uses reps/sets instead of distance
+  const isRepsBasedActivity = activityType === "jumping_rope" || activityType === "other";
+  
   const handleSave = () => {
     const newActivity: ActivityLog = {
       id: Date.now().toString(),
       type: activityType,
       duration: parseInt(duration) || 0,
-      distance: parseFloat(distance) || 0,
+      distance: isRepsBasedActivity ? undefined : parseFloat(distance) || 0,
       calories: parseInt(calories) || 0,
       date: `${date}T${time}:00`,
       isOutdoor,
       location: isOutdoor ? location : "",
       notes,
+      reps: isRepsBasedActivity ? parseInt(reps) || 0 : undefined,
+      sets: isRepsBasedActivity ? parseInt(sets) || 0 : undefined,
     };
     
     addActivityLog(newActivity);
@@ -88,12 +95,7 @@ export default function ActivityLogScreen() {
       <Stack.Screen 
         options={{
           title: "Log Activity",
-          headerBackTitle: "Health",
-          headerLeft: () => (
-            <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-              <ArrowLeft size={24} color={colors.text} />
-            </TouchableOpacity>
-          ),
+          headerBackTitle: "Back",
         }}
       />
       
@@ -116,6 +118,7 @@ export default function ActivityLogScreen() {
               <Picker.Item label="Cycling" value="cycling" />
               <Picker.Item label="Swimming" value="swimming" />
               <Picker.Item label="Hiking" value="hiking" />
+              <Picker.Item label="Jumping Rope" value="jumping_rope" />
               <Picker.Item label="Other" value="other" />
             </Picker>
           </View>
@@ -132,16 +135,44 @@ export default function ActivityLogScreen() {
           />
         </View>
         
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Distance (km)</Text>
-          <TextInput
-            style={styles.input}
-            value={distance}
-            onChangeText={setDistance}
-            keyboardType="numeric"
-            placeholder="Distance in kilometers"
-          />
-        </View>
+        {isRepsBasedActivity && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Reps</Text>
+            <TextInput
+              style={styles.input}
+              value={reps}
+              onChangeText={setReps}
+              keyboardType="numeric"
+              placeholder="Reps"
+            />
+          </View>
+        )}
+        
+        {isRepsBasedActivity && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Sets</Text>
+            <TextInput
+              style={styles.input}
+              value={sets}
+              onChangeText={setSets}
+              keyboardType="numeric"
+              placeholder="Sets"
+            />
+          </View>
+        )}
+        
+        {!isRepsBasedActivity && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Distance (km)</Text>
+            <TextInput
+              style={styles.input}
+              value={distance}
+              onChangeText={setDistance}
+              keyboardType="numeric"
+              placeholder="Distance in kilometers"
+            />
+          </View>
+        )}
         
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Calories Burned</Text>
@@ -185,7 +216,7 @@ export default function ActivityLogScreen() {
         <View style={styles.switchContainer}>
           <Text style={styles.label}>Outdoor Activity?</Text>
           <Switch
-            trackColor={{ false: colors.inactive, true: colors.primary }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor="#FFFFFF"
             value={isOutdoor}
             onValueChange={setIsOutdoor}
@@ -222,6 +253,13 @@ export default function ActivityLogScreen() {
         title="Save Activity"
         onPress={handleSave}
         style={styles.saveButton}
+      />
+      
+      <Button
+        title="Back"
+        onPress={handleGoBack}
+        variant="outline"
+        style={styles.backButton}
       />
     </ScrollView>
   );
@@ -322,6 +360,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   backButton: {
-    padding: 8,
+    marginTop: 12,
+    marginBottom: 20,
   },
 });

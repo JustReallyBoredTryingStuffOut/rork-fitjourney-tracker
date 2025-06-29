@@ -292,16 +292,20 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   input: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderWidth: 1,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     fontSize: 16,
+    color: '#FFFFFF',
   },
   pickerContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderWidth: 1,
     borderRadius: 8,
     overflow: "hidden",
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   picker: {
     height: 50,

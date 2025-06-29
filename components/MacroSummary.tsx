@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "@/constants/colors";
 import { MacroGoals } from "@/types";
 import { useGamificationStore } from "@/store/gamificationStore";
-import { Trophy, Info } from "lucide-react-native";
+import { Trophy } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import MacroInfoModal from "./MacroInfoModal";
 import { useTheme } from "@/context/ThemeContext";
 
 interface MacroSummaryProps {
@@ -21,7 +20,6 @@ interface MacroSummaryProps {
 export default function MacroSummary({ current, goals }: MacroSummaryProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
   const router = useRouter();
-  const [infoModalVisible, setInfoModalVisible] = useState(false);
   const { colors } = useTheme();
   
   // Check if goals are valid
@@ -124,17 +122,7 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
     <View style={styles.container}>
       <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
         <View style={[styles.calorieSection, { borderBottomColor: colors.border }]}>
-          <View style={styles.titleContainer}>
-            <Text style={[styles.calorieTitle, { color: colors.text }]}>Calories</Text>
-            <TouchableOpacity 
-              onPress={() => setInfoModalVisible(true)}
-              style={styles.infoButton}
-              accessibilityLabel="Nutrition information"
-              accessibilityHint="Opens a modal with information about how nutrition goals are calculated"
-            >
-              <Info size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.calorieTitle, { color: colors.text }]}>Calories</Text>
           
           <View style={styles.calorieNumbers}>
             <Text style={[styles.calorieConsumed, { color: colors.text }]}>{current.calories}</Text>
@@ -202,11 +190,11 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
         </View>
         
         {gamificationEnabled && (
-          <View style={[styles.motivationContainer, { backgroundColor: colors.backgroundLight }]}>
+          <View style={[styles.motivationContainer, { backgroundColor: colors.primary + '15' }]}>
             <Text style={[styles.motivationText, { color: colors.text }]}>{getMotivationalMessage()}</Text>
             
             {balancedMacrosAchievement && (
-              <TouchableOpacity style={[styles.achievementButton, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}>
+              <TouchableOpacity style={[styles.achievementButton, { backgroundColor: colors.card, borderColor: colors.primary }]}>
                 <Trophy size={14} color={colors.primary} />
                 <Text style={[styles.achievementButtonText, { color: colors.primary }]}>
                   {balancedMacrosAchievement.progress}/{balancedMacrosAchievement.target} balanced days
@@ -216,11 +204,6 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
           </View>
         )}
       </View>
-      
-      <MacroInfoModal 
-        visible={infoModalVisible}
-        onClose={() => setInfoModalVisible(false)}
-      />
     </View>
   );
 }
@@ -244,18 +227,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
   calorieTitle: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  infoButton: {
-    marginLeft: 8,
-    padding: 2,
+    marginBottom: 8,
   },
   calorieNumbers: {
     flexDirection: "row",

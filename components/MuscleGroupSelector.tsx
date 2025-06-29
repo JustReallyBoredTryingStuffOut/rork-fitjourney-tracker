@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { BodyRegion, MuscleGroup } from '@/types';
+import { BODY_REGIONS } from '@/constants/bodyRegions';
 
 type MuscleGroupSelectorProps = {
   selectedBodyRegion: BodyRegion | null;
@@ -28,73 +29,97 @@ export default function MuscleGroupSelector({
   const screenWidth = Dimensions.get('window').width;
   const imageHeight = 280;
 
+  // Set default body region to upper body when component mounts
+  useEffect(() => {
+    if (!selectedBodyRegion && bodyRegions.length > 0) {
+      const upperBody = bodyRegions.find(region => region.name === 'upper_body');
+      if (upperBody) {
+        onSelectBodyRegion(upperBody);
+      }
+    }
+  }, []);
+
+  // Format region name for display (remove underscores and capitalize)
+  const formatRegionName = (name: string) => {
+    return name.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
   // Get the appropriate body map image based on region and view
   const getBodyMapImage = () => {
-    if (selectedBodyRegion === 'Upper Body') {
+    if (selectedBodyRegion?.name === 'upper_body') {
       return viewMode === 'front' 
-        ? 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular front view
-        : 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular back view
-    } else if (selectedBodyRegion === 'Lower Body') {
+        ? require('@/assets/images/body-regions/Upper-body.png')
+        : require('@/assets/images/body-regions/back.png');
+    } else if (selectedBodyRegion?.name === 'lower_body') {
       return viewMode === 'front'
-        ? 'https://images.unsplash.com/photo-1581009137042-c552e485697a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular legs front view
-        : 'https://images.unsplash.com/photo-1584863231364-2edc166de576?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular legs back view
-    } else if (selectedBodyRegion === 'Core') {
-      return viewMode === 'front'
-        ? 'https://images.unsplash.com/photo-1577221084712-45b0445d2b00?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' // Muscular abs front view
-        : 'https://images.unsplash.com/photo-1616803689943-5601631c7fec?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80'; // Muscular back core view
+        ? require('@/assets/images/body-regions/lower-body.png')
+        : require('@/assets/images/body-regions/lower-body-back.png');
+    } else if (selectedBodyRegion?.name === 'core') {
+      return require('@/assets/images/body-regions/core.png');
     }
-    return '';
+    return require('@/assets/images/body-regions/Upper-body.png'); // Default to upper body front
   };
 
   // Define clickable areas for each muscle group based on body region and view
   const getMuscleGroupAreas = () => {
-    if (selectedBodyRegion === 'Upper Body') {
+    if (selectedBodyRegion?.name === 'upper_body') {
       if (viewMode === 'front') {
         return [
-          { group: 'Chest', style: styles.chestFront },
-          { group: 'Shoulders', style: styles.shouldersFront },
-          { group: 'Biceps', style: styles.bicepsFront },
-          { group: 'Forearms', style: styles.forearmsFront },
-          { group: 'Traps', style: styles.trapsFront },
+          { group: muscleGroups.find(g => g.name === 'chest'), style: styles.chestFront },
+          { group: muscleGroups.find(g => g.name === 'shoulders'), style: styles.leftShoulderFront },
+          { group: muscleGroups.find(g => g.name === 'shoulders'), style: styles.rightShoulderFront },
+          { group: muscleGroups.find(g => g.name === 'biceps'), style: styles.bicepsFront },
+          { group: muscleGroups.find(g => g.name === 'forearms'), style: styles.forearmsFront },
+          { group: muscleGroups.find(g => g.name === 'traps'), style: styles.trapsFront },
         ];
       } else {
         return [
-          { group: 'Back', style: styles.backArea },
-          { group: 'Traps', style: styles.trapsBack },
-          { group: 'Triceps', style: styles.tricepsBack },
-          { group: 'Lats', style: styles.latsBack },
-          { group: 'Rear Deltoids', style: styles.rearDeltoids },
+          { group: muscleGroups.find(g => g.name === 'back'), style: styles.backArea },
+          { group: muscleGroups.find(g => g.name === 'traps'), style: styles.trapsBack },
+          { group: muscleGroups.find(g => g.name === 'triceps'), style: styles.tricepsBack },
+          { group: muscleGroups.find(g => g.name === 'lats'), style: styles.latsBack },
+          { group: muscleGroups.find(g => g.name === 'deltoids'), style: styles.rearDeltoids },
         ];
       }
-    } else if (selectedBodyRegion === 'Lower Body') {
+    } else if (selectedBodyRegion?.name === 'lower_body') {
       if (viewMode === 'front') {
         return [
-          { group: 'Quadriceps', style: styles.quadsFront },
-          { group: 'Calves', style: styles.calvesFront },
-          { group: 'Hip Flexors', style: styles.hipFlexors },
+          { group: muscleGroups.find(g => g.name === 'quadriceps'), style: styles.quadsFront },
+          { group: muscleGroups.find(g => g.name === 'calves'), style: styles.calvesFront },
+          { group: muscleGroups.find(g => g.name === 'hip_flexors'), style: styles.hipFlexors },
         ];
       } else {
         return [
-          { group: 'Hamstrings', style: styles.hamstringsBack },
-          { group: 'Glutes', style: styles.glutesBack },
-          { group: 'Calves', style: styles.calvesBack },
+          { group: muscleGroups.find(g => g.name === 'hamstrings'), style: styles.hamstringsBack },
+          { group: muscleGroups.find(g => g.name === 'glutes'), style: styles.glutesBack },
+          { group: muscleGroups.find(g => g.name === 'calves'), style: styles.calvesBack },
         ];
       }
-    } else if (selectedBodyRegion === 'Core') {
+    } else if (selectedBodyRegion?.name === 'core') {
       if (viewMode === 'front') {
         return [
-          { group: 'Abs', style: styles.absFront },
-          { group: 'Obliques', style: styles.obliquesFront },
+          { group: muscleGroups.find(g => g.name === 'abs'), style: styles.absFront },
+          { group: muscleGroups.find(g => g.name === 'obliques'), style: styles.obliquesFront },
         ];
       } else {
         return [
-          { group: 'Lower Back', style: styles.lowerBack },
-          { group: 'Obliques', style: styles.obliquesBack },
+          { group: muscleGroups.find(g => g.name === 'lower_back'), style: styles.lowerBack },
+          { group: muscleGroups.find(g => g.name === 'obliques'), style: styles.obliquesBack },
         ];
       }
     }
     return [];
   };
+
+  // Find the selected region's muscles
+  const selectedRegionData = BODY_REGIONS.find(region => region.key === selectedBodyRegion?.name);
+  const muscles = selectedRegionData?.muscles || [];
+
+  if (!selectedBodyRegion) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -106,11 +131,11 @@ export default function MuscleGroupSelector({
       >
         {bodyRegions.map((region) => (
           <TouchableOpacity
-            key={region}
+            key={region.name}
             style={[
               styles.bodyRegionButton,
               { backgroundColor: colors.card, borderColor: colors.border },
-              selectedBodyRegion === region && [styles.selectedBodyRegion, { backgroundColor: colors.primary, borderColor: colors.primary }],
+              selectedBodyRegion?.name === region.name && [styles.selectedBodyRegion, { backgroundColor: colors.primary, borderColor: colors.primary }],
             ]}
             onPress={() => onSelectBodyRegion(region)}
           >
@@ -118,10 +143,10 @@ export default function MuscleGroupSelector({
               style={[
                 styles.bodyRegionText,
                 { color: colors.text },
-                selectedBodyRegion === region && styles.selectedBodyRegionText,
+                selectedBodyRegion?.name === region.name && styles.selectedBodyRegionText,
               ]}
             >
-              {region}
+              {formatRegionName(region.name)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -131,8 +156,7 @@ export default function MuscleGroupSelector({
         <>
           <View style={styles.viewToggleContainer}>
             <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 8 }]}>
-              {selectedBodyRegion === 'Upper Body' ? 'Upper Body View' : 
-               selectedBodyRegion === 'Lower Body' ? 'Lower Body View' : 'Core View'}
+              {formatRegionName(selectedBodyRegion.name)} View
             </Text>
             <TouchableOpacity 
               style={[styles.viewToggleButton, { backgroundColor: colors.primary }]} 
@@ -146,48 +170,53 @@ export default function MuscleGroupSelector({
 
           <View style={styles.bodyMapContainer}>
             <Image
-              source={{ uri: getBodyMapImage() }}
+              source={getBodyMapImage()}
               style={[styles.bodyMapImage, { width: screenWidth - 32, height: imageHeight }]}
               resizeMode="contain"
             />
             
             <View style={[styles.bodyMapOverlay, { width: screenWidth - 32, height: imageHeight }]}>
               {getMuscleGroupAreas().map((area) => (
-                <TouchableOpacity
-                  key={area.group}
-                  style={[
-                    area.style,
-                    styles.clickableArea,
-                    selectedMuscleGroup === area.group && styles.selectedMuscleArea
-                  ]}
-                  onPress={() => onSelectMuscleGroup(area.group as MuscleGroup)}
-                >
-                  <Text style={styles.muscleGroupLabel}>{area.group}</Text>
-                </TouchableOpacity>
+                area.group && (
+                  <TouchableOpacity
+                    key={area.group.name}
+                    style={[
+                      area.style,
+                      selectedMuscleGroup?.name === area.group.name && styles.selectedMuscleArea
+                    ]}
+                    onPress={() => area.group && onSelectMuscleGroup(area.group)}
+                  />
+                )
               ))}
             </View>
           </View>
 
           <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>Muscle Groups</Text>
           <View style={styles.muscleGroupsContainer}>
-            {muscleGroups.map((group) => (
+            {muscles.map((muscle) => (
               <TouchableOpacity
-                key={group}
+                key={muscle.key}
                 style={[
                   styles.muscleGroupButton,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                  selectedMuscleGroup === group && [styles.selectedMuscleGroup, { backgroundColor: colors.primary, borderColor: colors.primary }],
+                  { 
+                    backgroundColor: selectedMuscleGroup?.name === muscle.key ? colors.primary : colors.card,
+                    borderColor: colors.border
+                  }
                 ]}
-                onPress={() => onSelectMuscleGroup(group)}
+                onPress={() => onSelectMuscleGroup({
+                  ...muscle,
+                  bodyRegion: selectedBodyRegion
+                })}
               >
                 <Text
                   style={[
                     styles.muscleGroupText,
-                    { color: colors.text },
-                    selectedMuscleGroup === group && styles.selectedMuscleGroupText,
+                    { 
+                      color: selectedMuscleGroup?.name === muscle.key ? '#FFFFFF' : colors.text 
+                    }
                   ]}
                 >
-                  {group}
+                  {muscle.name}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -243,36 +272,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  muscleGroupsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  muscleGroupButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  selectedMuscleGroup: {
-  },
-  muscleGroupText: {
-    fontSize: 14,
-  },
-  selectedMuscleGroupText: {
-    color: '#FFFFFF',
-  },
   bodyMapContainer: {
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 16,
+    marginBottom: 16,
   },
   bodyMapImage: {
-    borderRadius: 12,
-    opacity: 0.8,
+    borderRadius: 8,
   },
   bodyMapOverlay: {
     position: 'absolute',
@@ -280,159 +285,220 @@ const styles = StyleSheet.create({
     left: 0,
   },
   clickableArea: {
-    position: 'absolute',
-    backgroundColor: 'rgba(52, 152, 219, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(52, 152, 219, 0.7)',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   selectedMuscleArea: {
-    backgroundColor: 'rgba(255, 59, 48, 0.4)',
-    borderColor: 'rgba(255, 59, 48, 0.8)',
+    backgroundColor: 'rgba(255, 0, 0, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 0, 0.8)',
   },
-  muscleGroupLabel: {
+  muscleGroupsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  muscleGroupButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  selectedMuscleGroup: {
+    backgroundColor: '#007AFF',
+  },
+  muscleGroupText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  selectedMuscleGroupText: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-    fontSize: 12,
   },
-  // Upper body front
+  // Upper body front view muscle areas
   chestFront: {
-    width: 100,
-    height: 60,
-    top: 70,
-    left: '50%',
-    marginLeft: -50,
+    position: 'absolute',
+    top: '20%',
+    left: '46.5%',
+    width: '7%',
+    height: '19%',
+    borderTopLeftRadius: 40,  // Increased radius for upper left slope
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  shouldersFront: {
-    width: 120,
-    height: 30,
-    top: 40,
-    left: '50%',
-    marginLeft: -60,
+  leftShoulderFront: {
+    position: 'absolute',
+    top: '22%',
+    left: '44%',
+    width: '4%',
+    height: '12%',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    transform: [{ rotate: '105deg' }],
+  },
+  rightShoulderFront: {
+    position: 'absolute',
+    top: '22%',
+    left: '53%',
+    width: '5%',
+    height: '12%',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   bicepsFront: {
-    width: 30,
-    height: 60,
-    top: 80,
-    left: '30%',
+    position: 'absolute',
+    top: '35%',
+    left: '20%',
+    width: '12%',
+    height: '15%',
+    borderRadius: 15,
   },
   forearmsFront: {
-    width: 25,
-    height: 60,
-    top: 140,
-    left: '30%',
+    position: 'absolute',
+    top: '50%',
+    left: '20%',
+    width: '12%',
+    height: '15%',
+    borderRadius: 15,
   },
   trapsFront: {
-    width: 60,
-    height: 30,
-    top: 30,
-    left: '50%',
-    marginLeft: -30,
+    position: 'absolute',
+    top: '18%',
+    left: '40%',
+    width: '20%',
+    height: '8%',
+    borderRadius: 15,
   },
-  // Upper body back
+  
+  // Upper body back view muscle areas
   backArea: {
-    width: 100,
-    height: 80,
-    top: 70,
-    left: '50%',
-    marginLeft: -50,
+    position: 'absolute',
+    top: '25%',
+    left: '40%',
+    width: '20%',
+    height: '25%',
+    borderRadius: 15,
   },
   trapsBack: {
-    width: 80,
-    height: 30,
-    top: 40,
-    left: '50%',
-    marginLeft: -40,
+    position: 'absolute',
+    top: '18%',
+    left: '40%',
+    width: '20%',
+    height: '8%',
+    borderRadius: 15,
   },
   tricepsBack: {
-    width: 30,
-    height: 60,
-    top: 80,
-    right: '30%',
+    position: 'absolute',
+    top: '35%',
+    left: '75%',
+    width: '12%',
+    height: '15%',
+    borderRadius: 15,
   },
   latsBack: {
-    width: 40,
-    height: 70,
-    top: 80,
-    left: '35%',
+    position: 'absolute',
+    top: '25%',
+    left: '30%',
+    width: '15%',
+    height: '20%',
+    borderRadius: 15,
   },
   rearDeltoids: {
-    width: 30,
-    height: 30,
-    top: 50,
-    left: '30%',
+    position: 'absolute',
+    top: '22%',
+    left: '65%',
+    width: '15%',
+    height: '8%',
+    borderRadius: 15,
   },
-  // Lower body front
+  
+  // Lower body front view muscle areas
   quadsFront: {
-    width: 40,
-    height: 80,
-    top: 100,
+    position: 'absolute',
+    top: '60%',
     left: '40%',
+    width: '20%',
+    height: '20%',
+    borderRadius: 15,
   },
   calvesFront: {
-    width: 30,
-    height: 60,
-    top: 200,
+    position: 'absolute',
+    top: '85%',
     left: '40%',
+    width: '20%',
+    height: '12%',
+    borderRadius: 15,
   },
   hipFlexors: {
-    width: 40,
-    height: 30,
-    top: 90,
-    left: '50%',
-    marginLeft: -20,
-  },
-  // Lower body back
-  hamstringsBack: {
-    width: 40,
-    height: 80,
-    top: 120,
+    position: 'absolute',
+    top: '55%',
     left: '40%',
+    width: '20%',
+    height: '8%',
+    borderRadius: 15,
+  },
+  
+  // Lower body back view muscle areas
+  hamstringsBack: {
+    position: 'absolute',
+    top: '60%',
+    left: '40%',
+    width: '20%',
+    height: '20%',
+    borderRadius: 15,
   },
   glutesBack: {
-    width: 80,
-    height: 40,
-    top: 80,
-    left: '50%',
-    marginLeft: -40,
+    position: 'absolute',
+    top: '50%',
+    left: '40%',
+    width: '20%',
+    height: '12%',
+    borderRadius: 15,
   },
   calvesBack: {
-    width: 30,
-    height: 60,
-    top: 200,
+    position: 'absolute',
+    top: '85%',
     left: '40%',
+    width: '20%',
+    height: '12%',
+    borderRadius: 15,
   },
-  // Core front
+  
+  // Core muscle areas
   absFront: {
-    width: 60,
-    height: 80,
-    top: 80,
-    left: '50%',
-    marginLeft: -30,
+    position: 'absolute',
+    top: '40%',
+    left: '40%',
+    width: '20%',
+    height: '12%',
+    borderRadius: 15,
   },
   obliquesFront: {
-    width: 30,
-    height: 80,
-    top: 80,
-    left: '30%',
+    position: 'absolute',
+    top: '40%',
+    left: '25%',
+    width: '8%',
+    height: '12%',
+    borderRadius: 15,
   },
-  // Core back
   lowerBack: {
-    width: 80,
-    height: 40,
-    top: 100,
-    left: '50%',
-    marginLeft: -40,
+    position: 'absolute',
+    top: '40%',
+    left: '40%',
+    width: '20%',
+    height: '12%',
+    borderRadius: 15,
   },
   obliquesBack: {
-    width: 30,
-    height: 80,
-    top: 80,
-    left: '30%',
+    position: 'absolute',
+    top: '40%',
+    left: '72%',
+    width: '8%',
+    height: '12%',
+    borderRadius: 15,
   },
 });

@@ -32,6 +32,12 @@ export default function HealthDevicesScreen() {
   const [permissionStatus, setPermissionStatus] = useState<"unknown" | "granted" | "denied">("unknown");
   const [isInitializing, setIsInitializing] = useState(true);
   
+  // Device Settings State
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [backgroundSyncEnabled, setBackgroundSyncEnabled] = useState(true);
+  const [backgroundSyncInterval, setBackgroundSyncInterval] = useState<number | null>(null);
+  const [lastBackgroundSync, setLastBackgroundSync] = useState<Date | null>(null);
+  
   // Initialize Bluetooth and check permissions
   useEffect(() => {
     const initializeBluetooth = async () => {
@@ -42,7 +48,7 @@ export default function HealthDevicesScreen() {
         const stateResult = await CoreBluetooth.getBluetoothState();
         setBluetoothState(stateResult.state);
         
-        if (stateResult.state !== "poweredOn") {
+        if (stateResult.state !== "poweredOn" && stateResult.state !== "PoweredOn") {
           setBluetoothError("Bluetooth is not powered on. Please enable Bluetooth in your device settings.");
         } else {
           setBluetoothError(null);
@@ -82,7 +88,7 @@ export default function HealthDevicesScreen() {
       (event) => {
         setBluetoothState(event.state);
         
-        if (event.state !== 'poweredOn') {
+        if (event.state !== 'poweredOn' && event.state !== 'PoweredOn') {
           setBluetoothError("Bluetooth is not powered on. Please enable Bluetooth in your device settings.");
         } else {
           setBluetoothError(null);
@@ -143,6 +149,15 @@ export default function HealthDevicesScreen() {
           
           addDevice(newDevice);
           setShowAvailableDevices(false);
+          
+          // Auto-sync if enabled
+          if (autoSyncEnabled) {
+            console.log('[HealthDevices] Auto-sync enabled - syncing new device');
+            // Wait a moment for device to be fully connected, then auto-sync
+            setTimeout(() => {
+              handleSyncDevice(newDevice.id);
+            }, 2000);
+          }
         }
       }
     );
@@ -189,6 +204,49 @@ export default function HealthDevicesScreen() {
     };
   }, [availableDevices, connectedDevices, addDevice, updateDevice]);
   
+  // Background sync effect
+  useEffect(() => {
+    if (backgroundSyncEnabled && connectedDevices.length > 0) {
+      console.log('[HealthDevices] Starting background sync - syncing every 2 minutes');
+      
+      const interval = setInterval(() => {
+        console.log('[HealthDevices] Background sync triggered');
+        setLastBackgroundSync(new Date());
+        connectedDevices.forEach(device => {
+          if (device.connected) {
+            console.log(`[HealthDevices] Background syncing device: ${device.name}`);
+            handleSyncDevice(device.id);
+          }
+        });
+      }, 120000); // 2 minutes = 120,000ms (reduced for testing)
+      
+      setBackgroundSyncInterval(interval);
+      
+      // Cleanup interval on dependency change
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    } else {
+      // Clear existing interval if background sync is disabled
+      if (backgroundSyncInterval) {
+        console.log('[HealthDevices] Stopping background sync');
+        clearInterval(backgroundSyncInterval);
+        setBackgroundSyncInterval(null);
+      }
+    }
+  }, [backgroundSyncEnabled, connectedDevices]);
+  
+  // Cleanup background sync on unmount
+  useEffect(() => {
+    return () => {
+      if (backgroundSyncInterval) {
+        clearInterval(backgroundSyncInterval);
+      }
+    };
+  }, []);
+  
   const handleScanDevices = async () => {
     setBluetoothError(null);
     setIsScanning(true);
@@ -205,7 +263,7 @@ export default function HealthDevicesScreen() {
     try {
       const stateResult = await CoreBluetooth.getBluetoothState();
       
-      if (stateResult.state !== "poweredOn") {
+      if (stateResult.state !== "poweredOn" && stateResult.state !== "PoweredOn") {
         setBluetoothState(stateResult.state);
         setBluetoothError("Bluetooth is not powered on. Please enable Bluetooth in your device settings.");
         setIsScanning(false);
@@ -226,18 +284,38 @@ export default function HealthDevicesScreen() {
       
       // Start scanning for Bluetooth devices
       await CoreBluetooth.startScan();
+      console.log('[HealthDevices] Started scanning - setting 15 second timeout');
       
-      // Set a timeout to stop scanning after 10 seconds
-      setTimeout(async () => {
-        if (isScanning) {
+      // Set a timeout to stop scanning after 15 seconds
+      const timeoutId = setTimeout(async () => {
+        console.log('[HealthDevices] Scan timeout reached - stopping scan');
+        try {
           await CoreBluetooth.stopScan();
-          setIsScanning(false);
+          console.log('[HealthDevices] Scan stopped successfully');
           
-          if (availableDevices.length === 0) {
-            setBluetoothError("No compatible devices found nearby. Make sure your device is in pairing mode and try again.");
-          }
+          // Use functional state updates to get current values
+          setIsScanning(false);
+          setAvailableDevices(currentDevices => {
+            console.log('[HealthDevices] Current devices found:', currentDevices.length);
+            if (currentDevices.length === 0) {
+              setBluetoothError("No compatible devices found nearby. Make sure your device is in pairing mode and try again.");
+            }
+            return currentDevices;
+          });
+        } catch (error) {
+          console.error('[HealthDevices] Error stopping scan:', error);
+          setIsScanning(false);
         }
-      }, 10000);
+      }, 15000);
+      
+      // Store timeout ID for cleanup
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+      };
+      
+      // Return cleanup function (though it won't be used in this context)
+      return cleanup;
+      
     } catch (error: any) {
       console.error("Error scanning for devices:", error);
       setBluetoothError(error.message || "An error occurred while scanning for devices");
@@ -596,12 +674,10 @@ export default function HealthDevicesScreen() {
         <View style={[
           styles.bluetoothStatusBanner, 
           { 
-            backgroundColor: bluetoothState === "poweredOn" 
-              ? "rgba(76, 217, 100, 0.1)" 
-              : "rgba(255, 59, 48, 0.1)" 
+            backgroundColor: (bluetoothState === "poweredOn" || bluetoothState === "PoweredOn") ? "rgba(76, 217, 100, 0.1)" : "rgba(255, 59, 48, 0.1)" 
           }
         ]}>
-          {bluetoothState === "poweredOn" ? (
+          {(bluetoothState === "poweredOn" || bluetoothState === "PoweredOn") ? (
             <View style={styles.bluetoothStatusContent}>
               <CheckCircle2 size={20} color="#4CD964" />
               <Text style={[styles.bluetoothStatusText, { color: "#4CD964" }]}>
@@ -617,7 +693,7 @@ export default function HealthDevicesScreen() {
             </View>
           )}
           
-          {bluetoothState !== "poweredOn" && (
+          {(bluetoothState !== "poweredOn" && bluetoothState !== "PoweredOn") && (
             <TouchableOpacity 
               style={styles.bluetoothSettingsButton}
               onPress={() => {
@@ -675,10 +751,10 @@ export default function HealthDevicesScreen() {
             icon={<Bluetooth size={18} color={colors.primary} />}
             variant="outline"
             style={styles.scanButton}
-            disabled={bluetoothState !== "poweredOn" || (Platform.OS === 'ios' && permissionStatus !== "granted")}
+            disabled={(bluetoothState !== "poweredOn" && bluetoothState !== "PoweredOn") || (Platform.OS === 'ios' && permissionStatus !== "granted")}
           />
           
-          {bluetoothError && bluetoothState === "poweredOn" && (
+          {bluetoothError && (bluetoothState === "poweredOn" || bluetoothState === "PoweredOn") && (
             <Text style={styles.errorText}>{bluetoothError}</Text>
           )}
         </View>
@@ -953,19 +1029,34 @@ export default function HealthDevicesScreen() {
             <Switch
               trackColor={{ false: colors.inactive, true: colors.primary }}
               thumbColor="#FFFFFF"
-              value={true}
+              value={autoSyncEnabled}
+              onValueChange={(value) => setAutoSyncEnabled(value)}
             />
           </View>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingName}>Background sync</Text>
-              <Text style={styles.settingDescription}>Sync data in the background periodically</Text>
+              <View style={styles.settingDescriptionContainer}>
+                <Text style={styles.settingDescription}>Sync data in the background periodically</Text>
+                {backgroundSyncEnabled && connectedDevices.length > 0 && (
+                  <View style={styles.activeSyncIndicator}>
+                    <View style={styles.activeSyncDot} />
+                    <Text style={styles.activeSyncText}>Active</Text>
+                  </View>
+                )}
+              </View>
+              {lastBackgroundSync && backgroundSyncEnabled && (
+                <Text style={styles.lastSyncText}>
+                  Last sync: {lastBackgroundSync.toLocaleTimeString()}
+                </Text>
+              )}
             </View>
             <Switch
               trackColor={{ false: colors.inactive, true: colors.primary }}
               thumbColor="#FFFFFF"
-              value={true}
+              value={backgroundSyncEnabled}
+              onValueChange={(value) => setBackgroundSyncEnabled(value)}
             />
           </View>
           
@@ -1360,9 +1451,29 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 4,
   },
+  settingDescriptionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   settingDescription: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  activeSyncIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  activeSyncDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    marginRight: 4,
+  },
+  activeSyncText: {
+    fontSize: 12,
+    color: colors.primary,
   },
   settingButton: {
     backgroundColor: colors.primary,
@@ -1481,5 +1592,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 4,
     lineHeight: 20,
+  },
+  lastSyncText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
   },
 });

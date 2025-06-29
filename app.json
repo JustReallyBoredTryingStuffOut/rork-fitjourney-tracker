@@ -15,28 +15,95 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.fitjourney-tracker"
+      "bundleIdentifier": "app.rork.fitjourney-tracker",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "This app needs access to your health data to track your fitness progress, workouts, and provide personalized insights.",
+        "NSHealthUpdateUsageDescription": "This app needs permission to update your health data to record workouts and fitness activities.",
+        "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to fitness devices like Apple Watch, heart rate monitors, and other health sensors.",
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to communicate with fitness devices and health sensors.",
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to track your outdoor activities and workouts.",
+        "NSMotionUsageDescription": "This app uses motion data to track your steps, workouts, and physical activity.",
+        "NSCameraUsageDescription": "This app uses the camera to scan nutrition labels and take progress photos.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to save and view progress photos.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "capabilities": [
+        "com.apple.HealthKit",
+        "com.apple.BackgroundModes"
+      ],
+      "backgroundModes": [
+        "background-processing",
+        "background-fetch"
+      ]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.fitjourney-tracker"
+      "package": "app.rork.fitjourney-tracker",
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-router",
       [
-        "expo-router",
+        "expo-sensors",
         {
-          "origin": "https://rork.com/"
+          "motionPermission": "Allow FitJourney Tracker to access motion and fitness data to track your activities and workouts."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow FitJourney Tracker to use your location to track outdoor workouts and activities."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow FitJourney Tracker to access your camera to scan nutrition labels and take progress photos."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow FitJourney Tracker to access your photos to save and view progress photos.",
+          "savePhotosPermission": "Allow FitJourney Tracker to save photos to your library.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      "expo-web-browser",
+      "react-native-ble-plx",
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "This app needs access to your health data to track your fitness progress, workouts, and provide personalized insights.",
+          "healthUpdatePermission": "This app needs permission to update your health data to record workouts and fitness activities."
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e8c3207a-2d9c-438a-a2b8-30a2fc1076da"
+      }
     }
   }
 }

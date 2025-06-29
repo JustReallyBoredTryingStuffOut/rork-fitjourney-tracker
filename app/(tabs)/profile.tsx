@@ -17,16 +17,18 @@ import {
   Camera, 
   Lock,
   ChevronRight,
-  Trophy
+  Trophy,
+  Droplets
 } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { useThemeStore } from "@/store/themeStore";
 import { useGamificationStore } from "@/store/gamificationStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { isDarkMode } = useThemeStore();
   const { gamificationEnabled, toggleGamification } = useGamificationStore();
+  const { waterTrackingMode, setWaterTrackingMode } = useSettingsStore();
   
   const profileSections = [
     {
@@ -111,6 +113,36 @@ export default function ProfileScreen() {
           trackColor={{ false: colors.border, true: colors.primary }}
           thumbColor="#fff"
         />
+      </View>
+      
+      {/* Water Tracking Settings */}
+      <View style={styles.gamificationContainer}>
+        <View style={styles.gamificationLeft}>
+          <View style={styles.gamificationIconContainer}>
+            <Droplets size={20} color={colors.primary} />
+          </View>
+          <View style={styles.gamificationTextContainer}>
+            <Text style={styles.gamificationTitle}>Water Tracking</Text>
+            <Text style={styles.gamificationDescription}>
+              {waterTrackingMode === 'disabled' ? 'Disabled' : 
+               waterTrackingMode === 'minimal' ? 'Minimal view' : 'Full tracking'}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={[styles.waterModeButton, { backgroundColor: colors.backgroundLight }]}
+          onPress={() => {
+            const modes = ['disabled', 'minimal', 'full'];
+            const currentIndex = modes.indexOf(waterTrackingMode);
+            const nextIndex = (currentIndex + 1) % modes.length;
+            setWaterTrackingMode(modes[nextIndex] as any);
+          }}
+        >
+          <Text style={[styles.waterModeButtonText, { color: colors.primary }]}>
+            {waterTrackingMode === 'disabled' ? 'Off' : 
+             waterTrackingMode === 'minimal' ? 'Min' : 'Full'}
+          </Text>
+        </TouchableOpacity>
       </View>
       
       {profileSections.map((section, index) => (
@@ -279,5 +311,17 @@ const styles = StyleSheet.create({
   privacyLink: {
     fontSize: 12,
     color: colors.primary,
+  },
+  waterModeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    minWidth: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterModeButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

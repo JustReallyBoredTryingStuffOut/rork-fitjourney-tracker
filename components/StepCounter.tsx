@@ -84,6 +84,63 @@ export default function StepCounter({ compact = false }: StepCounterProps) {
       );
     }
   };
+
+  const handleManualHealthKitAuth = async () => {
+    if (Platform.OS !== 'ios') return;
+    
+    setIsRetrying(true);
+    
+    try {
+      // Import HealthKit module
+      const HealthKit = require('@/src/NativeModules/HealthKit');
+      
+      Alert.alert('Debug', 'Starting manual HealthKit authorization...');
+      
+      // Check if HealthKit is available
+      const isAvailable = await HealthKit.isHealthDataAvailable();
+      
+      if (!isAvailable) {
+        Alert.alert('Error', 'HealthKit is not available on this device.');
+        setIsRetrying(false);
+        return;
+      }
+      
+      // Request authorization
+      const authResult = await HealthKit.requestAuthorization([
+        'steps', 
+        'distance', 
+        'calories',
+        'activity'
+      ]);
+      
+      if (authResult.authorized) {
+        Alert.alert(
+          'Success!', 
+          'HealthKit authorized successfully! Check Settings → Privacy & Security → Health → Data Access & Devices to see FitJourneyTracker in the list.',
+          [
+            { 
+              text: 'Restart App', 
+              onPress: () => {
+                Alert.alert('Restart Required', 'Please close and reopen the app to complete the setup.', [
+                  { text: 'OK' }
+                ]);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Authorization Failed', 
+          'HealthKit authorization was denied. Please check your privacy settings.'
+        );
+      }
+    } catch (error: any) {
+      Alert.alert('Error', `HealthKit authorization failed: ${error.message}`);
+      console.error('Manual HealthKit auth error:', error);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
   
   // Get data source display name
   const getDataSourceName = () => {
@@ -134,12 +191,12 @@ export default function StepCounter({ compact = false }: StepCounterProps) {
         {Platform.OS === 'ios' && (
           <View style={styles.bluetoothStatusContainer}>
             <View style={styles.bluetoothStatusContent}>
-              <Bluetooth size={16} color={bluetoothState === "poweredOn" ? colors.primary : colors.error} />
+              <Bluetooth size={16} color={(bluetoothState === "poweredOn" || bluetoothState === "PoweredOn") ? colors.primary : colors.error} />
               <Text style={[
                 styles.bluetoothStatusText, 
-                { color: bluetoothState === "poweredOn" ? colors.primary : colors.error }
+                { color: (bluetoothState === "poweredOn" || bluetoothState === "PoweredOn") ? colors.primary : colors.error }
               ]}>
-                Bluetooth: {bluetoothState === "poweredOn" ? "On" : "Off"}
+                Bluetooth: {(bluetoothState === "poweredOn" || bluetoothState === "PoweredOn") ? "On" : "Off"}
               </Text>
             </View>
             
@@ -156,6 +213,24 @@ export default function StepCounter({ compact = false }: StepCounterProps) {
         )}
         
         <View style={styles.errorActions}>
+          {/* Manual HealthKit Authorization Button for iOS */}
+          {Platform.OS === 'ios' && healthKitAvailable && !healthKitAuthorized && (
+            <TouchableOpacity 
+              style={styles.healthKitButton}
+              onPress={handleManualHealthKitAuth}
+              disabled={isRetrying}
+            >
+              {isRetrying ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Zap size={16} color="#FFFFFF" />
+                  <Text style={styles.healthKitButtonText}>Authorize Apple Health</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity 
             style={styles.retryButton}
             onPress={handleRetry}
@@ -707,6 +782,20 @@ const styles = StyleSheet.create({
   },
   healthKitStatusBadgeText: {
     fontSize: 10,
+    marginLeft: 4,
+  },
+  healthKitButton: {
+    backgroundColor: "#4CD964",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  healthKitButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "500",
     marginLeft: 4,
   },
 });

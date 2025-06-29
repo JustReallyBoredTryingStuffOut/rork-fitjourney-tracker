@@ -137,7 +137,8 @@ export const usePhotoStore = create<PhotoState>()(
       },
       
       addFoodPhoto: async (photo) => {
-        if (Platform.OS !== "web") {
+        // Only save to filesystem if there's a valid URI (skip for nutrition label scans with empty URI)
+        if (Platform.OS !== "web" && photo.uri && photo.uri.trim() !== "") {
           try {
             const fileName = `food_${photo.id}.jpg`;
             let newUri;
@@ -196,7 +197,8 @@ export const usePhotoStore = create<PhotoState>()(
       },
       
       addProgressPhoto: async (photo) => {
-        if (Platform.OS !== "web") {
+        // Only save to filesystem if there's a valid URI
+        if (Platform.OS !== "web" && photo.uri && photo.uri.trim() !== "") {
           try {
             const fileName = `progress_${photo.id}.jpg`;
             let newUri;
@@ -256,8 +258,8 @@ export const usePhotoStore = create<PhotoState>()(
       
       // Media functions
       addWorkoutMedia: async (media) => {
-        // Only save to filesystem if it's a local file (not a URL) and not on web
-        if (Platform.OS !== "web" && !media.uri.startsWith("http")) {
+        // Only save to filesystem if it's a valid local file (not a URL or empty) and not on web
+        if (Platform.OS !== "web" && media.uri && media.uri.trim() !== "" && !media.uri.startsWith("http")) {
           try {
             const extension = get().isGifUrl(media.uri) ? "gif" : "jpg";
             const fileName = `workout_${media.id}.${extension}`;

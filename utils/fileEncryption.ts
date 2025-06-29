@@ -44,7 +44,7 @@ const generateSecureFilename = async (sourceUri: string, baseFileName: string): 
       // This avoids loading the entire file into memory
       const fileInfo = await FileSystem.getInfoAsync(sourceUri);
       
-      if (fileInfo.exists && fileInfo.size > 0) {
+      if (fileInfo.exists && 'size' in fileInfo && fileInfo.size && fileInfo.size > 0) {
         // Read the first 4KB of the file
         const headerBytes = await FileSystem.readAsStringAsync(sourceUri, {
           encoding: FileSystem.EncodingType.Base64,
@@ -88,6 +88,11 @@ export const encryptAndSavePhoto = async (
   if (Platform.OS === 'web') {
     // For web, we can't encrypt files directly, so just return the original URI
     return sourceUri;
+  }
+  
+  // Validate the source URI
+  if (!sourceUri || typeof sourceUri !== 'string' || sourceUri.trim() === '') {
+    throw new Error('Invalid source URI: empty or null');
   }
   
   try {

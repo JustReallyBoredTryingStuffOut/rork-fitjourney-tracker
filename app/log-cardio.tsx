@@ -46,7 +46,14 @@ export default function LogCardioScreen() {
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [showRoutes, setShowRoutes] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [selectedRoute, setSelectedRoute] = useState<{
+    id: string;
+    name: string;
+    distance: number;
+    estimatedTime: number;
+    difficulty: string;
+    imageUrl: string;
+  } | null>(null);
   const [useConnectedDevice, setUseConnectedDevice] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -157,11 +164,7 @@ export default function LogCardioScreen() {
       calories: parseInt(calories) || 0,
       notes,
       isOutdoor,
-      location: isOutdoor ? location : "",
-      route: selectedRoute ? {
-        id: selectedRoute.id,
-        name: selectedRoute.name,
-      } : undefined,
+      location: isOutdoor ? (selectedRoute ? selectedRoute.name : location) : "",
       heartRate: heartRate.avg > 0 ? heartRate : undefined,
       source: useConnectedDevice && selectedDevice ? 
         connectedDevices.find(d => d.id === selectedDevice)?.name || "Connected Device" : 
@@ -254,12 +257,7 @@ export default function LogCardioScreen() {
       <Stack.Screen 
         options={{
           title: "Log Cardio Activity",
-          headerBackTitle: "Health",
-          headerLeft: () => (
-            <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-              <ChevronLeft size={24} color={colors.primary} />
-            </TouchableOpacity>
-          ),
+          headerBackTitle: "Back",
         }}
       />
       
@@ -275,7 +273,7 @@ export default function LogCardioScreen() {
             <Switch
               value={useConnectedDevice}
               onValueChange={setUseConnectedDevice}
-              trackColor={{ false: colors.inactive, true: colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
             />
           </View>
@@ -593,6 +591,13 @@ export default function LogCardioScreen() {
         title="Save Activity"
         onPress={handleSave}
         style={styles.saveButton}
+      />
+      
+      <Button
+        title="Back"
+        onPress={handleGoBack}
+        variant="outline"
+        style={styles.backButton}
       />
     </ScrollView>
   );
@@ -931,6 +936,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   backButton: {
-    padding: 8,
+    marginTop: 12,
+    marginBottom: 20,
   },
 });

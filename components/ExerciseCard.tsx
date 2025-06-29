@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Modal } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { useRouter } from "expo-router";
 import { Dumbbell, ChevronRight, Clock, X, BarChart2, History, Info } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
@@ -73,15 +73,15 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
           </TouchableOpacity>
           <View style={styles.compactTags}>
             {exercise.muscleGroups.slice(0, 1).map(group => (
-              <View key={group} style={[styles.compactTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
-                <Text style={[styles.compactTagText, { color: "#3498db" }]}>{group}</Text>
+              <View key={group.name} style={[styles.compactTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+                <Text style={[styles.compactTagText, { color: "#3498db" }]}>{group.name}</Text>
               </View>
             ))}
             {exercise.equipment.length > 0 && (
               <View style={[styles.compactEquipment, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
                 <Dumbbell size={10} color={colors.textSecondary} />
                 <Text style={[styles.compactEquipmentText, { color: colors.textSecondary }]}>
-                  {exercise.equipment[0]}
+                  {exercise.equipment[0].name}
                 </Text>
               </View>
             )}
@@ -125,31 +125,21 @@ export default function ExerciseCard({ exercise, onPress, compact = false }: Exe
         
         <View style={styles.tags}>
           {exercise.muscleGroups.map(group => (
-            <View key={group} style={[styles.tag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
-              <Text style={[styles.tagText, { color: "#3498db" }]}>{group}</Text>
+            <View key={group.name} style={[styles.tag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+              <Text style={[styles.tagText, { color: "#3498db" }]}>{group.name}</Text>
             </View>
           ))}
         </View>
         
         <View style={styles.equipment}>
           {exercise.equipment.map(item => (
-            <View key={item} style={[styles.equipmentItem, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
+            <View key={item.name} style={[styles.equipmentItem, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
               <Dumbbell size={12} color={colors.textSecondary} />
-              <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>{item}</Text>
+              <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>{item.name}</Text>
             </View>
           ))}
         </View>
       </View>
-      
-      {exercise.imageUrl && (
-        <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: exercise.imageUrl }} 
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </View>
-      )}
       
       <TouchableOpacity style={styles.arrow} onPress={handlePress}>
         <ChevronRight size={20} color={colors.textLight} />
@@ -405,11 +395,9 @@ function RecordsHistoryModal({
                       Muscle Groups
                     </Text>
                     <View style={styles.aboutDetailTags}>
-                      {exercise.muscleGroups.map((group, idx) => (
-                        <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
-                          <Text style={[styles.aboutDetailTagText, { color: "#3498db" }]}>
-                            {group}
-                          </Text>
+                      {exercise.muscleGroups.map(group => (
+                        <View key={group.name} style={[styles.aboutDetailTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+                          <Text style={[styles.aboutDetailTagText, { color: "#3498db" }]}>{group.name}</Text>
                         </View>
                       ))}
                     </View>
@@ -420,11 +408,9 @@ function RecordsHistoryModal({
                       Equipment
                     </Text>
                     <View style={styles.aboutDetailTags}>
-                      {exercise.equipment.map((item, idx) => (
-                        <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
-                          <Text style={[styles.aboutDetailTagText, { color: colors.textSecondary }]}>
-                            {item}
-                          </Text>
+                      {exercise.equipment.map(item => (
+                        <View key={item.name} style={[styles.aboutDetailTag, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
+                          <Text style={[styles.aboutDetailTagText, { color: colors.textSecondary }]}>{item.name}</Text>
                         </View>
                       ))}
                     </View>
@@ -435,27 +421,10 @@ function RecordsHistoryModal({
                       Difficulty
                     </Text>
                     <View style={[styles.aboutDifficultyBadge, { backgroundColor: getBadgeColor(exercise.difficulty) }]}>
-                      <Text style={styles.aboutDifficultyText}>
-                        {exercise.difficulty}
-                      </Text>
+                      <Text style={styles.aboutDifficultyText}>{exercise.difficulty}</Text>
                     </View>
                   </View>
                 </View>
-                
-                {exercise.imageUrl && (
-                  <View style={styles.aboutImageContainer}>
-                    <Text style={[styles.aboutImageTitle, { color: colors.text }]}>
-                      Reference Image
-                    </Text>
-                    <View style={styles.aboutImage}>
-                      <Image 
-                        source={{ uri: exercise.imageUrl }} 
-                        style={styles.aboutImageContent}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  </View>
-                )}
               </View>
             )}
           </View>
@@ -492,6 +461,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    marginRight: 8,
   },
   header: {
     flexDirection: "row",
@@ -506,11 +476,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "600",
+    marginBottom: 4,
   },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   badgeText: {
     fontSize: 12,
@@ -521,18 +493,18 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 14,
     marginBottom: 12,
+    lineHeight: 20,
   },
   tags: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 8,
+    gap: 6,
   },
   tag: {
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    marginRight: 6,
-    marginBottom: 6,
   },
   tagText: {
     fontSize: 12,
@@ -540,6 +512,7 @@ const styles = StyleSheet.create({
   equipment: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 6,
   },
   equipmentItem: {
     flexDirection: "row",
@@ -547,27 +520,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    marginRight: 6,
-    marginBottom: 4,
   },
   equipmentText: {
     fontSize: 12,
     marginLeft: 4,
   },
-  imageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    overflow: "hidden",
-    marginLeft: 12,
-    marginRight: 12,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
   arrow: {
     justifyContent: "center",
+    marginLeft: 8,
   },
   
   // Compact styles
@@ -835,25 +795,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FFFFFF',
     textTransform: 'capitalize',
-  },
-  aboutImageContainer: {
-    marginTop: 8,
-  },
-  aboutImageTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  aboutImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  aboutImageContent: {
-    width: '100%',
-    height: '100%',
   },
   
   // Empty state styles

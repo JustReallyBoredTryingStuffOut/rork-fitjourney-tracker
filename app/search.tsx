@@ -398,7 +398,7 @@ export default function SearchScreen() {
                             
                             {muscleGroups.map(group => (
                               <TouchableOpacity 
-                                key={group}
+                                key={group.name}
                                 style={[
                                   styles.filterCategoryChip,
                                   { backgroundColor: colors.card, borderColor: colors.border },
@@ -411,7 +411,7 @@ export default function SearchScreen() {
                                   { color: colors.text },
                                   filterMuscleGroup === group && styles.filterCategoryTextActive
                                 ]}>
-                                  {group}
+                                  {group.name}
                                 </Text>
                               </TouchableOpacity>
                             ))}

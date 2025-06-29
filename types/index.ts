@@ -17,16 +17,20 @@ export interface UserProfile {
 }
 
 // Workout Types
-export type BodyRegion = 'upper_body' | 'lower_body' | 'core' | 'full_body';
-export type MuscleGroup = 
-  'chest' | 'back' | 'shoulders' | 'biceps' | 'triceps' | 'forearms' | 
-  'quadriceps' | 'hamstrings' | 'glutes' | 'calves' | 'abs' | 'obliques' | 
-  'lower_back' | 'traps' | 'lats' | 'deltoids';
+export type BodyRegion = {
+  name: string;
+  image?: any;
+};
 
-export type EquipmentType = 
-  'bodyweight' | 'dumbbell' | 'barbell' | 'kettlebell' | 'resistance_band' | 
-  'cable_machine' | 'smith_machine' | 'leg_press' | 'bench' | 'pull_up_bar' | 
-  'medicine_ball' | 'stability_ball' | 'foam_roller' | 'trx' | 'machine';
+export type MuscleGroup = {
+  name: string;
+  bodyRegion: BodyRegion;
+};
+
+export type EquipmentType = {
+  name: string;
+  category: string;
+};
 
 export interface Exercise {
   id: string;
@@ -34,7 +38,6 @@ export interface Exercise {
   description: string;
   instructions: string[];
   muscleGroups: MuscleGroup[];
-  bodyRegion: BodyRegion;
   equipment: EquipmentType[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   videoUrl?: string;
@@ -82,6 +85,7 @@ export interface ExerciseLog {
   exerciseId: string;
   sets: WorkoutSet[];
   notes: string;
+  completed: boolean;
 }
 
 export interface WorkoutRating {
@@ -116,8 +120,9 @@ export interface WorkoutLog {
 
 export interface ScheduledWorkout {
   id: string;
-  workoutId: string;
+  workoutId?: string; // Optional for flexible workouts
   workoutName?: string; // Added for easier display
+  workoutType?: 'specific' | 'flexible'; // Added to distinguish between specific and flexible workouts
   
   // Scheduling type
   scheduleType: 'recurring' | 'one-time';
@@ -176,6 +181,42 @@ export interface NutritionGoals {
     fat: number; // percentage
   };
   waterIntake: number; // in ml
+}
+
+export interface MacroGoals {
+  calories: number;
+  protein: number; // in grams
+  carbs: number; // in grams
+  fat: number; // in grams
+}
+
+export interface MacroLog {
+  id: string;
+  date: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  foodName: string;
+  calories: number;
+  protein: number; // in grams
+  carbs: number; // in grams
+  fat: number; // in grams
+  quantity: number;
+  notes?: string;
+}
+
+export interface FoodCategory {
+  id: string;
+  name: string;
+  mealType: string;
+  items: {
+    id: string;
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    servingSize: string;
+    imageUrl?: string;
+  }[];
 }
 
 export interface FoodItem {
@@ -277,6 +318,34 @@ export interface CardioLog {
   notes?: string;
 }
 
+export interface ActivityLog {
+  id: string;
+  type: string; // e.g., 'walking', 'running', 'cycling', 'swimming', 'hiking', 'jumping_rope', 'other'
+  date: string;
+  duration: number; // in minutes
+  distance?: number; // in km
+  calories: number;
+  notes?: string;
+  isOutdoor: boolean;
+  location?: string;
+  reps?: number; // for jumping rope and other rep-based activities
+  sets?: number; // for jumping rope and other set-based activities
+  source?: string; // e.g., 'Apple Health', 'Fitbit', 'Device Pedometer'
+  deviceId?: string; // ID of the device that provided the data
+  externalId?: string; // External ID from the source device
+  heartRate?: {
+    avg: number;
+    max: number;
+    min: number;
+  };
+  elevationGain?: number;
+  route?: {
+    lat: number;
+    lng: number;
+    timestamp: string;
+  }[];
+}
+
 // Progress Photo Types
 export interface ProgressPhoto {
   id: string;
@@ -314,7 +383,7 @@ export interface Achievement {
   currentProgress: number;
   completed: boolean;
   completedDate?: string;
-  pointsAwarded: number;
+  pointsAwarded?: number;
 }
 
 export interface Challenge {
@@ -329,7 +398,7 @@ export interface Challenge {
   unit: string;
   completed: boolean;
   completedDate?: string;
-  pointsAwarded: number;
+  pointsAwarded?: number;
 }
 
 export interface DailyQuest {
@@ -340,7 +409,7 @@ export interface DailyQuest {
   date: string;
   completed: boolean;
   completedDate?: string;
-  pointsAwarded: number;
+  pointsAwarded?: number;
 }
 
 export interface Reward {
@@ -474,6 +543,7 @@ export interface HealthGoals {
   weeklyWorkouts: number;
   targetWeight: number;
   targetDate: string;
+  dailyWaterGoal?: number; // in ml
 }
 
 // Water Intake
@@ -481,6 +551,14 @@ export interface WaterIntake {
   id: string;
   date: string;
   amount: number;
+}
+
+export interface DailyNote {
+  id: string;
+  date: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Export all types
