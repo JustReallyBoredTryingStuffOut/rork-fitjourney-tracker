@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		3A8FE8C32E12035300A5E1C9 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A8FE8C22E12035300A5E1C9 /* HealthKit.framework */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		882DCF6068610DA9949FAA72 /* libPods-FitJourneyTracker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2066FB778345BBABC1A80F1C /* libPods-FitJourneyTracker.a */; };
 		9C8CB5962D89DC2C64482A7D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766758E7EBEBEFEDFD367D8 /* ExpoModulesProvider.swift */; };
@@ -21,6 +22,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FitJourneyTracker/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FitJourneyTracker/Info.plist; sourceTree = "<group>"; };
 		2066FB778345BBABC1A80F1C /* libPods-FitJourneyTracker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FitJourneyTracker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A8FE8C22E12035300A5E1C9 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		5766758E7EBEBEFEDFD367D8 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-FitJourneyTracker/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		5CCAEBB98257D4F58E43E5F8 /* Pods-FitJourneyTracker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FitJourneyTracker.debug.xcconfig"; path = "Target Support Files/Pods-FitJourneyTracker/Pods-FitJourneyTracker.debug.xcconfig"; sourceTree = "<group>"; };
 		71A9B27CB2E0C6CADCFBDC2E /* Pods-FitJourneyTracker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FitJourneyTracker.release.xcconfig"; path = "Target Support Files/Pods-FitJourneyTracker/Pods-FitJourneyTracker.release.xcconfig"; sourceTree = "<group>"; };
@@ -38,6 +40,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				882DCF6068610DA9949FAA72 /* libPods-FitJourneyTracker.a in Frameworks */,
+				3A8FE8C32E12035300A5E1C9 /* HealthKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,6 +72,7 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3A8FE8C22E12035300A5E1C9 /* HealthKit.framework */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				2066FB778345BBABC1A80F1C /* libPods-FitJourneyTracker.a */,
 			);
@@ -468,10 +472,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -526,10 +527,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

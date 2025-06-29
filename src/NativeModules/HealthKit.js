@@ -1,12 +1,13 @@
 import { Platform } from 'react-native';
 import RNHealthKit from 'react-native-health';
+import { HealthKitPermissions } from 'react-native-health';
 
 // Check if HealthKit is available
 let isLibraryAvailable = false;
 
 try {
-  isLibraryAvailable = !!RNHealthKit;
-  console.log('[HealthKit] Successfully loaded react-native-health library');
+  isLibraryAvailable = !!(RNHealthKit && RNHealthKit.isHealthDataAvailable);
+  console.log('[HealthKit] Successfully loaded react-native-health library with methods:', isLibraryAvailable);
 } catch (error) {
   console.log('[HealthKit] react-native-health library not available, using fallback mode');
   isLibraryAvailable = false;
@@ -35,49 +36,26 @@ class HealthKit {
     }
     
     try {
-      // Set up permissions only if Constants are available
-      if (RNHealthKit.Constants && RNHealthKit.Constants.Permissions) {
-        this.permissions = {
-          read: [
-            RNHealthKit.Constants.Permissions.Steps,
-            RNHealthKit.Constants.Permissions.HeartRate,
-            RNHealthKit.Constants.Permissions.ActiveEnergyBurned,
-            RNHealthKit.Constants.Permissions.DistanceWalkingRunning,
-            RNHealthKit.Constants.Permissions.Weight,
-            RNHealthKit.Constants.Permissions.Height,
-            RNHealthKit.Constants.Permissions.DateOfBirth,
-            RNHealthKit.Constants.Permissions.BiologicalSex,
-            RNHealthKit.Constants.Permissions.Workout,
-          ],
-          write: [
-            RNHealthKit.Constants.Permissions.Steps,
-            RNHealthKit.Constants.Permissions.ActiveEnergyBurned,
-            RNHealthKit.Constants.Permissions.Workout,
-            RNHealthKit.Constants.Permissions.Weight,
-          ]
-        };
-      } else {
-        console.warn('[HealthKit] Constants not available, using string permissions');
-        this.permissions = {
-          read: [
-            'Steps',
-            'HeartRate', 
-            'ActiveEnergyBurned',
-            'DistanceWalkingRunning',
-            'Weight',
-            'Height',
-            'DateOfBirth',
-            'BiologicalSex',
-            'Workout',
-          ],
-          write: [
-            'Steps',
-            'ActiveEnergyBurned',
-            'Workout',
-            'Weight',
-          ]
-        };
-      }
+      // Use the proper permissions from react-native-health
+      this.permissions = {
+        read: [
+          HealthKitPermissions.Steps,
+          HealthKitPermissions.HeartRate,
+          HealthKitPermissions.ActiveEnergyBurned,
+          HealthKitPermissions.DistanceWalkingRunning,
+          HealthKitPermissions.Weight,
+          HealthKitPermissions.Height,
+          HealthKitPermissions.DateOfBirth,
+          HealthKitPermissions.BiologicalSex,
+          HealthKitPermissions.Workout,
+        ],
+        write: [
+          HealthKitPermissions.Steps,
+          HealthKitPermissions.ActiveEnergyBurned,
+          HealthKitPermissions.Workout,
+          HealthKitPermissions.Weight,
+        ]
+      };
     } catch (error) {
       console.error('[HealthKit] Error setting up permissions:', error);
       this.permissions = {
@@ -143,9 +121,8 @@ class HealthKit {
       return { authorized: false };
     }
 
-    if (!RNHealthKit) {
+    if (!RNHealthKit || !isLibraryAvailable) {
       console.warn('[HealthKit] Library not available - simulating authorization');
-      // Return authorized: true for fallback mode
       return { authorized: true };
     }
 
@@ -159,19 +136,19 @@ class HealthKit {
       dataTypes.forEach(type => {
         switch (type) {
           case 'steps':
-            permissions.read.push(RNHealthKit.Constants.Permissions.Steps);
-            permissions.write.push(RNHealthKit.Constants.Permissions.Steps);
+            permissions.read.push(HealthKitPermissions.Steps);
+            permissions.write.push(HealthKitPermissions.Steps);
             break;
           case 'distance':
-            permissions.read.push(RNHealthKit.Constants.Permissions.DistanceWalkingRunning);
+            permissions.read.push(HealthKitPermissions.DistanceWalkingRunning);
             break;
           case 'calories':
-            permissions.read.push(RNHealthKit.Constants.Permissions.ActiveEnergyBurned);
-            permissions.write.push(RNHealthKit.Constants.Permissions.ActiveEnergyBurned);
+            permissions.read.push(HealthKitPermissions.ActiveEnergyBurned);
+            permissions.write.push(HealthKitPermissions.ActiveEnergyBurned);
             break;
           case 'activity':
-            permissions.read.push(RNHealthKit.Constants.Permissions.Workout);
-            permissions.write.push(RNHealthKit.Constants.Permissions.Workout);
+            permissions.read.push(HealthKitPermissions.Workout);
+            permissions.write.push(HealthKitPermissions.Workout);
             break;
         }
       });
