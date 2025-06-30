@@ -164,7 +164,9 @@ export default function useStepCounter() {
               'steps', 
               'distance', 
               'calories',
-              'activity'
+              'activity',
+              'heartRate',
+              'sleep'
             ]);
             
             setHealthKitAuthorized(authResult.authorized);
@@ -548,7 +550,9 @@ export default function useStepCounter() {
         'steps', 
         'distance', 
         'calories',
-        'activity'
+        'activity',
+        'heartRate',
+        'sleep'
       ]);
       
       setHealthKitAuthorized(authResult.authorized);
@@ -784,7 +788,9 @@ export default function useStepCounter() {
             'steps', 
             'distance', 
             'calories',
-            'activity'
+            'activity',
+            'heartRate',
+            'sleep'
           ]);
           
           if (authResult.authorized) {
@@ -1093,7 +1099,9 @@ export default function useStepCounter() {
             'steps', 
             'distance', 
             'calories',
-            'activity'
+            'activity',
+            'heartRate',
+            'sleep'
           ]);
           
           Alert.alert('RESULT', `Authorization result: ${JSON.stringify(authResult)}`);
