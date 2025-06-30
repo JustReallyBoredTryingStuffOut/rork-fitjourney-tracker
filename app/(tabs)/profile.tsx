@@ -26,7 +26,7 @@ import { useThemeStore } from "@/store/themeStore";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTheme } from '../../context/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function ProfileScreen() {
   const router = useRouter();

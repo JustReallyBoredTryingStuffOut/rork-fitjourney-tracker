@@ -6,24 +6,24 @@ import { randomBytes } from 'crypto';
 import { secureDeleteFile, secureDeleteFileWithMetadata } from './secureDelete';
 
 // Directory for encrypted photos
-export const ENCRYPTED_PHOTOS_DIR = `${RNFS.documentDirectory}encrypted_photos/`;
+export const ENCRYPTED_PHOTOS_DIR = `${RNFS.DocumentDirectoryPath}/encrypted_photos/`;
 // Directory for temporary decrypted files
-export const TEMP_DECRYPTED_DIR = `${RNFS.cacheDirectory}temp_decrypted/`;
+export const TEMP_DECRYPTED_DIR = `${RNFS.CachesDirectoryPath}/temp_decrypted/`;
 
 // Ensure encrypted photos directory exists
 export const setupEncryptedPhotoDirectory = async (): Promise<void> => {
   if (Platform.OS === 'web') return;
   
   try {
-    const dirInfo = await RNFS.getInfoAsync(ENCRYPTED_PHOTOS_DIR);
-    if (!dirInfo.exists) {
-      await RNFS.makeDirectoryAsync(ENCRYPTED_PHOTOS_DIR, { intermediates: true });
+    const dirExists = await RNFS.exists(ENCRYPTED_PHOTOS_DIR);
+    if (!dirExists) {
+      await RNFS.mkdir(ENCRYPTED_PHOTOS_DIR);
     }
     
     // Also create temp directory for decrypted files
-    const tempDirInfo = await RNFS.getInfoAsync(TEMP_DECRYPTED_DIR);
-    if (!tempDirInfo.exists) {
-      await RNFS.makeDirectoryAsync(TEMP_DECRYPTED_DIR, { intermediates: true });
+    const tempDirExists = await RNFS.exists(TEMP_DECRYPTED_DIR);
+    if (!tempDirExists) {
+      await RNFS.mkdir(TEMP_DECRYPTED_DIR);
     }
   } catch (error) {
     console.error('Error setting up encrypted photo directory:', error);
@@ -39,29 +39,26 @@ if (Platform.OS !== 'web') {
 const generateSecureFilename = async (sourceUri: string, baseFileName: string): Promise<string> => {
   try {
     // For local files, hash the content for a unique filename
-    if (sourceUri.startsWith('file://') || sourceUri.startsWith(RNFS.documentDirectory)) {
+    if (sourceUri.startsWith('file://') || sourceUri.startsWith(RNFS.DocumentDirectoryPath)) {
       // Read a small portion of the file to create a hash
       // This avoids loading the entire file into memory
-      const fileInfo = await RNFS.getInfoAsync(sourceUri);
+      const fileExists = await RNFS.exists(sourceUri);
       
-      if (fileInfo.exists && 'size' in fileInfo && fileInfo.size && fileInfo.size > 0) {
-        // Read the first 4KB of the file
-        const headerBytes = await RNFS.readAsStringAsync(sourceUri, {
-          encoding: RNFS.EncodingType.Base64,
-          position: 0,
-          length: Math.min(4096, fileInfo.size)
-        });
+      if (fileExists) {
+        const fileInfo = await RNFS.stat(sourceUri);
+        if (fileInfo.size && fileInfo.size > 0) {
+          // Read the first 4KB of the file
+          const headerBytes = await RNFS.read(sourceUri, Math.min(4096, fileInfo.size), 0, 'base64');
         
         // Create a hash from the header + file size + timestamp + random value
-        const randomBytes = await Random.getRandomBytesAsync(16);
-        const randomValue = Array.from(randomBytes)
+        const randomBytesBuffer = randomBytes(16);
+        const randomValue = Array.from(randomBytesBuffer)
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
         
-        const contentHash = await Crypto.digestStringAsync(
-          Crypto.CryptoDigestAlgorithm.SHA256,
-          headerBytes + fileInfo.size + Date.now() + randomValue
-        );
+        const contentHash = createHash('sha256')
+          .update(headerBytes + fileInfo.size + Date.now() + randomValue)
+          .digest('hex');
         
         // Use the first 12 characters of the hash
         return `${baseFileName.split('.')[0]}_${contentHash.substring(0, 12)}.enc`;
@@ -72,8 +69,8 @@ const generateSecureFilename = async (sourceUri: string, baseFileName: string): 
   }
   
   // Fallback to timestamp-based filename with random component
-  const randomBytes = await Random.getRandomBytesAsync(8);
-  const randomValue = Array.from(randomBytes)
+  const randomBytesBuffer = randomBytes(8);
+  const randomValue = Array.from(randomBytesBuffer)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
   
@@ -103,9 +100,7 @@ export const encryptAndSavePhoto = async (
     const encryptedFilePath = `${ENCRYPTED_PHOTOS_DIR}${secureFileName}`;
     
     // Read the file as base64
-    const fileContent = await RNFS.readAsStringAsync(sourceUri, {
-      encoding: RNFS.EncodingType.Base64
-    });
+    const fileContent = await RNFS.readFile(sourceUri, 'base64');
     
     // Create metadata with file type and original name
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
@@ -115,10 +110,9 @@ export const encryptAndSavePhoto = async (
       timestamp: Date.now(),
       originalSize: fileContent.length,
       encryptionVersion: 2, // Track encryption version for future upgrades
-      contentHash: await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        fileContent.substring(0, Math.min(fileContent.length, 1024)) // Hash first 1KB for verification
-      )
+      contentHash: createHash('sha256')
+        .update(fileContent.substring(0, Math.min(fileContent.length, 1024))) // Hash first 1KB for verification
+        .digest('hex')
     });
     
     // Encrypt the metadata and file content separately
@@ -129,17 +123,17 @@ export const encryptAndSavePhoto = async (
     const fullEncryptedContent = `${encryptedMetadata}|||${encryptedContent}`;
     
     // Write the encrypted content to the new file
-    await RNFS.writeAsStringAsync(encryptedFilePath, fullEncryptedContent);
+    await RNFS.writeFile(encryptedFilePath, fullEncryptedContent, 'utf8');
     
     // Create a verification file to ensure integrity
-    const verificationHash = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      fullEncryptedContent.substring(0, Math.min(fullEncryptedContent.length, 1024)) // Hash first 1KB
-    );
+    const verificationHash = createHash('sha256')
+      .update(fullEncryptedContent.substring(0, Math.min(fullEncryptedContent.length, 1024))) // Hash first 1KB
+      .digest('hex');
     
-    await RNFS.writeAsStringAsync(
+    await RNFS.writeFile(
       `${encryptedFilePath}.verify`,
-      verificationHash
+      verificationHash,
+      'utf8'
     );
     
     return encryptedFilePath;
@@ -148,10 +142,7 @@ export const encryptAndSavePhoto = async (
     // If encryption fails, copy the file without encryption as fallback
     try {
       const fallbackPath = `${ENCRYPTED_PHOTOS_DIR}${fileName}`;
-      await RNFS.copyAsync({
-        from: sourceUri,
-        to: fallbackPath
-      });
+      await RNFS.copyFile(sourceUri, fallbackPath);
       return fallbackPath;
     } catch (fallbackError) {
       console.error('Fallback copy also failed:', fallbackError);
@@ -169,7 +160,7 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
   
   try {
     // Read the encrypted file
-    const encryptedContent = await RNFS.readAsStringAsync(encryptedUri);
+    const encryptedContent = await RNFS.readFile(encryptedUri, 'utf8');
     
     // Check if this is our new format with metadata
     if (encryptedContent.includes('|||')) {
@@ -191,10 +182,9 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
       
       // Verify content integrity if we have a hash in metadata
       if (metadata.contentHash) {
-        const contentHash = await Crypto.digestStringAsync(
-          Crypto.CryptoDigestAlgorithm.SHA256,
-          decryptedContent.substring(0, Math.min(decryptedContent.length, 1024)) // Hash first 1KB
-        );
+        const contentHash = createHash('sha256')
+          .update(decryptedContent.substring(0, Math.min(decryptedContent.length, 1024))) // Hash first 1KB
+          .digest('hex');
         
         if (contentHash !== metadata.contentHash) {
           console.warn('Content hash verification failed, file may be corrupted');
@@ -206,10 +196,8 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
       const tempFileName = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExtension}`;
       const tempFilePath = `${TEMP_DECRYPTED_DIR}${tempFileName}`;
       
-      // Write the decrypted content to the temp file
-      await RNFS.writeAsStringAsync(tempFilePath, decryptedContent, {
-        encoding: RNFS.EncodingType.Base64
-      });
+              // Write the decrypted content to the temp file
+        await RNFS.writeFile(tempFilePath, decryptedContent, 'base64');
       
       return tempFilePath;
     } else {
@@ -225,9 +213,7 @@ export const decryptPhoto = async (encryptedUri: string): Promise<string> => {
       const tempFilePath = `${TEMP_DECRYPTED_DIR}${tempFileName}`;
       
       // Write the decrypted content to the temp file
-      await RNFS.writeAsStringAsync(tempFilePath, decryptedContent, {
-        encoding: RNFS.EncodingType.Base64
-      });
+      await RNFS.writeFile(tempFilePath, decryptedContent, 'base64');
       
       return tempFilePath;
     }
@@ -256,10 +242,10 @@ export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
     // Delete verification file if it exists
     try {
       const verifyUri = `${uri}.verify`;
-      const verifyInfo = await RNFS.getInfoAsync(verifyUri);
-      if (verifyInfo.exists) {
-        await RNFS.deleteAsync(verifyUri, { idempotent: true });
-      }
+      const verifyInfo = await RNFS.stat(verifyUri);
+              if (verifyInfo.isFile && verifyInfo.isFile()) {
+          await RNFS.unlink(verifyUri);
+        }
     } catch (verifyError) {
       console.warn('Error deleting verification file:', verifyError);
     }
@@ -271,7 +257,7 @@ export const deleteEncryptedPhoto = async (uri: string): Promise<void> => {
       const baseFileName = fileName.split('.')[0];
       
       try {
-        const tempDirContents = await RNFS.readDirectoryAsync(TEMP_DECRYPTED_DIR);
+        const tempDirContents = await RNFS.readDir(TEMP_DECRYPTED_DIR);
         const relatedTempFiles = tempDirContents.filter(file => 
           file.includes(baseFileName) || file.includes(uri.substring(uri.length - 20))
         );
@@ -302,13 +288,13 @@ export const getEncryptedPhotoInfo = async (uri: string): Promise<{
   }
   
   try {
-    const fileInfo = await RNFS.getInfoAsync(uri);
+    const fileInfo = await RNFS.stat(uri);
     
     // Try to extract metadata if the file exists
-    let metadata = undefined;
-    if (fileInfo.exists) {
+          let metadata = undefined;
+      if (fileInfo.isFile && fileInfo.isFile()) {
       try {
-        const encryptedContent = await RNFS.readAsStringAsync(uri);
+        const encryptedContent = await RNFS.readFile(uri);
         
         // Check if this is our new format with metadata
         if (encryptedContent.includes('|||')) {
@@ -327,8 +313,8 @@ export const getEncryptedPhotoInfo = async (uri: string): Promise<{
     
     return {
       size: fileInfo.size,
-      modificationTime: fileInfo.modificationTime,
-      exists: fileInfo.exists,
+      modificationTime: fileInfo.mtime,
+      exists: fileInfo.isFile && fileInfo.isFile(),
       metadata
     };
   } catch (error) {
@@ -342,10 +328,10 @@ export const cleanupTempDecryptedFiles = async (): Promise<void> => {
   if (Platform.OS === 'web') return;
   
   try {
-    const tempDirInfo = await RNFS.getInfoAsync(TEMP_DECRYPTED_DIR);
-    if (tempDirInfo.exists) {
+    const tempDirInfo = await RNFS.stat(TEMP_DECRYPTED_DIR);
+          if (tempDirInfo.isDirectory && tempDirInfo.isDirectory()) {
       // Get all files in the temp directory
-      const tempFiles = await RNFS.readDirectoryAsync(TEMP_DECRYPTED_DIR);
+      const tempFiles = await RNFS.readDir(TEMP_DECRYPTED_DIR);
       
       // Delete each file
       for (const file of tempFiles) {
@@ -364,19 +350,19 @@ export const deleteAllEncryptedPhotos = async (): Promise<void> => {
   if (Platform.OS === 'web') return;
   
   try {
-    const dirInfo = await RNFS.getInfoAsync(ENCRYPTED_PHOTOS_DIR);
-    if (dirInfo.exists) {
+    const dirInfo = await RNFS.stat(ENCRYPTED_PHOTOS_DIR);
+          if (dirInfo.isDirectory && dirInfo.isDirectory()) {
       // Get all files in the encrypted photos directory
-      const files = await RNFS.readDirectoryAsync(ENCRYPTED_PHOTOS_DIR);
+      const files = await RNFS.readDir(ENCRYPTED_PHOTOS_DIR);
       
       // Securely delete each file
       for (const file of files) {
         await secureDeleteFileWithMetadata(`${ENCRYPTED_PHOTOS_DIR}${file}`, 3);
       }
       
-      // Also delete the directory and recreate it
-      await RNFS.deleteAsync(ENCRYPTED_PHOTOS_DIR, { idempotent: true });
-      await RNFS.makeDirectoryAsync(ENCRYPTED_PHOTOS_DIR, { intermediates: true });
+              // Also delete the directory and recreate it
+        await RNFS.rmdir(ENCRYPTED_PHOTOS_DIR);
+        await RNFS.mkdir(ENCRYPTED_PHOTOS_DIR);
       
       // Clean up temp files too
       await cleanupTempDecryptedFiles();
@@ -397,20 +383,19 @@ export const verifyEncryptedFile = async (uri: string): Promise<boolean> => {
   try {
     // Check if verification file exists
     const verifyUri = `${uri}.verify`;
-    const verifyInfo = await RNFS.getInfoAsync(verifyUri);
+    const verifyInfo = await RNFS.stat(verifyUri);
     
-    if (verifyInfo.exists) {
+          if (verifyInfo.isFile && verifyInfo.isFile()) {
       // Read the verification hash
-      const storedHash = await RNFS.readAsStringAsync(verifyUri);
+      const storedHash = await RNFS.readFile(verifyUri);
       
       // Read the encrypted file
-      const encryptedContent = await RNFS.readAsStringAsync(uri);
+      const encryptedContent = await RNFS.readFile(uri);
       
       // Calculate hash of the encrypted content
-      const calculatedHash = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        encryptedContent.substring(0, Math.min(encryptedContent.length, 1024)) // Hash first 1KB
-      );
+      const calculatedHash = createHash('sha256')
+        .update(encryptedContent.substring(0, Math.min(encryptedContent.length, 1024))) // Hash first 1KB
+        .digest('hex');
       
       // Compare hashes
       if (storedHash === calculatedHash) {
@@ -422,7 +407,7 @@ export const verifyEncryptedFile = async (uri: string): Promise<boolean> => {
     }
     
     // If no verification file, check if we can decrypt the metadata
-    const encryptedContent = await RNFS.readAsStringAsync(uri);
+    const encryptedContent = await RNFS.readFile(uri);
     
     // Check if this is our new format with metadata
     if (!encryptedContent.includes('|||')) {

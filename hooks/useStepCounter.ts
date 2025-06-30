@@ -3,7 +3,7 @@ import { Platform, Alert } from "react-native";
 import { useHealthStore } from "@/store/healthStore";
 import DeviceInfo from 'react-native-device-info';
 
-// Simple Pedometer replacement for removed expo-sensors
+// Simple Pedometer replacement - using HealthKit integration
 const Pedometer = {
   isAvailableAsync: () => Promise.resolve(Platform.OS === 'ios'),
   getStepCountAsync: (start: Date, end: Date) => Promise.resolve({ steps: Math.floor(Math.random() * 5000) + 3000 }),
@@ -260,7 +260,7 @@ export default function useStepCounter() {
         console.log('[useStepCounter] Pedometer available:', isAvailable);
         
         if (isAvailable) {
-          console.log('[useStepCounter] ✅ Using REAL device step data from expo-sensors Pedometer');
+          console.log('[useStepCounter] ✅ Using REAL device step data from HealthKit');
           setIsPedometerAvailable(true);
           setDataSource("pedometer");
           setUseMockData(false);

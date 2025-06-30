@@ -31,12 +31,7 @@
           <string>app.rork.fitjourney-tracker</string>
         </array>
       </dict>
-      <dict>
-        <key>CFBundleURLSchemes</key>
-        <array>
-          <string>exp+fitjourney-tracker</string>
-        </array>
-      </dict>
+
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
@@ -77,10 +72,7 @@
     <string>Allow FitJourney Tracker to save photos to your library.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Allow FitJourney Tracker to access your photos to save and view progress photos.</string>
-    <key>NSUserActivityTypes</key>
-    <array>
-      <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
-    </array>
+
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

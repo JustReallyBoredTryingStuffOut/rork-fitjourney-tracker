@@ -1,5 +1,4 @@
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
-const { withNativeWind } = require('nativewind/metro');
+const { getDefaultConfig, mergeConfig } = require('metro-config');
 
 const defaultConfig = getDefaultConfig(__dirname);
 
@@ -16,11 +15,9 @@ const customConfig = {
     },
   },
   resolver: {
-    // Add support for .ts and .tsx files
-    sourceExts: [...defaultConfig.resolver.sourceExts, 'ts', 'tsx'],
+    // Add support for .ts and .tsx files with fallback
+    sourceExts: [...(defaultConfig.resolver?.sourceExts || ['js', 'jsx']), 'ts', 'tsx'],
   },
 };
 
-const config = mergeConfig(defaultConfig, customConfig);
-
-module.exports = withNativeWind(config, { input: './global.css' }); 
+module.exports = mergeConfig(defaultConfig, customConfig); 

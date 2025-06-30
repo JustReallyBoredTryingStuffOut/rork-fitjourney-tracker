@@ -89,29 +89,29 @@ interface PhotoState {
 const setupPhotoDirectories = async () => {
   if (Platform.OS === "web") return;
   
-  const photoDir = `${RNFS.documentDirectory}photos/`;
+  const photoDir = `${RNFS.DocumentDirectoryPath}/photos/`;
   const foodPhotoDir = `${photoDir}food/`;
   const progressPhotoDir = `${photoDir}progress/`;
   const workoutMediaDir = `${photoDir}workout/`;
   
-  const photoDirInfo = await RNFS.getInfoAsync(photoDir);
-  if (!photoDirInfo.exists) {
-    await RNFS.makeDirectoryAsync(photoDir, { intermediates: true });
+  const photoDirExists = await RNFS.exists(photoDir);
+  if (!photoDirExists) {
+    await RNFS.mkdir(photoDir);
   }
   
-  const foodDirInfo = await RNFS.getInfoAsync(foodPhotoDir);
-  if (!foodDirInfo.exists) {
-    await RNFS.makeDirectoryAsync(foodPhotoDir, { intermediates: true });
+  const foodDirExists = await RNFS.exists(foodPhotoDir);
+  if (!foodDirExists) {
+    await RNFS.mkdir(foodPhotoDir);
   }
   
-  const progressDirInfo = await RNFS.getInfoAsync(progressPhotoDir);
-  if (!progressDirInfo.exists) {
-    await RNFS.makeDirectoryAsync(progressPhotoDir, { intermediates: true });
+  const progressDirExists = await RNFS.exists(progressPhotoDir);
+  if (!progressDirExists) {
+    await RNFS.mkdir(progressPhotoDir);
   }
   
-  const workoutDirInfo = await RNFS.getInfoAsync(workoutMediaDir);
-  if (!workoutDirInfo.exists) {
-    await RNFS.makeDirectoryAsync(workoutMediaDir, { intermediates: true });
+  const workoutDirExists = await RNFS.exists(workoutMediaDir);
+  if (!workoutDirExists) {
+    await RNFS.mkdir(workoutMediaDir);
   }
   
   // Also setup encrypted photos directory
@@ -148,11 +148,8 @@ export const usePhotoStore = create<PhotoState>()(
               newUri = await encryptAndSavePhoto(photo.uri, fileName);
             } else {
               // Save without encryption (original behavior)
-              newUri = `${RNFS.documentDirectory}photos/food/${fileName}`;
-              await RNFS.copyAsync({
-                from: photo.uri,
-                to: newUri
-              });
+              newUri = `${RNFS.DocumentDirectoryPath}/photos/food/${fileName}`;
+              await RNFS.copyFile(photo.uri, newUri);
             }
             
             // Update the URI to point to the saved file
@@ -208,11 +205,8 @@ export const usePhotoStore = create<PhotoState>()(
               newUri = await encryptAndSavePhoto(photo.uri, fileName);
             } else {
               // Save without encryption (original behavior)
-              newUri = `${RNFS.documentDirectory}photos/progress/${fileName}`;
-              await RNFS.copyAsync({
-                from: photo.uri,
-                to: newUri
-              });
+              newUri = `${RNFS.DocumentDirectoryPath}/photos/progress/${fileName}`;
+              await RNFS.copyFile(photo.uri, newUri);
             }
             
             // Update the URI to point to the saved file
@@ -270,11 +264,8 @@ export const usePhotoStore = create<PhotoState>()(
               newUri = await encryptAndSavePhoto(media.uri, fileName);
             } else {
               // Save without encryption (original behavior)
-              newUri = `${RNFS.documentDirectory}photos/workout/${fileName}`;
-              await RNFS.copyAsync({
-                from: media.uri,
-                to: newUri
-              });
+              newUri = `${RNFS.DocumentDirectoryPath}/photos/workout/${fileName}`;
+              await RNFS.copyFile(media.uri, newUri);
             }
             
             // Update the URI to point to the saved file
@@ -499,7 +490,7 @@ export const usePhotoStore = create<PhotoState>()(
             await cleanupTempDecryptedFiles();
             
             // Clean up photo directories
-            const photoDir = `${RNFS.documentDirectory}photos/`;
+            const photoDir = `${RNFS.DocumentDirectoryPath}/photos/`;
             await secureDeleteDirectory(photoDir, 2);
             await setupPhotoDirectories();
             

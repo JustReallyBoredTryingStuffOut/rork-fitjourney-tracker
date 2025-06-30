@@ -2,10 +2,12 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: [
-      'metro-react-native-babel-preset'
+      ['module:metro-react-native-babel-preset', {
+        unstable_transformProfile: 'hermes-stable',
+      }]
     ],
     plugins: [
-      '@babel/plugin-transform-runtime'
-    ]
+      '@babel/plugin-transform-flow-strip-types'
+    ],
   };
 }; 

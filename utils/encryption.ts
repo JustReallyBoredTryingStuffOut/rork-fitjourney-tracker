@@ -20,8 +20,8 @@ const ENCRYPTION_VERSION = 2; // Current encryption version
 export const generateEncryptionKey = async (): Promise<string> => {
   try {
     // Generate a cryptographically secure random key
-    const randomBytes = await randomBytes(32); // 256 bits
-    return bufferToBase64(randomBytes);
+    const randomBytesBuffer = randomBytes(32); // 256 bits
+    return bufferToBase64(randomBytesBuffer);
   } catch (error) {
     console.error('Error generating encryption key:', error);
     // Fallback to a less secure but functional method
@@ -45,10 +45,9 @@ export const storeEncryptionKey = async (key: string): Promise<void> => {
     // For web, store in localStorage with additional protection
     // In a real production app, consider using a service like Auth0 or Firebase Auth
     // to handle key management more securely
-    const keyHash = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      key + navigator.userAgent
-    );
+    const keyHash = createHash('sha256')
+      .update(key + navigator.userAgent)
+      .digest('hex');
     await AsyncStorage.setItem('encryption-key-hash', keyHash);
     await AsyncStorage.setItem('encryption-key', key);
     await AsyncStorage.setItem('encryption-version', ENCRYPTION_VERSION.toString());
@@ -56,8 +55,8 @@ export const storeEncryptionKey = async (key: string): Promise<void> => {
   }
   
   // For native platforms, use SecureStore
-  await Keychain.setItemAsync('encryption-key', key);
-  await Keychain.setItemAsync('encryption-version', ENCRYPTION_VERSION.toString());
+      await Keychain.setInternetCredentials('encryption-key', 'encryption-key', key);
+    await Keychain.setInternetCredentials('encryption-version', 'encryption-version', ENCRYPTION_VERSION.toString());
 };
 
 // Retrieve the encryption key
@@ -68,10 +67,9 @@ export const getEncryptionKey = async (): Promise<string | null> => {
     
     if (key && storedHash) {
       // Verify the key hasn't been tampered with
-      const verifyHash = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        key + navigator.userAgent
-      );
+      const verifyHash = createHash('sha256')
+        .update(key + navigator.userAgent)
+        .digest('hex');
       
       if (verifyHash === storedHash) {
         return key;
@@ -84,7 +82,8 @@ export const getEncryptionKey = async (): Promise<string | null> => {
     return null;
   }
   
-  return Keychain.getItemAsync('encryption-key');
+  const credentials = await Keychain.getInternetCredentials('encryption-key');
+  return credentials && credentials.password ? credentials.password : null;
 };
 
 // Get the current encryption version
@@ -94,7 +93,8 @@ export const getEncryptionVersion = async (): Promise<number> => {
     return version ? parseInt(version, 10) : 1;
   }
   
-  const version = await Keychain.getItemAsync('encryption-version');
+  const credentials = await Keychain.getInternetCredentials('encryption-version');
+  const version = credentials && credentials.password ? credentials.password : null;
   return version ? parseInt(version, 10) : 1;
 };
 
@@ -135,7 +135,7 @@ const base64ToBuffer = (base64: string): Uint8Array => {
 // Generate a random salt
 const generateSalt = async (): Promise<Uint8Array> => {
   try {
-    return await randomBytes(SALT_LENGTH);
+    return randomBytes(SALT_LENGTH);
   } catch (error) {
     console.warn('Using fallback salt generation');
     
@@ -157,7 +157,7 @@ const generateSalt = async (): Promise<Uint8Array> => {
 // Generate a random initialization vector (IV)
 const generateIV = async (): Promise<Uint8Array> => {
   try {
-    return await randomBytes(IV_LENGTH);
+    return randomBytes(IV_LENGTH);
   } catch (error) {
     console.warn('Using fallback IV generation');
     
@@ -486,7 +486,7 @@ export const secureStore = {
       const encrypted = await encryptData(value);
       await AsyncStorage.setItem(key, encrypted);
     } else {
-      await Keychain.setItemAsync(key, value);
+      await Keychain.setInternetCredentials(key, key, value);
     }
   },
   
@@ -496,7 +496,8 @@ export const secureStore = {
       if (!encrypted) return null;
       return decryptData(encrypted);
     } else {
-      return Keychain.getItemAsync(key);
+      const credentials = await Keychain.getInternetCredentials(key);
+      return credentials && credentials.password ? credentials.password : null;
     }
   },
   
@@ -504,7 +505,7 @@ export const secureStore = {
     if (Platform.OS === 'web') {
       await AsyncStorage.removeItem(key);
     } else {
-      await Keychain.deleteItemAsync(key);
+      await Keychain.resetInternetCredentials(key);
     }
   }
 };
