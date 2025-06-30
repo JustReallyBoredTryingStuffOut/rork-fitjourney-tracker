@@ -2,10 +2,10 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import Keychain from 'react-native-keychain';
 import { secureStore, generateEncryptionKey, storeEncryptionKey, getEncryptionVersion } from "@/utils/encryption";
-import * as Crypto from 'expo-crypto';
-import * as FileSystem from 'expo-file-system';
+import { createHash, randomBytes } from 'crypto';
+import RNFS from 'react-native-fs';
 import { cleanupTempDecryptedFiles, deleteAllEncryptedPhotos } from "@/utils/fileEncryption";
 import { secureDeleteFile, secureWipeAllUserData } from "@/utils/secureDelete";
 
@@ -45,7 +45,11 @@ const createSecureStorage = () => {
         return AsyncStorage.getItem(name);
       }
       try {
-        return await SecureStore.getItemAsync(name);
+        const credentials = await Keychain.getInternetCredentials(name);
+        if (credentials && credentials.password) {
+          return credentials.password;
+        }
+        return null;
       } catch (e) {
         return null;
       }
@@ -56,7 +60,7 @@ const createSecureStorage = () => {
         return;
       }
       try {
-        await SecureStore.setItemAsync(name, value);
+        await Keychain.setInternetCredentials(name, name, value);
       } catch (e) {
         console.error('Error storing secure data:', e);
       }
@@ -67,7 +71,7 @@ const createSecureStorage = () => {
         return;
       }
       try {
-        await SecureStore.deleteItemAsync(name);
+        await Keychain.resetInternetCredentials(name);
       } catch (e) {
         console.error('Error removing secure data:', e);
       }
@@ -99,14 +103,13 @@ export const useSecureStore = create<SecureStoreState>()(
                                   screen.height + 
                                   navigator.language;
               
-              deviceId = await Crypto.digestStringAsync(
-                Crypto.CryptoDigestAlgorithm.SHA256,
-                fingerprint
-              );
+              deviceId = createHash('sha256')
+                .update(fingerprint)
+                .digest('hex');
             } else {
               // For native, generate a random ID
-              const randomBytes = await Crypto.getRandomBytesAsync(32);
-              deviceId = Array.from(randomBytes)
+              const randomBytesBuffer = randomBytes(32);
+              deviceId = Array.from(randomBytesBuffer)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('');
             }
@@ -256,35 +259,36 @@ export const useSecureStore = create<SecureStoreState>()(
           for (const key of keys) {
             try {
               // Get the current value to determine if it exists
-              const currentValue = await SecureStore.getItemAsync(key);
+              const credentials = await Keychain.getInternetCredentials(key);
               
-              if (currentValue) {
+              if (credentials && credentials.password) {
+                const currentValue = credentials.password;
                 // Generate random data of similar length
-                const randomBytes = await Crypto.getRandomBytesAsync(
+                const randomBytesBuffer = randomBytes(
                   Math.max(currentValue.length, 32)
                 );
-                const randomData = Array.from(randomBytes)
+                const randomData = Array.from(randomBytesBuffer)
                   .map(b => String.fromCharCode(b % 94 + 32)) // Printable ASCII
                   .join('');
                 
                 // Overwrite with random data
-                await SecureStore.setItemAsync(key, randomData);
+                await Keychain.setInternetCredentials(key, key, randomData);
                 
                 // Overwrite again with zeros
-                await SecureStore.setItemAsync(key, '0'.repeat(randomData.length));
+                await Keychain.setInternetCredentials(key, key, '0'.repeat(randomData.length));
                 
                 // Finally delete
-                await SecureStore.deleteItemAsync(key);
+                await Keychain.resetInternetCredentials(key);
               }
-            } catch (keyError) {
-              console.warn(`Error securely wiping key ${key}:`, keyError);
-              // Try regular deletion as fallback
-              try {
-                await SecureStore.deleteItemAsync(key);
-              } catch (deleteError) {
-                console.error(`Failed to delete key ${key}:`, deleteError);
+                          } catch (keyError) {
+                console.warn(`Error securely wiping key ${key}:`, keyError);
+                // Try regular deletion as fallback
+                try {
+                  await Keychain.resetInternetCredentials(key);
+                } catch (deleteError) {
+                  console.error(`Failed to delete key ${key}:`, deleteError);
+                }
               }
-            }
           }
         } catch (error) {
           console.error('Error during secure key wipe:', error);
