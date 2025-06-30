@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { 
   Activity, 
   TrendingUp, 
@@ -36,7 +36,7 @@ import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
 import HealthKit from "@/src/NativeModules/HealthKit";
 
 export default function HealthScreen() {
-  const router = useRouter();
+  const navigation = useNavigation();
   const { 
     workoutLogs 
   } = useWorkoutStore();
@@ -152,7 +152,7 @@ export default function HealthScreen() {
         "You don't have any connected devices or Apple Health access. Would you like to connect a device or enable Apple Health?",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Connect Device", onPress: () => router.push("/health-devices") },
+          { text: "Connect Device", onPress: () => navigation.navigate("health-devices") },
           { 
             text: "Enable Apple Health", 
             onPress: async () => {
@@ -291,13 +291,22 @@ export default function HealthScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      {/* DEBUG BUTTON - TEMPORARY */}
+      {/* DEBUG BUTTONS - TEMPORARY */}
       <TouchableOpacity 
         style={{ backgroundColor: '#FF6B6B', padding: 12, margin: 16, borderRadius: 8 }}
         onPress={testHealthKitAuth}
       >
         <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
           🧪 TEST HEALTHKIT AUTH
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={{ backgroundColor: '#4ECDC4', padding: 12, margin: 16, borderRadius: 8 }}
+        onPress={() => router.push("/health-test" as any)}
+      >
+        <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+          🔬 DIRECT HEALTHKIT TEST
         </Text>
       </TouchableOpacity>
 
