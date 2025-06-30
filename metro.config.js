@@ -1,9 +1,11 @@
-const { getDefaultConfig, mergeConfig } = require('metro-config');
+const { getDefaultConfig } = require('@react-native/metro-config');
 
-const defaultConfig = getDefaultConfig(__dirname);
+const config = getDefaultConfig(__dirname);
 
-const customConfig = {
+module.exports = {
+  ...config,
   transformer: {
+    ...config.transformer,
     // Configure for production builds
     minifierConfig: {
       keep_classnames: true,
@@ -15,9 +17,8 @@ const customConfig = {
     },
   },
   resolver: {
-    // Add support for .ts and .tsx files with fallback
-    sourceExts: [...(defaultConfig.resolver?.sourceExts || ['js', 'jsx']), 'ts', 'tsx'],
+    ...config.resolver,
+    // Add support for .ts and .tsx files
+    sourceExts: [...(config.resolver?.sourceExts || ['js', 'jsx']), 'ts', 'tsx'],
   },
-};
-
-module.exports = mergeConfig(defaultConfig, customConfig); 
+}; 
