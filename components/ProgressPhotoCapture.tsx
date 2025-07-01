@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Platform, Alert, TextInput } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, Platform, Alert } from "react-native";
 import { Camera, ArrowLeft, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { colors } from "@/constants/colors";
@@ -25,7 +25,6 @@ export default function ProgressPhotoCapture({
 }: ProgressPhotoCaptureProps) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [currentWeight, setCurrentWeight] = useState(weight.toString());
   
   const requestPermissions = async () => {
     if (Platform.OS !== "web") {
@@ -99,13 +98,11 @@ export default function ProgressPhotoCapture({
   const handleSave = () => {
     if (!photo) return;
     
-    const weightValue = parseFloat(currentWeight) || weight || 0;
-    
     const newProgressPhoto: ProgressPhoto = {
       id: Date.now().toString(),
       uri: photo,
       date: new Date().toISOString(),
-      weight: weightValue,
+      weight,
       notes,
       category
     };
@@ -132,23 +129,6 @@ export default function ProgressPhotoCapture({
             <Text style={styles.cameraText}>
               Take a {category} view photo to track your progress
             </Text>
-            
-            {/* Health Mindfulness Reminder */}
-            <View style={styles.healthNotice}>
-              <Text style={styles.healthNoticeTitle}>💚 Mindful Progress</Text>
-              <Text style={styles.healthNoticeText}>
-                Remember: You are more than a photo. Progress comes in many forms - strength, endurance, confidence, and health. 
-                If taking photos ever makes you feel anxious or critical of yourself, it's okay to take a break. 
-                Your worth isn't measured by visual changes.
-              </Text>
-              <Text style={styles.healthNoticeSubtext}>
-                • Take photos at the same time of day for consistency{'\n'}
-                • Focus on how you feel, not just how you look{'\n'}
-                • Real progress takes weeks or months, not days{'\n'}
-                • If photos cause negative self-talk, consider pausing
-              </Text>
-            </View>
-            
             <View style={styles.photoButtonsContainer}>
               <Button 
                 title="Take Photo" 
@@ -183,15 +163,8 @@ export default function ProgressPhotoCapture({
             </View>
             
             <View style={styles.infoContainer}>
-              <Text style={styles.infoLabel}>Current Weight (kg):</Text>
-              <TextInput
-                style={styles.weightInput}
-                value={currentWeight}
-                onChangeText={setCurrentWeight}
-                placeholder="Enter your current weight"
-                placeholderTextColor={colors.textLight}
-                keyboardType="numeric"
-              />
+              <Text style={styles.infoLabel}>Current Weight:</Text>
+              <Text style={styles.infoValue}>{weight} kg</Text>
             </View>
             
             <View style={styles.notesContainer}>
@@ -281,31 +254,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: "center",
   },
-  healthNotice: {
-    backgroundColor: '#F0F8F0',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  healthNoticeTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: '#2E7D32',
-    marginBottom: 8,
-  },
-  healthNoticeText: {
-    fontSize: 15,
-    color: '#388E3C',
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  healthNoticeSubtext: {
-    fontSize: 14,
-    color: '#558B2F',
-    lineHeight: 20,
-  },
   photoButtonsContainer: {
     width: "100%",
     gap: 12,
@@ -348,17 +296,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     textTransform: "capitalize",
-  },
-  weightInput: {
-    fontSize: 16,
-    color: colors.text,
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.background,
   },
   notesContainer: {
     marginTop: 8,

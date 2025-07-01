@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGamificationStore } from '@/store/gamificationStore';
 import { useMacroStore } from '@/store/macroStore';
 import { useWorkoutStore } from '@/store/workoutStore';
-import { Zap, Award, Trophy, X, User, Weight, Ruler, Calendar, Activity, ArrowRight, ChevronLeft, ChevronRight, Brain, Sparkles, Heart, AlertTriangle, Check } from 'lucide-react-native';
+import { Zap, Award, Trophy, X, User, Weight, Ruler, Calendar, Activity, ArrowRight, ChevronRight, Brain, Sparkles, Heart, AlertTriangle, Check } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { Picker } from '@react-native-picker/picker';
 import Button from '@/components/Button';
@@ -138,10 +138,6 @@ export default function RootLayout() {
             setTimeout(async () => {
               setShowLoadingScreen(false);
               await AsyncStorage.setItem('hasLaunched', 'true');
-              // Don't show welcome screen again if onboarding is completed
-              if (onboardingCompleted) {
-                setShowWelcome(false);
-              }
             }, 1500);
           });
         }
@@ -161,7 +157,7 @@ export default function RootLayout() {
       
       return () => clearInterval(interval);
     }
-  }, [showLoadingScreen, loadingBarWidth, welcomeFadeIn, onboardingCompleted]);
+  }, [showLoadingScreen, loadingBarWidth, welcomeFadeIn]);
   
   // Validate form fields
   const validateName = (value: string) => {
@@ -276,28 +272,24 @@ export default function RootLayout() {
     const age = birthYear ? new Date().getFullYear() - parseInt(birthYear) : userProfile.age;
     
     updateUserProfile({
-      ...userProfile, // Include existing properties
       name: name.trim() || "Fitness Enthusiast", // Default name if empty
       weight: weight ? parseFloat(weight) : userProfile.weight,
       height: height ? parseFloat(height) : userProfile.height,
       age: age || 30,
-      gender: gender as "male" | "female" | "other" | "prefer not to say" | undefined,
+      gender,
       fitnessGoal,
-      activityLevel: activityLevel as "sedentary" | "lightly_active" | "moderately_active" | "very_active" | "extremely_active" | undefined,
+      activityLevel,
       fitnessLevel,
-      updatedAt: new Date().toISOString(), // Update the timestamp
+      dateOfBirth: null, // We're only collecting year, not full date
     });
     
-    // Complete onboarding first
+    // Complete onboarding
     setOnboardingCompleted(true);
+    setShowWelcome(false);
     
-    // Show loading screen for first launch only
+    // Show loading screen for first launch
     if (isFirstLaunch) {
-      setShowWelcome(false); // Hide welcome screen before showing loading
       setShowLoadingScreen(true);
-    } else {
-      // For non-first launch, just hide welcome screen
-      setShowWelcome(false);
     }
   };
   
@@ -416,7 +408,7 @@ export default function RootLayout() {
               if (text.trim()) setNameError("");
             }}
             placeholder="Enter your name"
-            placeholderTextColor="rgba(255, 255, 255, 0.6)"
+            placeholderTextColor={colors.textLight}
           />
           {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
         </View>
@@ -443,7 +435,7 @@ export default function RootLayout() {
                 }}
                 placeholder="70"
                 keyboardType="numeric"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={colors.textLight}
               />
               {weightError ? <Text style={styles.errorText}>{weightError}</Text> : null}
             </View>
@@ -459,7 +451,7 @@ export default function RootLayout() {
                 }}
                 placeholder="175"
                 keyboardType="numeric"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={colors.textLight}
               />
               {heightError ? <Text style={styles.errorText}>{heightError}</Text> : null}
             </View>
@@ -473,7 +465,7 @@ export default function RootLayout() {
             placeholder={`${currentYear - 30}`}
             keyboardType="numeric"
             maxLength={4}
-            placeholderTextColor="rgba(255, 255, 255, 0.6)"
+            placeholderTextColor={colors.textLight}
           />
           {birthYearError ? (
             <Text style={styles.errorText}>{birthYearError}</Text>
@@ -718,7 +710,7 @@ export default function RootLayout() {
                 onPress={handleSkip}
               >
                 <Text style={styles.skipButtonText}>
-                  Skip
+                  {currentStep.skipText || "Skip"}
                 </Text>
                 <ChevronRight size={16} color="#FFFFFF" />
               </TouchableOpacity>
@@ -740,22 +732,12 @@ export default function RootLayout() {
             {currentStep.customButtons ? (
               currentStep.customButtons
             ) : (
-              <View style={styles.buttonContainer}>
-                {currentOnboardingStep > 0 && (
-                  <Button
-                    title="Back"
-                    onPress={() => setCurrentOnboardingStep(currentOnboardingStep - 1)}
-                    style={styles.backButton}
-                    icon={<ChevronLeft size={18} color="#FFFFFF" style={{ marginRight: 8 }} />}
-                  />
-                )}
-                <Button
-                  title={currentStep.actionText}
-                  onPress={currentStep.action || handleContinue}
-                  style={currentOnboardingStep > 0 ? styles.continueButtonWithBack : styles.continueButton}
-                  icon={<ArrowRight size={18} color="#FFFFFF" style={{ marginRight: 8 }} />}
-                />
-              </View>
+              <Button
+                title={currentStep.actionText}
+                onPress={currentStep.action || handleContinue}
+                style={styles.continueButton}
+                icon={<ArrowRight size={18} color="#FFFFFF" style={{ marginRight: 8 }} />}
+              />
             )}
             
             {/* Modern progress indicator */}
@@ -869,25 +851,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 4,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
-  },
-  backButton: {
-    backgroundColor: '#444444',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    flex: 0.4,
-    alignItems: 'center',
-  },
-  continueButtonWithBack: {
-    flex: 0.6,
-  },
   // Modern progress indicator
   progressContainer: {
     width: '100%',
@@ -975,14 +938,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   textInput: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 8,
     padding: 12,
     color: '#FFFFFF',
     fontSize: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   inputError: {
     borderColor: '#FF3B30',
@@ -1003,26 +966,22 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   pickerContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    overflow: Platform.OS === 'ios' ? 'visible' : 'hidden',
-    minHeight: Platform.OS === 'ios' ? 60 : 50,
-    justifyContent: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    overflow: 'hidden',
   },
   picker: {
     color: '#FFFFFF',
-    height: Platform.OS === 'ios' ? 50 : 50,
-    backgroundColor: 'transparent',
-    width: '100%',
+    height: 50,
   },
   pickerItemIOS: {
     fontSize: 16,
-    height: 30,
-    color: '#000000',
-    backgroundColor: 'transparent',
+    height: 120,
+    color: '#333333',
+    backgroundColor: '#FFFFFF',
   },
   inputHint: {
     fontSize: 12,

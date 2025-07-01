@@ -95,17 +95,17 @@ export default function MacroInfoModal({ visible, onClose }: MacroInfoModalProps
               </View>
             </View>
             
-            <View style={[styles.macroCaloriesExplanation, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.macroCaloriesExplanation, { backgroundColor: colors.highlight }]}>
               <Text style={[styles.macroCaloriesTitle, { color: colors.text }]}>Why We Show Calories per Gram</Text>
-              <Text style={[styles.macroCaloriesText, { color: colors.text }]}>
+              <Text style={[styles.macroCaloriesText, { color: colors.textSecondary }]}>
                 The calorie values (4 cal/g for protein and carbs, 9 cal/g for fat) represent how much energy each macronutrient provides when metabolized by your body. This helps you understand why balancing your macros is important:
               </Text>
               <View style={styles.macroCaloriesList}>
-                <Text style={[styles.macroCaloriesItem, { color: colors.text }]}>• Protein (4 cal/g): Building blocks for muscle and tissue repair</Text>
-                <Text style={[styles.macroCaloriesItem, { color: colors.text }]}>• Carbs (4 cal/g): Primary energy source for daily activities and workouts</Text>
-                <Text style={[styles.macroCaloriesItem, { color: colors.text }]}>• Fat (9 cal/g): Energy-dense nutrient essential for hormone production</Text>
+                <Text style={[styles.macroCaloriesItem, { color: colors.textSecondary }]}>• Protein (4 cal/g): Building blocks for muscle and tissue repair</Text>
+                <Text style={[styles.macroCaloriesItem, { color: colors.textSecondary }]}>• Carbs (4 cal/g): Primary energy source for daily activities and workouts</Text>
+                <Text style={[styles.macroCaloriesItem, { color: colors.textSecondary }]}>• Fat (9 cal/g): Energy-dense nutrient essential for hormone production</Text>
               </View>
-              <Text style={[styles.macroCaloriesText, { color: colors.text }]}>
+              <Text style={[styles.macroCaloriesText, { color: colors.textSecondary }]}>
                 Understanding these values helps you make informed choices about your diet composition based on your specific fitness goals.
               </Text>
             </View>
@@ -215,7 +215,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
-    borderWidth: 1,
   },
   macroCaloriesTitle: {
     fontSize: 15,

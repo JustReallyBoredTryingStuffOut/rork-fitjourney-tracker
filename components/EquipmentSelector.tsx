@@ -43,13 +43,15 @@ export default function EquipmentSelector({
 }: EquipmentSelectorProps) {
   const { colors } = useTheme();
 
-  // Get unique categories from equipment types
-  const categories = Array.from(new Set(equipmentTypes.map(eq => eq.category)));
+  // Filter equipment types by selected category
+  const getFilteredEquipment = () => {
+    if (!selectedEquipmentCategory) return equipmentTypes;
+    
+    const categoryEquipment = EQUIPMENT_CATEGORIES[selectedEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES] || [];
+    return equipmentTypes.filter(e => categoryEquipment.includes(e));
+  };
 
-  // Filter equipment by selected category
-  const filteredEquipment = selectedEquipmentCategory
-    ? equipmentTypes.filter(eq => eq.category === selectedEquipmentCategory)
-    : equipmentTypes;
+  const filteredEquipment = getFilteredEquipment();
 
   const getEquipmentIcon = (equipment: string) => {
     const iconColor = selectedEquipment === equipment ? '#FFFFFF' : colors.text;
@@ -138,28 +140,53 @@ export default function EquipmentSelector({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Equipment</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Equipment Type</Text>
       
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesContainer}
       >
-        {categories.map((category) => (
+        <TouchableOpacity
+          style={[
+            styles.categoryButton,
+            { backgroundColor: colors.card, borderColor: colors.border },
+            selectedEquipmentCategory === null && [styles.selectedCategoryButton, { backgroundColor: colors.primary, borderColor: colors.primary }],
+          ]}
+          onPress={() => {
+            onSelectEquipmentCategory(null);
+            onSelectEquipment(null);
+          }}
+        >
+          <Text
+            style={[
+              styles.categoryButtonText,
+              { color: colors.text },
+              selectedEquipmentCategory === null && styles.selectedCategoryButtonText,
+            ]}
+          >
+            All
+          </Text>
+        </TouchableOpacity>
+        
+        {Object.keys(EQUIPMENT_CATEGORIES).map((category) => (
           <TouchableOpacity
             key={category}
             style={[
               styles.categoryButton,
               { backgroundColor: colors.card, borderColor: colors.border },
-              selectedEquipmentCategory === category && [styles.selectedCategory, { backgroundColor: colors.primary, borderColor: colors.primary }],
+              selectedEquipmentCategory === category && [styles.selectedCategoryButton, { backgroundColor: colors.primary, borderColor: colors.primary }],
             ]}
-            onPress={() => onSelectEquipmentCategory(category)}
+            onPress={() => {
+              onSelectEquipmentCategory(category);
+              onSelectEquipment(null);
+            }}
           >
             <Text
               style={[
-                styles.categoryText,
+                styles.categoryButtonText,
                 { color: colors.text },
-                selectedEquipmentCategory === category && styles.selectedCategoryText,
+                selectedEquipmentCategory === category && styles.selectedCategoryButtonText,
               ]}
             >
               {category}
@@ -167,35 +194,40 @@ export default function EquipmentSelector({
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.equipmentContainer}
-      >
-        {filteredEquipment.map((equipment) => (
-          <TouchableOpacity
-            key={equipment.name}
-            style={[
-              styles.equipmentButton,
-              { backgroundColor: colors.card, borderColor: colors.border },
-              selectedEquipment?.name === equipment.name && [styles.selectedEquipment, { backgroundColor: colors.primary, borderColor: colors.primary }],
-            ]}
-            onPress={() => onSelectEquipment(equipment)}
+      
+      {filteredEquipment.length > 0 && (
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>Equipment</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.equipmentContainer}
           >
-            {getEquipmentIcon(equipment.name)}
-            <Text
-              style={[
-                styles.equipmentText,
-                { color: colors.text },
-                selectedEquipment?.name === equipment.name && styles.selectedEquipmentText,
-              ]}
-            >
-              {equipment.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {filteredEquipment.map((equipment) => (
+              <TouchableOpacity
+                key={equipment}
+                style={[
+                  styles.equipmentButton,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  selectedEquipment === equipment && [styles.selectedEquipment, { backgroundColor: colors.primary, borderColor: colors.primary }],
+                ]}
+                onPress={() => onSelectEquipment(equipment)}
+              >
+                {getEquipmentIcon(equipment)}
+                <Text
+                  style={[
+                    styles.equipmentText,
+                    { color: colors.text },
+                    selectedEquipment === equipment && styles.selectedEquipmentText,
+                  ]}
+                >
+                  {equipment.replace('Machine', '').trim()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 }
@@ -207,47 +239,48 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   categoriesContainer: {
-    paddingHorizontal: 16,
-    gap: 8,
-    marginBottom: 8,
+    paddingBottom: 8,
   },
   categoryButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginRight: 8,
     borderWidth: 1,
   },
-  selectedCategory: {
-    backgroundColor: '#007AFF',
+  selectedCategoryButton: {
   },
-  categoryText: {
+  categoryButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    textTransform: 'capitalize',
   },
-  selectedCategoryText: {
+  selectedCategoryButtonText: {
     color: '#FFFFFF',
   },
   equipmentContainer: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingBottom: 8,
   },
   equipmentButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 100,
+    height: 100,
     borderWidth: 1,
   },
   selectedEquipment: {
-    backgroundColor: '#007AFF',
   },
   equipmentText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
-    textTransform: 'capitalize',
+    marginTop: 8,
+    textAlign: 'center',
   },
   selectedEquipmentText: {
     color: '#FFFFFF',

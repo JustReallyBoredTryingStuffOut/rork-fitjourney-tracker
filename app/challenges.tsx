@@ -11,13 +11,11 @@ import {
   FlatList
 } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { useGamificationStore, Challenge, AchievementCategory, TimedChallenge, Badge } from '@/store/gamificationStore';
+import { useGamificationStore, Challenge, AchievementCategory } from '@/store/gamificationStore';
 import { Stack, useRouter } from 'expo-router';
 import ChallengeCard from '@/components/ChallengeCard';
-import TimedChallengeCard from '@/components/TimedChallengeCard';
-import PersonalizedInsightsModal from '@/components/PersonalizedInsightsModal';
 import Button from '@/components/Button';
-import { Award, X, Check, Calendar, Clock, Target, ArrowLeft, Lock, Filter, Search, Zap, Star } from 'lucide-react-native';
+import { Award, X, Check, Calendar, Clock, Target, ArrowLeft, Lock, Filter, Search } from 'lucide-react-native';
 import { APP_NAME } from '@/app/_layout';
 import { TextInput } from 'react-native';
 import ChallengeCelebrationModal from '@/components/ChallengeCelebrationModal';

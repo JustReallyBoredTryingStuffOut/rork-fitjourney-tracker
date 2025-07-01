@@ -121,17 +121,17 @@ export default function WorkoutDetailScreen() {
           <View style={styles.stats}>
             <View style={styles.stat}>
               <Clock size={16} color={colors.textSecondary} />
-              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.duration || 0} min</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.duration} min</Text>
             </View>
             
             <View style={styles.stat}>
               <Dumbbell size={16} color={colors.textSecondary} />
-              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.exercises?.length || 0} exercises</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.exercises.length} exercises</Text>
             </View>
             
             <View style={styles.stat}>
               <Award size={16} color={colors.textSecondary} />
-              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.difficulty || 'Unknown'}</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.difficulty}</Text>
             </View>
           </View>
           
@@ -188,27 +188,19 @@ export default function WorkoutDetailScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Exercises</Text>
           
-          {workout.exercises && workout.exercises.length > 0 ? (
-            workout.exercises
-              .filter(exerciseItem => exerciseItem && exerciseItem.id) // Filter out null/undefined exercises
-              .map((exerciseItem, index) => {
-              const exercise = exercises.find(e => e.id === exerciseItem.id);
-              if (!exercise) return null;
-              
-              return (
-                <View key={exercise.id} style={styles.exerciseContainer}>
-                  <View style={[styles.exerciseNumber, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.exerciseNumberText}>{index + 1}</Text>
-                  </View>
-                  <ExerciseCard exercise={exercise} />
+          {workout.exercises.map((exerciseItem, index) => {
+            const exercise = exercises.find(e => e.id === exerciseItem.id);
+            if (!exercise) return null;
+            
+            return (
+              <View key={exercise.id} style={styles.exerciseContainer}>
+                <View style={[styles.exerciseNumber, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.exerciseNumberText}>{index + 1}</Text>
                 </View>
-              );
-            })
-          ) : (
-            <Text style={[styles.noExercisesText, { color: colors.textSecondary }]}>
-              No exercises found for this workout.
-            </Text>
-          )}
+                <ExerciseCard exercise={exercise} />
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
       
@@ -392,10 +384,5 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-  },
-  noExercisesText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 24,
   },
 });

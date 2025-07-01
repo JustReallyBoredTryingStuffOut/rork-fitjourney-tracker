@@ -10,9 +10,7 @@ import {
   Platform,
   Vibration,
   Modal,
-  GestureResponderEvent,
-  PanResponderGestureState,
-  ViewStyle
+  Image
 } from 'react-native';
 import { ChevronDown, ChevronUp, Check, Clock, GripVertical, X, BarChart2, History, Info } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
@@ -57,7 +55,7 @@ export default function DraggableExerciseCard({
 }: DraggableExerciseCardProps) {
   const { colors } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
-  const dropZoneIndexRef = useRef<number | null>(null);
+  const [dropZoneIndex, setDropZoneIndex] = useState<number | null>(null);
   const pan = useRef(new Animated.ValueXY()).current;
   const cardRef = useRef<View>(null);
   const cardPositionY = useRef(0);
@@ -88,7 +86,7 @@ export default function DraggableExerciseCard({
   const screenHeight = Dimensions.get('window').height;
   
   // Calculate possible drop positions
-  const getDropIndex = (gestureY: number): number => {
+  const getDropIndex = (gestureY: number) => {
     // Calculate the absolute position on screen
     const absoluteY = cardPositionY.current + gestureY - initialTouchY.current;
     
@@ -101,15 +99,15 @@ export default function DraggableExerciseCard({
   
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: (_: GestureResponderEvent, gestureState: PanResponderGestureState): boolean => {
+      onStartShouldSetPanResponder: (_, gestureState) => {
         // Only respond to vertical movements that are significant
         return Math.abs(gestureState.dy) > 5;
       },
-      onMoveShouldSetPanResponder: (_: GestureResponderEvent, gestureState: PanResponderGestureState): boolean => {
+      onMoveShouldSetPanResponder: (_, gestureState) => {
         // Only respond to vertical movements that are significant
         return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
       },
-      onPanResponderGrant: (_: GestureResponderEvent, gestureState: PanResponderGestureState): void => {
+      onPanResponderGrant: (_, gestureState) => {
         // Store the initial touch position
         initialTouchY.current = gestureState.y0;
         
@@ -131,11 +129,11 @@ export default function DraggableExerciseCard({
         
         // Store the initial position
         pan.setOffset({
-          x: 0,
-          y: 0
+          x: pan.x._value,
+          y: pan.y._value
         });
       },
-      onPanResponderMove: (_: GestureResponderEvent, gestureState: PanResponderGestureState): void => {
+      onPanResponderMove: (_, gestureState) => {
         // Update the animated value
         Animated.event(
           [null, { dy: pan.y }],
@@ -147,7 +145,7 @@ export default function DraggableExerciseCard({
         
         // Only update and provide feedback if the drop zone has changed
         if (potentialDropIndex !== lastReportedDropZone.current) {
-          dropZoneIndexRef.current = potentialDropIndex;
+          setDropZoneIndex(potentialDropIndex);
           lastReportedDropZone.current = potentialDropIndex;
           
           // Provide light haptic feedback when crossing threshold to a new position
@@ -159,7 +157,7 @@ export default function DraggableExerciseCard({
           }
         }
       },
-      onPanResponderRelease: (_: GestureResponderEvent, gestureState: PanResponderGestureState): void => {
+      onPanResponderRelease: (_, gestureState) => {
         // Reset the pan offset
         pan.flattenOffset();
         
@@ -173,7 +171,7 @@ export default function DraggableExerciseCard({
           friction: 5
         }).start(() => {
           setIsDragging(false);
-          dropZoneIndexRef.current = null;
+          setDropZoneIndex(null);
           
           // Only call onDragEnd if we have a valid drop index
           if (finalDropIndex !== null && finalDropIndex !== index) {
@@ -194,30 +192,32 @@ export default function DraggableExerciseCard({
   ).current;
   
   // Calculate styles for the draggable card
-  const cardStyle: ViewStyle = {
+  const cardStyle = {
     transform: [{ translateY: pan.y }],
     zIndex: isDragging ? 999 : 1,
-    opacity: isDragging ? 0.9 : 1,
+    shadowOpacity: isDragging ? 0.3 : 0.1,
+    shadowRadius: isDragging ? 10 : 2,
+    elevation: isDragging ? 8 : 2,
   };
   
   // Handle exercise name press to show records/history modal
-  const handleNamePress = (): void => {
+  const handleNamePress = () => {
     setShowRecordsModal(true);
   };
   
   // Close modal
-  const closeModal = (): void => {
+  const closeModal = () => {
     setShowRecordsModal(false);
   };
   
   // Format date to readable format
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
   // Calculate predicted 1RM using Epley formula
-  const calculatePredicted1RM = (weight: number, reps: number): number => {
+  const calculatePredicted1RM = (weight: number, reps: number) => {
     return Math.round(weight * (1 + reps/30));
   };
   
@@ -273,11 +273,28 @@ export default function DraggableExerciseCard({
           </Text>
         </View>
         
-        {isExpanded ? (
-          <ChevronUp size={20} color={colors.textSecondary} />
-        ) : (
-          <ChevronDown size={20} color={colors.textSecondary} />
-        )}
+        <View style={styles.headerActions}>
+          {isCompleted ? (
+            <View style={[styles.completedBadge, { backgroundColor: colors.secondary }]}>
+              <Check size={16} color="#FFFFFF" />
+            </View>
+          ) : areAllSetsCompleted ? (
+            <TouchableOpacity
+              style={[styles.markCompletedButton, { backgroundColor: "rgba(80, 200, 120, 0.1)" }]}
+              onPress={onMarkCompleted}
+            >
+              <Check size={16} color={colors.secondary} />
+            </TouchableOpacity>
+          ) : null}
+          
+          <TouchableOpacity style={styles.expandButton} onPress={onToggleExpand}>
+            {isExpanded ? (
+              <ChevronUp size={20} color={colors.textSecondary} />
+            ) : (
+              <ChevronDown size={20} color={colors.textSecondary} />
+            )}
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
       
       {isExpanded && (
@@ -338,24 +355,6 @@ export default function DraggableExerciseCard({
               <TouchableOpacity 
                 style={[
                   styles.tabButton, 
-                  activeTab === 'about' && [styles.activeTabButton, { borderBottomColor: colors.primary }]
-                ]}
-                onPress={() => setActiveTab('about')}
-              >
-                <Info size={16} color={activeTab === 'about' ? colors.primary : colors.textSecondary} />
-                <Text 
-                  style={[
-                    styles.tabText, 
-                    { color: activeTab === 'about' ? colors.primary : colors.textSecondary }
-                  ]}
-                >
-                  About
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.tabButton, 
                   activeTab === 'history' && [styles.activeTabButton, { borderBottomColor: colors.primary }]
                 ]}
                 onPress={() => setActiveTab('history')}
@@ -388,48 +387,28 @@ export default function DraggableExerciseCard({
                   Records
                 </Text>
               </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.tabButton, 
+                  activeTab === 'about' && [styles.activeTabButton, { borderBottomColor: colors.primary }]
+                ]}
+                onPress={() => setActiveTab('about')}
+              >
+                <Info size={16} color={activeTab === 'about' ? colors.primary : colors.textSecondary} />
+                <Text 
+                  style={[
+                    styles.tabText, 
+                    { color: activeTab === 'about' ? colors.primary : colors.textSecondary }
+                  ]}
+                >
+                  About
+                </Text>
+              </TouchableOpacity>
             </View>
             
             <View style={styles.tabContent}>
-              {activeTab === 'about' ? (
-                <View style={styles.aboutTab}>
-                  <Text style={[styles.aboutTitle, { color: colors.text }]}>
-                    How to perform
-                  </Text>
-                  
-                  <Text style={[styles.aboutDescription, { color: colors.textSecondary }]}>
-                    {exercise.description}
-                  </Text>
-                  
-                  <View style={styles.aboutDetails}>
-                    <View style={styles.aboutDetailItem}>
-                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
-                        Muscle Groups
-                      </Text>
-                      <View style={styles.aboutDetailTags}>
-                        {exercise.muscleGroups.map((group, idx) => (
-                          <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
-                            <Text style={[styles.aboutDetailTagText, { color: "#3498db" }]}>
-                              {group.name}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                    
-                    <View style={styles.aboutDetailItem}>
-                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
-                        Difficulty
-                      </Text>
-                      <View style={[styles.aboutDifficultyBadge, { backgroundColor: getDifficultyColor(exercise.difficulty) }]}>
-                        <Text style={styles.aboutDifficultyText}>
-                          {exercise.difficulty}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              ) : activeTab === 'history' ? (
+              {activeTab === 'history' ? (
                 <View style={styles.historyTab}>
                   {exerciseHistory.length > 0 ? (
                     exerciseHistory.map((historyItem, index) => (
@@ -478,7 +457,7 @@ export default function DraggableExerciseCard({
                     </View>
                   )}
                 </View>
-              ) : (
+              ) : activeTab === 'records' ? (
                 <View style={styles.recordsTab}>
                   {personalRecord ? (
                     <>
@@ -556,6 +535,74 @@ export default function DraggableExerciseCard({
                     </View>
                   )}
                 </View>
+              ) : (
+                <View style={styles.aboutTab}>
+                  <Text style={[styles.aboutTitle, { color: colors.text }]}>
+                    How to perform
+                  </Text>
+                  
+                  <Text style={[styles.aboutDescription, { color: colors.textSecondary }]}>
+                    {exercise.description}
+                  </Text>
+                  
+                  <View style={styles.aboutDetails}>
+                    <View style={styles.aboutDetailItem}>
+                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                        Muscle Groups
+                      </Text>
+                      <View style={styles.aboutDetailTags}>
+                        {exercise.muscleGroups.map((group, idx) => (
+                          <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(52, 152, 219, 0.1)" }]}>
+                            <Text style={[styles.aboutDetailTagText, { color: "#3498db" }]}>
+                              {group}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                    
+                    <View style={styles.aboutDetailItem}>
+                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                        Equipment
+                      </Text>
+                      <View style={styles.aboutDetailTags}>
+                        {exercise.equipment.map((item, idx) => (
+                          <View key={idx} style={[styles.aboutDetailTag, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
+                            <Text style={[styles.aboutDetailTagText, { color: colors.textSecondary }]}>
+                              {item}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                    
+                    <View style={styles.aboutDetailItem}>
+                      <Text style={[styles.aboutDetailTitle, { color: colors.text }]}>
+                        Difficulty
+                      </Text>
+                      <View style={[styles.aboutDifficultyBadge, { backgroundColor: getDifficultyColor(exercise.difficulty) }]}>
+                        <Text style={styles.aboutDifficultyText}>
+                          {exercise.difficulty}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  {exercise.imageUrl && (
+                    <View style={styles.aboutImageContainer}>
+                      <Text style={[styles.aboutImageTitle, { color: colors.text }]}>
+                        Reference Image
+                      </Text>
+                      <View style={styles.aboutImage}>
+                        <Image 
+                          source={{ uri: exercise.imageUrl }} 
+                          style={styles.aboutImageContent}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    </View>
+                  )}
+                </View>
               )}
             </View>
           </View>
@@ -565,27 +612,27 @@ export default function DraggableExerciseCard({
   );
 }
 
-const getDifficultyColor = (difficulty: "beginner" | "intermediate" | "advanced"): string => {
+// Helper function to get color based on difficulty
+const getDifficultyColor = (difficulty: "beginner" | "intermediate" | "advanced") => {
   switch (difficulty) {
     case "beginner":
-      return "rgba(46, 204, 113, 0.1)";
+      return "#4CD964";
     case "intermediate":
-      return "rgba(241, 196, 15, 0.1)";
+      return "#FFCC00";
     case "advanced":
-      return "rgba(231, 76, 60, 0.1)";
+      return "#FF3B30";
     default:
-      return "rgba(0, 0, 0, 0.1)";
+      return "#5E5CE6";
   }
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
-    marginVertical: 8,
     borderRadius: 12,
+    marginBottom: 12,
     overflow: 'hidden',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -595,30 +642,53 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 60,
-    paddingLeft: 40,
+    padding: 16,
+    paddingLeft: 48, // Make room for the drag handle on the left
   },
   completedHeader: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
   exerciseInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 8,
   },
   exerciseName: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
-    paddingRight: 24,
   },
   exerciseDetail: {
     fontSize: 14,
-    lineHeight: 20,
   },
   completedText: {
     textDecorationLine: 'line-through',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  completedBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  markCompletedButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  expandButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     padding: 16,
@@ -626,52 +696,42 @@ const styles = StyleSheet.create({
   },
   completionActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 16,
-    gap: 8,
   },
   completionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
+    marginRight: 8,
   },
   completionButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   restButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
   },
   restButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   dragHandleContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: 32,
-    height: 60, // Match the minHeight of the header
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
-    backgroundColor: 'transparent',
-  },
-  dragHandle: {
-    opacity: 0.5,
-    transform: [{ scale: 0.8 }],
   },
   dragIndicator: {
     position: 'absolute',
@@ -722,8 +782,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
   },
   tabButton: {
     flexDirection: 'row',
@@ -731,7 +789,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginRight: 16,
-    flexShrink: 0,
   },
   activeTabButton: {
     borderBottomWidth: 2,
@@ -891,38 +948,59 @@ const styles = StyleSheet.create({
   aboutDetailTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -4,
   },
   aboutDetailTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginHorizontal: 4,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
     marginBottom: 8,
   },
   aboutDetailTagText: {
     fontSize: 14,
-    fontWeight: '500',
   },
   aboutDifficultyBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
     alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   aboutDifficultyText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#2C3E50',
+    color: '#FFFFFF',
+    textTransform: 'capitalize',
   },
+  aboutImageContainer: {
+    marginTop: 8,
+  },
+  aboutImageTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  aboutImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  aboutImageContent: {
+    width: '100%',
+    height: '100%',
+  },
+  
+  // Empty state styles
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
   },
   emptyStateText: {
     fontSize: 16,
+    fontWeight: '500',
     textAlign: 'center',
     marginBottom: 8,
   },

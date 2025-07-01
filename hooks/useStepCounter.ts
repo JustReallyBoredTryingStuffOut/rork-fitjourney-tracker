@@ -91,7 +91,7 @@ export default function useStepCounter() {
           
           bluetoothListenerRef.current = CoreBluetooth.addListener(
             'bluetoothStateChanged',
-            (event: any) => {
+            (event) => {
               setBluetoothState(event.state);
               
               if (event.state !== 'poweredOn') {
@@ -114,39 +114,13 @@ export default function useStepCounter() {
     // Initialize HealthKit if on iOS
     const initializeHealthKit = async () => {
       if (Platform.OS === 'ios') {
-        // DEBUG: Show alert to confirm HealthKit initialization is being called
-        Alert.alert('Debug', 'HealthKit initialization starting...');
-        
-        // CHECK: HealthKit module status
         try {
-          const RNHealth = require('react-native-health');
-          const hasRealMethods = RNHealth && typeof RNHealth.isHealthDataAvailable === 'function';
-          Alert.alert('HealthKit Status', `Module loaded: ${!!RNHealth}, Has methods: ${hasRealMethods}`);
-        } catch (error: any) {
-          Alert.alert('Error', `HealthKit import failed: ${error.message}`);
-        }
-        
-        try {
-          // Check if HealthKit methods are available (dev build compatibility)
-          if (!HealthKit.isHealthDataAvailable) {
-            Alert.alert('Debug', 'HealthKit methods not available - using pedometer fallback');
-            console.warn('[useStepCounter] HealthKit methods not available in current build, using pedometer fallback');
-            checkPedometerAvailability();
-            return;
-          }
-          
           // Check if HealthKit is available on this device
-          Alert.alert('Debug', 'HealthKit module available - checking device compatibility...');
-          console.log('[useStepCounter] 🏥 Initializing HealthKit for full health data integration');
-          
-          Alert.alert('Debug', 'About to call isHealthDataAvailable()...');
           const isAvailable = await HealthKit.isHealthDataAvailable();
-          Alert.alert('Debug', `Device compatibility result: ${isAvailable}`);
           setHealthKitAvailable(isAvailable);
           
           if (isAvailable) {
             // Request authorization for steps
-            Alert.alert('Debug', 'Requesting HealthKit authorization...');
             const authResult = await HealthKit.requestAuthorization([
               'steps', 
               'distance', 
@@ -157,8 +131,6 @@ export default function useStepCounter() {
             setHealthKitAuthorized(authResult.authorized);
             
             if (authResult.authorized) {
-              Alert.alert('Success!', 'HealthKit authorized - App should now appear in Health settings!');
-              console.log('[useStepCounter] ✅ HealthKit authorized - App will appear in Health settings');
               // Set HealthKit as the primary data source
               setDataSource("healthKit");
               setIsPedometerAvailable(true);
@@ -199,12 +171,11 @@ export default function useStepCounter() {
                   source: "Apple Health"
                 };
                 
-                // Defer store update to avoid React warning
-                setTimeout(() => addStepLog(stepLog), 0);
+                addStepLog(stepLog);
               }
               
               // Set up observer for step count changes
-              healthKitObserverRef.current = HealthKit.observeStepCount((result: any) => {
+              healthKitObserverRef.current = HealthKit.observeStepCount((result) => {
                 if (result.success) {
                   setCurrentStepCount(result.steps);
                   
@@ -218,67 +189,71 @@ export default function useStepCounter() {
                     source: "Apple Health"
                   };
                   
-                  // Defer store update to avoid React warning
-                  setTimeout(() => addStepLog(stepLog), 0);
+                  addStepLog(stepLog);
                 }
               });
             } else {
-              console.log('[useStepCounter] HealthKit authorization denied, falling back to pedometer');
+              // Fall back to pedometer if HealthKit authorization denied
               checkPedometerAvailability();
             }
           } else {
-            console.log('[useStepCounter] HealthKit not available, falling back to pedometer');
+            // Fall back to pedometer if HealthKit not available
             checkPedometerAvailability();
           }
         } catch (error: any) {
-          Alert.alert('HealthKit Error', `Error: ${error.message}`);
-          console.error('[useStepCounter] Error initializing HealthKit:', error);
-          console.log('[useStepCounter] Falling back to pedometer due to HealthKit error');
+          console.error("Error initializing HealthKit:", error);
+          setError(`Error initializing HealthKit: ${error.message}`);
+          setErrorType(ERROR_TYPES.HEALTHKIT_ERROR);
+          // Fall back to pedometer
           checkPedometerAvailability();
         }
       } else {
+        // Not on iOS, check pedometer
         checkPedometerAvailability();
       }
     };
     
     const checkPedometerAvailability = async () => {
       try {
-        const isAvailable = await Pedometer.isAvailableAsync();
-        console.log('[useStepCounter] Pedometer available:', isAvailable);
+        // Check for connected devices first
+        const appleWatch = getConnectedDeviceByType("appleWatch");
+        const fitbit = getConnectedDeviceByType("fitbit");
+        const garmin = getConnectedDeviceByType("garmin");
         
-        if (isAvailable) {
-          console.log('[useStepCounter] ✅ Using REAL device step data from expo-sensors Pedometer');
+        const connectedDevice = appleWatch || fitbit || garmin;
+        
+        if (connectedDevice && connectedDevice.connected) {
+          setIsUsingConnectedDevice(true);
+          setDeviceName(connectedDevice.name);
+          setDataSource("connectedDevice");
+          
+          // If we have a connected device, we don't need the pedometer
           setIsPedometerAvailable(true);
-          setDataSource("pedometer");
-          setUseMockData(false);
           setError(null);
           setErrorType(null);
-          
-                     // Request permissions for pedometer
-           const { status } = await Pedometer.requestPermissionsAsync();
-           console.log('[useStepCounter] Pedometer permission status:', status);
-           setPermissionStatus(status as "unknown" | "granted" | "denied");
-          
-                     if (status === 'granted') {
-             startTracking();
-           } else {
-            console.log('[useStepCounter] Pedometer permissions denied');
-            setError('Pedometer permissions denied');
-            setErrorType(ERROR_TYPES.PERMISSION_DENIED);
-            setUseMockData(true);
-          }
+          return;
+        }
+        
+        // Fall back to device pedometer if no connected devices
+        const isAvailable = await Pedometer.isAvailableAsync();
+        setIsPedometerAvailable(isAvailable);
+        
+        if (isAvailable) {
+          setDataSource("pedometer");
+          setError(null);
+          setErrorType(null);
         } else {
-          console.log('[useStepCounter] Pedometer not available on this device');
-          setIsPedometerAvailable(false);
-          setError('Pedometer not available on this device');
+          setError("Pedometer is not available on this device");
           setErrorType(ERROR_TYPES.DEVICE_NOT_SUPPORTED);
           setUseMockData(true);
+          setDataSource("mock");
         }
-      } catch (error: any) {
-        console.error('[useStepCounter] Error checking pedometer availability:', error);
-        setError(`Error checking pedometer: ${error.message}`);
+      } catch (e) {
+        console.error("Error checking pedometer availability:", e);
+        setError("Error checking pedometer availability");
         setErrorType(ERROR_TYPES.UNKNOWN_ERROR);
         setUseMockData(true);
+        setDataSource("mock");
       }
     };
     
@@ -937,15 +912,10 @@ export default function useStepCounter() {
         );
         
         // Get calories data
-        let caloriesResult = { success: false, calories: 0 };
-        try {
-          caloriesResult = await HealthKit.getActiveEnergyBurned(
-            today.toISOString(),
-            new Date().toISOString()
-          );
-        } catch (error) {
-          console.warn('[useStepCounter] Failed to get calories data, using calculated fallback:', error);
-        }
+        const caloriesResult = await HealthKit.getActiveEnergyBurned(
+          today.toISOString(),
+          new Date().toISOString()
+        );
         
         // Log the steps with additional data if available
         const stepLog = {
@@ -1011,15 +981,10 @@ export default function useStepCounter() {
           );
           
           // Get calories data
-          let caloriesResult = { success: false, calories: 0 };
-          try {
-            caloriesResult = await HealthKit.getActiveEnergyBurned(
-              today.toISOString(),
-              new Date().toISOString()
-            );
-          } catch (error) {
-            console.warn('[useStepCounter] Failed to get calories data in manualSync, using calculated fallback:', error);
-          }
+          const caloriesResult = await HealthKit.getActiveEnergyBurned(
+            today.toISOString(),
+            new Date().toISOString()
+          );
           
           // Log the steps with additional data if available
           const stepLog = {
@@ -1055,49 +1020,6 @@ export default function useStepCounter() {
       return false;
     }
   };
-  
-  useEffect(() => {
-    // DEBUG: Add global function to manually test HealthKit authorization
-    if (Platform.OS === 'ios' && typeof window !== 'undefined') {
-      (window as any).debugHealthKitAuth = async () => {
-        try {
-          Alert.alert('DEBUG', 'Starting manual HealthKit authorization test...');
-          
-          const HealthKit = require('@/src/NativeModules/HealthKit');
-          
-          // Check availability
-          const isAvailable = await HealthKit.isHealthDataAvailable();
-          Alert.alert('DEBUG', `HealthKit available: ${isAvailable}`);
-          
-          if (!isAvailable) {
-            Alert.alert('ERROR', 'HealthKit not available on this device');
-            return;
-          }
-          
-          // Request authorization
-          Alert.alert('DEBUG', 'About to request authorization - watch for system popup!');
-          const authResult = await HealthKit.requestAuthorization([
-            'steps', 
-            'distance', 
-            'calories',
-            'activity'
-          ]);
-          
-          Alert.alert('RESULT', `Authorization result: ${JSON.stringify(authResult)}`);
-          
-          if (authResult.authorized) {
-            Alert.alert('SUCCESS!', 'HealthKit authorized! Check Settings → Privacy & Security → Health → Data Access & Devices. FitJourneyTracker should now be in the list!');
-          } else {
-            Alert.alert('FAILED', 'HealthKit authorization failed or was denied.');
-          }
-          
-        } catch (error: any) {
-          Alert.alert('ERROR', `HealthKit test failed: ${error.message}`);
-          console.error('Manual HealthKit test error:', error);
-        }
-      };
-    }
-  }, []);
   
   return {
     currentStepCount,

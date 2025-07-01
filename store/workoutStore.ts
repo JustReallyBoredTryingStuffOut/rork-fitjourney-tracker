@@ -4,7 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Exercise, Workout, WorkoutLog, ExerciseLog, WorkoutSet, ScheduledWorkout, WorkoutRating, WorkoutMedia, TimerSettings, BodyRegion, MuscleGroup, EquipmentType, PersonalRecord } from "@/types";
 import { exercises } from "@/mocks/exercises";
 import { workouts } from "@/mocks/workouts";
-import { validateAllWorkouts, validateWorkout } from "@/utils/workoutValidation";
 import { useMacroStore } from "./macroStore";
 import { useGamificationStore } from "./gamificationStore";
 
@@ -128,20 +127,9 @@ interface WorkoutState {
   // New action for deleting workout logs
   deleteWorkoutLog: (id: string) => void;
   
-  // Development/testing function to clear all workout logs
-  clearAllWorkoutLogs: () => void;
-  
   // New actions for one-time vs recurring workouts
   getScheduledWorkoutsForDate: (date: Date) => ScheduledWorkout[];
   getRecurringWorkoutsForDay: (dayOfWeek: number) => ScheduledWorkout[];
-
-  // New actions for editing completed workout logs
-  updateWorkoutLog: (workoutLogId: string, updates: Partial<WorkoutLog>) => void;
-  updateWorkoutLogExercise: (workoutLogId: string, exerciseIndex: number, updates: Partial<ExerciseLog>) => void;
-  updateWorkoutLogSet: (workoutLogId: string, exerciseIndex: number, setIndex: number, updates: Partial<WorkoutSet>) => void;
-  addWorkoutLogSet: (workoutLogId: string, exerciseIndex: number, setData: WorkoutSet) => void;
-  removeWorkoutLogSet: (workoutLogId: string, exerciseIndex: number, setIndex: number) => void;
-  getWorkoutLog: (workoutLogId: string) => WorkoutLog | null;
 }
 
 // List of major lifts for special PR celebrations
@@ -156,15 +144,12 @@ const MAJOR_LIFTS = [
   "Hip Thrust"
 ];
 
-// Sample workout logs for testing
-// No sample workout logs - users start with clean slate
-
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
     (set, get) => ({
       exercises: exercises,
-      workouts: validateAllWorkouts(workouts, exercises),
-      workoutLogs: [], // Start with empty workout logs - no sample data
+      workouts: workouts,
+      workoutLogs: [],
       scheduledWorkouts: [],
       activeWorkout: null,
       personalRecords: [],
@@ -198,13 +183,9 @@ export const useWorkoutStore = create<WorkoutState>()(
         exercises: state.exercises.filter(ex => ex.id !== id)
       })),
       
-      addWorkout: (workout) => {
-        const { exercises } = get();
-        const validatedWorkout = validateWorkout(workout, exercises);
-        set((state) => ({
-          workouts: [...state.workouts, validatedWorkout]
-        }));
-      },
+      addWorkout: (workout) => set((state) => ({
+        workouts: [...state.workouts, workout]
+      })),
       
       updateWorkout: (workout) => set((state) => ({
         workouts: state.workouts.map(w => w.id === workout.id ? workout : w)
@@ -227,15 +208,13 @@ export const useWorkoutStore = create<WorkoutState>()(
           duration: 0,
           startTime: new Date().toISOString(), // Track when workout started
           endTime: "", // Will be set when workout is completed
-          exercises: workout.exercises
-            .filter(exercise => exercise && exercise.id) // Filter out null/undefined exercises
-            .map(exercise => ({
-              id: Date.now().toString() + Math.random().toString(),
-              exerciseId: exercise.id,
-              sets: [],
-              notes: "",
-              completed: false, // Add completed flag for each exercise
-            })),
+          exercises: workout.exercises.map(exercise => ({
+            id: Date.now().toString() + Math.random().toString(),
+            exerciseId: exercise.id,
+            sets: [],
+            notes: "",
+            completed: false, // Add completed flag for each exercise
+          })),
           notes: "",
           completed: false,
           rating: null,
@@ -970,51 +949,49 @@ export const useWorkoutStore = create<WorkoutState>()(
       
       // New functions for filtering exercises
       getBodyRegions: () => {
-        return [
-          { name: 'upper_body', image: null },
-          { name: 'lower_body', image: null },
-          { name: 'core', image: null },
-          { name: 'back', image: null },
-        ];
+        const { exercises } = get();
+        const regions = new Set<BodyRegion>();
+        
+        exercises.forEach(exercise => {
+          regions.add(exercise.bodyRegion);
+        });
+        
+        return Array.from(regions);
       },
       
       getMuscleGroups: (bodyRegion) => {
         const { exercises } = get();
-        const muscleGroupsMap = new Map<string, MuscleGroup>();
+        const muscleGroups = new Set<MuscleGroup>();
         
         exercises.forEach(exercise => {
-          if (!bodyRegion || exercise.muscleGroups.some(group => group.bodyRegion.name === bodyRegion.name)) {
+          if (!bodyRegion || exercise.bodyRegion === bodyRegion) {
             exercise.muscleGroups.forEach(group => {
-              if (!muscleGroupsMap.has(group.name)) {
-                muscleGroupsMap.set(group.name, group);
-              }
+              muscleGroups.add(group);
             });
           }
         });
         
-        return Array.from(muscleGroupsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        return Array.from(muscleGroups).sort();
       },
       
       getEquipmentTypes: () => {
         const { exercises } = get();
-        const equipmentTypesMap = new Map<string, EquipmentType>();
+        const equipmentTypes = new Set<EquipmentType>();
         
         exercises.forEach(exercise => {
           exercise.equipment.forEach(equipment => {
-            if (!equipmentTypesMap.has(equipment.name)) {
-              equipmentTypesMap.set(equipment.name, equipment);
-            }
+            equipmentTypes.add(equipment);
           });
         });
         
-        return Array.from(equipmentTypesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        return Array.from(equipmentTypes).sort();
       },
       
       getExercisesByMuscleGroup: (muscleGroup) => {
         const { exercises } = get();
         
         return exercises.filter(exercise => 
-          exercise.muscleGroups.some(group => group.name === muscleGroup.name)
+          exercise.muscleGroups.includes(muscleGroup)
         );
       },
       
@@ -1022,7 +999,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         const { exercises } = get();
         
         return exercises.filter(exercise => 
-          exercise.muscleGroups.some(group => group.bodyRegion.name === bodyRegion.name)
+          exercise.bodyRegion === bodyRegion
         );
       },
       
@@ -1030,7 +1007,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         const { exercises } = get();
         
         return exercises.filter(exercise => 
-          exercise.equipment.some(eq => eq.name === equipment.name)
+          exercise.equipment.includes(equipment)
         );
       },
       
@@ -1039,17 +1016,17 @@ export const useWorkoutStore = create<WorkoutState>()(
         
         return exercises.filter(exercise => {
           // Filter by body region
-          if (filters.bodyRegion && !exercise.muscleGroups.some(group => group.bodyRegion.name === filters.bodyRegion?.name)) {
+          if (filters.bodyRegion && exercise.bodyRegion !== filters.bodyRegion) {
             return false;
           }
           
           // Filter by muscle group
-          if (filters.muscleGroup && !exercise.muscleGroups.some(group => group.name === filters.muscleGroup?.name)) {
+          if (filters.muscleGroup && !exercise.muscleGroups.includes(filters.muscleGroup)) {
             return false;
           }
           
           // Filter by equipment
-          if (filters.equipment && !exercise.equipment.some(eq => eq.name === filters.equipment?.name)) {
+          if (filters.equipment && !exercise.equipment.includes(filters.equipment)) {
             return false;
           }
           
@@ -1064,7 +1041,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             const nameMatch = exercise.name.toLowerCase().includes(query);
             const descriptionMatch = exercise.description.toLowerCase().includes(query);
             const muscleGroupMatch = exercise.muscleGroups.some(group => 
-              group.name.toLowerCase().includes(query)
+              group.toLowerCase().includes(query)
             );
             
             if (!nameMatch && !descriptionMatch && !muscleGroupMatch) {
@@ -1564,7 +1541,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             workout.exercises.forEach(exercise => {
               const ex = exercises.find(e => e.id === exercise.id);
               if (ex) {
-                ex.muscleGroups.forEach(group => muscleGroups.add(group.name));
+                ex.muscleGroups.forEach(group => muscleGroups.add(group));
               }
             });
           }
@@ -1618,7 +1595,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           // Check if any exercise in the workout targets the specified muscle group
           return workout.exercises.some(workoutExercise => {
             const exercise = exercises.find(e => e.id === workoutExercise.id);
-            return exercise && exercise.muscleGroups.some(group => group.name === muscleGroup);
+            return exercise && exercise.muscleGroups.includes(muscleGroup);
           });
         });
       },
@@ -1664,102 +1641,6 @@ export const useWorkoutStore = create<WorkoutState>()(
           // Check if the recurring workout is still valid (hasn't ended)
           (!sw.recurrenceEndDate || new Date(sw.recurrenceEndDate) >= new Date())
         );
-      },
-
-      // New actions for editing completed workout logs
-      updateWorkoutLog: (workoutLogId: string, updates: Partial<WorkoutLog>) => {
-        set((state) => ({
-          workoutLogs: state.workoutLogs.map(log => 
-            log.id === workoutLogId ? { ...log, ...updates } : log
-          )
-        }));
-      },
-
-      updateWorkoutLogExercise: (workoutLogId: string, exerciseIndex: number, updates: Partial<ExerciseLog>) => {
-        set((state) => ({
-          workoutLogs: state.workoutLogs.map(log => 
-            log.id === workoutLogId 
-              ? {
-                  ...log,
-                  exercises: log.exercises.map((exercise, index) => 
-                    index === exerciseIndex ? { ...exercise, ...updates } : exercise
-                  )
-                }
-              : log
-          )
-        }));
-      },
-
-      updateWorkoutLogSet: (workoutLogId: string, exerciseIndex: number, setIndex: number, updates: Partial<WorkoutSet>) => {
-        set((state) => ({
-          workoutLogs: state.workoutLogs.map(log => 
-            log.id === workoutLogId 
-              ? {
-                  ...log,
-                  exercises: log.exercises.map((exercise, exIndex) => 
-                    exIndex === exerciseIndex 
-                      ? {
-                          ...exercise,
-                          sets: exercise.sets.map((set, sIndex) => 
-                            sIndex === setIndex ? { ...set, ...updates } : set
-                          )
-                        }
-                      : exercise
-                  )
-                }
-              : log
-          )
-        }));
-      },
-
-      addWorkoutLogSet: (workoutLogId: string, exerciseIndex: number, setData: WorkoutSet) => {
-        set((state) => ({
-          workoutLogs: state.workoutLogs.map(log => 
-            log.id === workoutLogId 
-              ? {
-                  ...log,
-                  exercises: log.exercises.map((exercise, index) => 
-                    index === exerciseIndex 
-                      ? { ...exercise, sets: [...exercise.sets, setData] }
-                      : exercise
-                  )
-                }
-              : log
-          )
-        }));
-      },
-
-      removeWorkoutLogSet: (workoutLogId: string, exerciseIndex: number, setIndex: number) => {
-        set((state) => ({
-          workoutLogs: state.workoutLogs.map(log => 
-            log.id === workoutLogId 
-              ? {
-                  ...log,
-                  exercises: log.exercises.map((exercise, exIndex) => 
-                    exIndex === exerciseIndex 
-                      ? {
-                          ...exercise,
-                          sets: exercise.sets.filter((_, sIndex) => sIndex !== setIndex)
-                        }
-                      : exercise
-                  )
-                }
-              : log
-          )
-        }));
-      },
-
-      getWorkoutLog: (workoutLogId: string) => {
-        const { workoutLogs } = get();
-        return workoutLogs.find(log => log.id === workoutLogId) || null;
-      },
-
-      clearAllWorkoutLogs: () => {
-        set((state) => ({
-          workoutLogs: [],
-          personalRecords: [], // Also clear personal records since they depend on workout logs
-          activeWorkout: null // Clear any active workout
-        }));
       },
     }),
     {

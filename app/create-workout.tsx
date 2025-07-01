@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   View, 
   Text, 
@@ -28,8 +28,6 @@ import { useWorkoutStore } from "@/store/workoutStore";
 import { Exercise } from "@/types";
 import Button from "@/components/Button";
 import ExerciseCard from "@/components/ExerciseCard";
-import BodyRegionSelector from "@/components/BodyRegionSelector";
-import { BODY_REGIONS } from "@/constants/bodyRegions";
 
 export default function CreateWorkoutScreen() {
   const router = useRouter();
@@ -40,7 +38,7 @@ export default function CreateWorkoutScreen() {
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("45");
   const [category, setCategory] = useState("Strength");
-  const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("beginner");
+  const [difficulty, setDifficulty] = useState("intermediate");
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   
   const [showExerciseModal, setShowExerciseModal] = useState(false);
@@ -51,15 +49,17 @@ export default function CreateWorkoutScreen() {
   const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
   const [bodyViewMode, setBodyViewMode] = useState<'front' | 'back'>('front');
   
-  // Get available body regions from BODY_REGIONS
-  const bodyRegions = BODY_REGIONS.map(region => region.name);
+  // Get unique categories and muscle groups for filtering
+  const bodyRegions = Array.from(new Set(exercises.map(ex => ex.bodyRegion)));
   
-  // Get muscle groups for selected body region
   const getMuscleGroups = () => {
-    if (!selectedBodyRegion) return [];
-    
-    const region = BODY_REGIONS.find(r => r.key === selectedBodyRegion);
-    return region ? region.muscles : [];
+    const groups = new Set<string>();
+    exercises.forEach(ex => {
+      if (!selectedBodyRegion || ex.bodyRegion === selectedBodyRegion) {
+        ex.muscleGroups.forEach(group => groups.add(group));
+      }
+    });
+    return Array.from(groups).sort();
   };
   
   const muscleGroups = getMuscleGroups();
@@ -72,15 +72,11 @@ export default function CreateWorkoutScreen() {
     'Accessories': ['Bench', 'Stability Ball', 'Medicine Ball', 'TRX', 'Ab Wheel', 'Resistance Band', 'Rope Attachment'],
   };
   
-  // Get filtered equipment types
+  // Get filtered equipment types by selected category
   const getFilteredEquipmentTypes = () => {
     if (!selectedEquipmentCategory) {
       const allEquipment = new Set<string>();
-      exercises.forEach(ex => {
-        ex.equipment.forEach(eq => {
-          allEquipment.add(eq.name);
-        });
-      });
+      exercises.forEach(ex => ex.equipment.forEach(eq => allEquipment.add(eq)));
       return Array.from(allEquipment).sort();
     }
     
@@ -89,8 +85,8 @@ export default function CreateWorkoutScreen() {
     
     exercises.forEach(ex => {
       ex.equipment.forEach(eq => {
-        if (categoryEquipment.includes(eq.name)) {
-          availableEquipment.add(eq.name);
+        if (categoryEquipment.includes(eq)) {
+          availableEquipment.add(eq);
         }
       });
     });
@@ -100,45 +96,6 @@ export default function CreateWorkoutScreen() {
   
   const equipmentTypes = getFilteredEquipmentTypes();
   
-  // Helper function to map muscle names to regions
-  const getMuscleRegionMapping = (muscleName: string): string => {
-    if (!muscleName) return 'full_body';
-    
-    const upperBodyMuscles = ['chest', 'shoulders', 'biceps', 'triceps', 'forearms', 'back', 'lats', 'traps', 'deltoids'];
-    const lowerBodyMuscles = ['quadriceps', 'hamstrings', 'glutes', 'calves', 'hip_flexors'];
-    const coreMuscles = ['abs', 'obliques', 'lower_back'];
-    
-    if (upperBodyMuscles.includes(muscleName.toLowerCase())) return 'upper';
-    if (lowerBodyMuscles.includes(muscleName.toLowerCase())) return 'lower';
-    if (coreMuscles.includes(muscleName.toLowerCase())) return 'core';
-    return 'full_body';
-  };
-  
-  // Helper function to map UI muscle key to exercise muscle name
-  const mapUIMuscleToExerciseMuscle = (uiMuscleKey: string): string => {
-    if (!uiMuscleKey) return '';
-    
-    const muscleMapping: { [key: string]: string } = {
-      'shoulders': 'shoulders',
-      'back': 'back',
-      'chest': 'chest',
-      'triceps': 'triceps',
-      'biceps': 'biceps',
-      'forearms': 'forearms',
-      'traps': 'traps',
-      'quads': 'quadriceps',
-      'hamstrings': 'hamstrings',
-      'glutes': 'glutes',
-      'calves': 'calves',
-      'hipflexors': 'hip_flexors',
-      'adductors': 'adductors',
-      'abs': 'abs',
-      'obliques': 'obliques',
-      'lowerback': 'lower_back'
-    };
-    return muscleMapping[uiMuscleKey] || uiMuscleKey;
-  };
-  
   // Filter exercises based on search query and filters
   const filteredExercises = exercises.filter(exercise => {
     // Filter by search query
@@ -146,7 +103,7 @@ export default function CreateWorkoutScreen() {
       const query = searchQuery.toLowerCase();
       const nameMatch = exercise.name.toLowerCase().includes(query);
       const descriptionMatch = exercise.description.toLowerCase().includes(query);
-      const muscleGroupMatch = exercise.muscleGroups.some(mg => mg.name.toLowerCase().includes(query));
+      const muscleGroupMatch = exercise.muscleGroups.some(mg => mg.toLowerCase().includes(query));
       
       if (!nameMatch && !descriptionMatch && !muscleGroupMatch) {
         return false;
@@ -154,31 +111,23 @@ export default function CreateWorkoutScreen() {
     }
     
     // Filter by body region
-    if (selectedBodyRegion) {
-      const hasRegion = exercise.muscleGroups.some(muscle => {
-        const region = getMuscleRegionMapping(muscle.name);
-        return region === selectedBodyRegion;
-      });
-      if (!hasRegion) return false;
+    if (selectedBodyRegion && exercise.bodyRegion !== selectedBodyRegion) {
+      return false;
     }
     
     // Filter by muscle group
-    if (selectedMuscleGroup) {
-      const exerciseMuscleName = mapUIMuscleToExerciseMuscle(selectedMuscleGroup);
-      const hasMuscle = exercise.muscleGroups.some(mg => 
-        mg.name.toLowerCase() === exerciseMuscleName.toLowerCase()
-      );
-      if (!hasMuscle) return false;
+    if (selectedMuscleGroup && !exercise.muscleGroups.includes(selectedMuscleGroup)) {
+      return false;
     }
     
     // Filter by equipment
-    if (selectedEquipment && !exercise.equipment.some(eq => eq.name === selectedEquipment)) {
+    if (selectedEquipment && !exercise.equipment.includes(selectedEquipment)) {
       return false;
     }
     
     // Filter by equipment category
     if (selectedEquipmentCategory && !exercise.equipment.some(eq => 
-      EQUIPMENT_CATEGORIES[selectedEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES]?.includes(eq.name)
+      EQUIPMENT_CATEGORIES[selectedEquipmentCategory as keyof typeof EQUIPMENT_CATEGORIES]?.includes(eq)
     )) {
       return false;
     }
@@ -227,21 +176,16 @@ export default function CreateWorkoutScreen() {
       id: Date.now().toString(),
       name,
       description: description || `Custom workout: ${name}`,
-      exercises: selectedExercises.map(ex => ({ 
-        id: ex.id,
-        sets: 3, // Default to 3 sets
-        reps: 10, // Default to 10 reps
-        restTime: 60 // Default to 60 seconds rest
-      })),
+      exercises: selectedExercises.map(ex => ({ id: ex.id })),
       duration: parseInt(duration) || 45,
       difficulty: difficulty as "beginner" | "intermediate" | "advanced",
       category,
       // Add these fields to match the Workout type in the store
       estimatedDuration: parseInt(duration) || 45,
-      intensity: difficulty === "beginner" ? "low" : difficulty === "intermediate" ? "medium" : "high" as "low" | "medium" | "high",
+      intensity: difficulty === "beginner" ? "low" : difficulty === "intermediate" ? "medium" : "high",
       muscleGroups: Array.from(new Set(selectedExercises.flatMap(ex => ex.muscleGroups))),
       equipment: Array.from(new Set(selectedExercises.flatMap(ex => ex.equipment))),
-      image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+      image: selectedExercises[0]?.image || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
     };
     
     // Add the workout to the store
@@ -512,7 +456,7 @@ export default function CreateWorkoutScreen() {
                   <View style={styles.exerciseContent}>
                     <Text style={[styles.exerciseName, { color: colors.text }]}>{exercise.name}</Text>
                     <Text style={[styles.exerciseCategory, { color: colors.textSecondary }]}>
-                      {exercise.muscleGroups.map(mg => mg.name).join(", ")}
+                      {exercise.bodyRegion} • {exercise.muscleGroups.join(", ")}
                     </Text>
                   </View>
                   
@@ -589,14 +533,55 @@ export default function CreateWorkoutScreen() {
                 ) : null}
               </View>
               
-              {/* Body Region Selector */}
-              <BodyRegionSelector
-                selectedRegion={selectedBodyRegion}
-                onSelectRegion={(regionKey) => {
-                  setSelectedBodyRegion(regionKey);
-                  setSelectedMuscleGroup(null);
-                }}
-              />
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filtersContainer}
+              >
+                <TouchableOpacity 
+                  style={[
+                    styles.filterChip,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    selectedBodyRegion === null && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                  ]}
+                  onPress={() => {
+                    setSelectedBodyRegion(null);
+                    setSelectedMuscleGroup(null);
+                  }}
+                >
+                  <Text style={[
+                    styles.filterChipText,
+                    { color: colors.text },
+                    selectedBodyRegion === null && styles.filterChipTextActive
+                  ]}>
+                    All Body Regions
+                  </Text>
+                </TouchableOpacity>
+                
+                {bodyRegions.map(region => (
+                  <TouchableOpacity 
+                    key={region}
+                    style={[
+                      styles.filterChip,
+                      { backgroundColor: colors.card, borderColor: colors.border },
+                      selectedBodyRegion === region && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                    ]}
+                    onPress={() => {
+                      setSelectedBodyRegion(region);
+                      setSelectedMuscleGroup(null);
+                      setBodyViewMode('front');
+                    }}
+                  >
+                    <Text style={[
+                      styles.filterChipText,
+                      { color: colors.text },
+                      selectedBodyRegion === region && styles.filterChipTextActive
+                    ]}>
+                      {region}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
               
               {selectedBodyRegion && (
                 <>
@@ -638,20 +623,20 @@ export default function CreateWorkoutScreen() {
                     
                     {muscleGroups.map(group => (
                       <TouchableOpacity 
-                        key={group.key}
+                        key={group}
                         style={[
                           styles.filterChip,
                           { backgroundColor: colors.card, borderColor: colors.border },
-                          selectedMuscleGroup === group.key && [styles.filterChipActive, { backgroundColor: colors.primary }]
+                          selectedMuscleGroup === group && [styles.filterChipActive, { backgroundColor: colors.primary }]
                         ]}
-                        onPress={() => setSelectedMuscleGroup(group.key)}
+                        onPress={() => setSelectedMuscleGroup(group)}
                       >
                         <Text style={[
                           styles.filterChipText,
                           { color: colors.text },
-                          selectedMuscleGroup === group.key && styles.filterChipTextActive
+                          selectedMuscleGroup === group && styles.filterChipTextActive
                         ]}>
-                          {group.name}
+                          {group}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -778,13 +763,13 @@ export default function CreateWorkoutScreen() {
                   <View style={styles.exerciseListItemContent}>
                     <Text style={[styles.exerciseListItemName, { color: colors.text }]}>{item.name}</Text>
                     <Text style={[styles.exerciseListItemDetails, { color: colors.textSecondary }]}>
-                      {item.muscleGroups.map(mg => mg.name).join(", ")}
+                      {item.bodyRegion} • {item.muscleGroups.join(", ")}
                     </Text>
                     <View style={styles.exerciseListItemEquipment}>
                       {item.equipment.map(eq => (
-                        <View key={eq.name} style={styles.equipmentTag}>
+                        <View key={eq} style={styles.equipmentTag}>
                           <Dumbbell size={10} color={colors.textSecondary} />
-                          <Text style={[styles.equipmentTagText, { color: colors.textSecondary }]}>{eq.name}</Text>
+                          <Text style={[styles.equipmentTagText, { color: colors.textSecondary }]}>{eq}</Text>
                         </View>
                       ))}
                     </View>

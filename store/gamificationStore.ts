@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useWorkoutStore } from "./workoutStore";
 import { useHealthStore } from "./healthStore";
-import { useMacroStore } from "./macroStore";
 
 export type AchievementCategory = 
   | "workout" 
@@ -14,8 +13,6 @@ export type AchievementCategory =
   | "special";
 
 export type AchievementTier = "bronze" | "silver" | "gold" | "platinum" | "diamond";
-
-export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export interface Achievement {
   id: string;
@@ -29,7 +26,6 @@ export interface Achievement {
   completed: boolean;
   dateCompleted?: string;
   points: number;
-  fitnessLevel?: FitnessLevel[]; // Which fitness levels this achievement is appropriate for
 }
 
 export interface Challenge {
@@ -45,7 +41,6 @@ export interface Challenge {
   points: number;
   reward?: string;
   difficulty?: "easy" | "medium" | "hard";
-  fitnessLevel?: FitnessLevel[]; // Which fitness levels this challenge is appropriate for
 }
 
 export interface Streak {
@@ -84,23 +79,6 @@ export interface DailyQuest {
   date: string;
   points: number;
   category: AchievementCategory;
-  fitnessLevel?: FitnessLevel[]; // Which fitness levels this quest is appropriate for
-}
-
-export interface ProgressionTracker {
-  currentFitnessLevel: FitnessLevel;
-  workoutsCompleted: number;
-  streakRecord: number;
-  totalPoints: number;
-  timeAtCurrentLevel: number; // days at current level
-  readyForProgression: boolean;
-  lastProgressionCheck: string;
-  progressionCriteria: {
-    workouts: number;
-    streak: number;
-    points: number;
-    timeRequired: number; // minimum days at current level
-  };
 }
 
 interface GamificationState {
@@ -121,7 +99,6 @@ interface GamificationState {
   celebrationAchievement: Achievement | null;
   showChallengeCelebration: boolean;
   celebrationChallenge: Challenge | null;
-  progressionTracker: ProgressionTracker;
   
   // Actions
   toggleGamification: (enabled: boolean) => void;
@@ -165,22 +142,6 @@ interface GamificationState {
     nextMilestone: number;
     daysToNextReward: number;
   };
-  
-  // New fitness level and progression methods
-  getUserFitnessLevel: () => FitnessLevel;
-  getAppropriateAchievements: () => Achievement[];
-  getAppropriateChallenges: () => Challenge[];
-  getAppropriateDailyQuests: () => DailyQuest[];
-  checkProgressionEligibility: () => boolean;
-  suggestProgression: () => { 
-    ready: boolean; 
-    nextLevel: FitnessLevel; 
-    criteria: string[];
-    completedCriteria: string[];
-  };
-  updateProgressionTracker: () => void;
-  acceptProgression: () => void;
-  generateBeginnerFriendlyQuests: () => DailyQuest[];
 }
 
 // Define levels
@@ -2633,54 +2594,7 @@ const defaultChallenges: Challenge[] = [
     category: "workout",
     points: 100,
     reward: "50 bonus points",
-    difficulty: "easy",
-    fitnessLevel: ['intermediate', 'advanced']
-  },
-  // Beginner-friendly challenges
-  {
-    id: "challenge-beginner-first-week",
-    title: "Getting Started",
-    description: "Complete 2 workouts this week",
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    target: 2,
-    progress: 0,
-    completed: false,
-    category: "workout",
-    points: 75,
-    reward: "30 bonus points",
-    difficulty: "easy",
-    fitnessLevel: ['beginner']
-  },
-  {
-    id: "challenge-beginner-3-day-streak",
-    title: "Building Habits",
-    description: "Work out for 3 consecutive days",
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-    target: 3,
-    progress: 0,
-    completed: false,
-    category: "streak",
-    points: 60,
-    reward: "25 bonus points",
-    difficulty: "easy",
-    fitnessLevel: ['beginner']
-  },
-  {
-    id: "challenge-beginner-steps",
-    title: "Daily Steps",
-    description: "Walk 3,000 steps every day this week",
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    target: 7,
-    progress: 0,
-    completed: false,
-    category: "steps",
-    points: 50,
-    reward: "20 bonus points",
-    difficulty: "easy",
-    fitnessLevel: ['beginner']
+    difficulty: "easy"
   },
   {
     id: "challenge-steps",
@@ -3035,8 +2949,7 @@ const defaultChallenges: Challenge[] = [
     category: "steps",
     points: 150,
     reward: "50 bonus points",
-    difficulty: "hard",
-    fitnessLevel: ['intermediate', 'advanced']
+    difficulty: "hard"
   },
   {
     id: "challenge-steps-weekend",
@@ -3583,56 +3496,7 @@ const defaultChallenges: Challenge[] = [
 // Helper function to generate daily quests
 const generateDefaultDailyQuests = (): DailyQuest[] => {
   const today = new Date().toISOString();
-  const macroStore = useMacroStore.getState();
-  const userFitnessLevel = macroStore.userProfile.fitnessLevel || 'beginner';
   
-  // Generate quests based on fitness level
-  if (userFitnessLevel === 'beginner') {
-    return [
-      {
-        id: `quest-beginner-workout-${Date.now()}`,
-        title: "First Steps",
-        description: "Complete a 15-minute beginner workout",
-        completed: false,
-        date: today,
-        points: 15,
-        category: "workout",
-        fitnessLevel: ['beginner']
-      },
-      {
-        id: `quest-beginner-steps-${Date.now()}`,
-        title: "Daily Walk",
-        description: "Take 5,000 steps today",
-        completed: false,
-        date: today,
-        points: 10,
-        category: "steps",
-        fitnessLevel: ['beginner']
-      },
-      {
-        id: `quest-beginner-water-${Date.now()}`,
-        title: "Stay Hydrated",
-        description: "Drink 6 glasses of water today",
-        completed: false,
-        date: today,
-        points: 8,
-        category: "nutrition",
-        fitnessLevel: ['beginner']
-      },
-      {
-        id: `quest-beginner-stretch-${Date.now()}`,
-        title: "Gentle Stretch",
-        description: "Do 5 minutes of stretching",
-        completed: false,
-        date: today,
-        points: 10,
-        category: "workout",
-        fitnessLevel: ['beginner']
-      }
-    ];
-  }
-  
-  // Intermediate/Advanced quests
   return [
     {
       id: `quest-workout-${Date.now()}`,
@@ -3641,8 +3505,7 @@ const generateDefaultDailyQuests = (): DailyQuest[] => {
       completed: false,
       date: today,
       points: 20,
-      category: "workout",
-      fitnessLevel: ['intermediate', 'advanced']
+      category: "workout"
     },
     {
       id: `quest-steps-${Date.now()}`,
@@ -3651,8 +3514,7 @@ const generateDefaultDailyQuests = (): DailyQuest[] => {
       completed: false,
       date: today,
       points: 15,
-      category: "steps",
-      fitnessLevel: ['intermediate', 'advanced']
+      category: "steps"
     },
     {
       id: `quest-water-${Date.now()}`,
@@ -3661,8 +3523,7 @@ const generateDefaultDailyQuests = (): DailyQuest[] => {
       completed: false,
       date: today,
       points: 10,
-      category: "nutrition",
-      fitnessLevel: ['intermediate', 'advanced']
+      category: "nutrition"
     },
     {
       id: `quest-protein-${Date.now()}`,
@@ -3671,8 +3532,7 @@ const generateDefaultDailyQuests = (): DailyQuest[] => {
       completed: false,
       date: today,
       points: 15,
-      category: "nutrition",
-      fitnessLevel: ['intermediate', 'advanced']
+      category: "nutrition"
     }
   ];
 };
@@ -3702,21 +3562,6 @@ export const useGamificationStore = create<GamificationState>()(
       celebrationAchievement: null,
       showChallengeCelebration: false,
       celebrationChallenge: null,
-      progressionTracker: {
-        currentFitnessLevel: 'beginner',
-        workoutsCompleted: 0,
-        streakRecord: 0,
-        totalPoints: 0,
-        timeAtCurrentLevel: 0,
-        readyForProgression: false,
-        lastProgressionCheck: new Date().toISOString(),
-        progressionCriteria: {
-          workouts: 10, // Complete 10 workouts to progress from beginner
-          streak: 3, // Maintain 3-day streak
-          points: 200, // Earn 200 points
-          timeRequired: 14 // Stay at level for at least 2 weeks
-        }
-      },
       
       // New action to toggle gamification
       toggleGamification: (enabled) => set({ gamificationEnabled: enabled }),
@@ -3777,33 +3622,27 @@ export const useGamificationStore = create<GamificationState>()(
             case "workout-strength-10":
             case "workout-strength-50":
             case "workout-strength-100":
-              const strengthWorkouts = workoutStore.workoutLogs.filter(log => {
-                if (!log.completed) return false;
-                const workout = workoutStore.workouts.find(w => w.id === log.workoutId);
-                return workout && workout.category === "strength";
-              }).length;
+              const strengthWorkouts = workoutStore.workoutLogs.filter(
+                log => log.completed && log.type === "strength"
+              ).length;
               progress = strengthWorkouts;
               break;
               
             case "workout-cardio-10":
             case "workout-cardio-50":
             case "workout-cardio-100":
-              const cardioWorkouts = workoutStore.workoutLogs.filter(log => {
-                if (!log.completed) return false;
-                const workout = workoutStore.workouts.find(w => w.id === log.workoutId);
-                return workout && workout.category === "cardio";
-              }).length;
+              const cardioWorkouts = workoutStore.workoutLogs.filter(
+                log => log.completed && log.type === "cardio"
+              ).length;
               progress = cardioWorkouts;
               break;
               
             case "workout-flexibility-10":
             case "workout-flexibility-30":
             case "workout-flexibility-50":
-              const flexibilityWorkouts = workoutStore.workoutLogs.filter(log => {
-                if (!log.completed) return false;
-                const workout = workoutStore.workouts.find(w => w.id === log.workoutId);
-                return workout && workout.category === "flexibility";
-              }).length;
+              const flexibilityWorkouts = workoutStore.workoutLogs.filter(
+                log => log.completed && log.type === "flexibility"
+              ).length;
               progress = flexibilityWorkouts;
               break;
               
@@ -3824,11 +3663,7 @@ export const useGamificationStore = create<GamificationState>()(
               const uniqueWorkoutTypes = new Set(
                 workoutStore.workoutLogs
                   .filter(log => log.completed)
-                  .map(log => {
-                    const workout = workoutStore.workouts.find(w => w.id === log.workoutId);
-                    return workout ? workout.name : '';
-                  })
-                  .filter(name => name !== '')
+                  .map(log => log.name)
               ).size;
               progress = uniqueWorkoutTypes;
               break;
@@ -4481,250 +4316,6 @@ export const useGamificationStore = create<GamificationState>()(
           nextMilestone,
           daysToNextReward
         };
-      },
-
-      // New fitness level and progression methods
-      getUserFitnessLevel: (): FitnessLevel => {
-        const macroStore = useMacroStore.getState();
-        return macroStore.userProfile.fitnessLevel || 'beginner';
-      },
-
-      getAppropriateAchievements: () => {
-        const { achievements, getUserFitnessLevel } = get();
-        const userLevel = getUserFitnessLevel();
-        
-        return achievements.filter(achievement => {
-          if (!achievement.fitnessLevel) return true; // If no level specified, show to all
-          return achievement.fitnessLevel.includes(userLevel);
-        });
-      },
-
-      getAppropriateChallenges: () => {
-        const { challenges, getUserFitnessLevel } = get();
-        const userLevel = getUserFitnessLevel();
-        
-        return challenges.filter(challenge => {
-          if (!challenge.fitnessLevel) return true; // If no level specified, show to all
-          return challenge.fitnessLevel.includes(userLevel);
-        });
-      },
-
-      getAppropriateDailyQuests: () => {
-        const { dailyQuests, getUserFitnessLevel } = get();
-        const userLevel = getUserFitnessLevel();
-        
-        return dailyQuests.filter(quest => {
-          if (!quest.fitnessLevel) return true; // If no level specified, show to all
-          return quest.fitnessLevel.includes(userLevel);
-        });
-      },
-
-      checkProgressionEligibility: () => {
-        const { progressionTracker, getUserFitnessLevel } = get();
-        const workoutStore = useWorkoutStore.getState();
-        const currentLevel = getUserFitnessLevel();
-        
-        // Don't suggest progression if already at advanced level
-        if (currentLevel === 'advanced') return false;
-        
-        // Update progression tracker with current stats
-        const completedWorkouts = workoutStore.workoutLogs.filter(log => log.completed).length;
-        const currentStreak = get().streak.currentStreak;
-        const totalPoints = get().points;
-        
-        // Check if user meets all criteria for progression
-        const meetsWorkouts = completedWorkouts >= progressionTracker.progressionCriteria.workouts;
-        const meetsStreak = currentStreak >= progressionTracker.progressionCriteria.streak;
-        const meetsPoints = totalPoints >= progressionTracker.progressionCriteria.points;
-        
-        // Check time at current level
-        const daysSinceLastCheck = Math.floor(
-          (new Date().getTime() - new Date(progressionTracker.lastProgressionCheck).getTime()) / 
-          (1000 * 60 * 60 * 24)
-        );
-        const meetsTimeRequirement = daysSinceLastCheck >= progressionTracker.progressionCriteria.timeRequired;
-        
-        return meetsWorkouts && meetsStreak && meetsPoints && meetsTimeRequirement;
-      },
-
-      suggestProgression: () => {
-        const { progressionTracker, getUserFitnessLevel, checkProgressionEligibility } = get();
-        const workoutStore = useWorkoutStore.getState();
-        const currentLevel = getUserFitnessLevel();
-        const isReady = checkProgressionEligibility();
-        
-        const nextLevel: FitnessLevel = currentLevel === 'beginner' ? 'intermediate' : 'advanced';
-        
-        const completedWorkouts = workoutStore.workoutLogs.filter(log => log.completed).length;
-        const currentStreak = get().streak.currentStreak;
-        const totalPoints = get().points;
-        
-        const daysSinceLastCheck = Math.floor(
-          (new Date().getTime() - new Date(progressionTracker.lastProgressionCheck).getTime()) / 
-          (1000 * 60 * 60 * 24)
-        );
-        
-        const criteria = [
-          `Complete ${progressionTracker.progressionCriteria.workouts} workouts`,
-          `Maintain ${progressionTracker.progressionCriteria.streak}-day streak`,
-          `Earn ${progressionTracker.progressionCriteria.points} points`,
-          `Stay at current level for ${progressionTracker.progressionCriteria.timeRequired} days`
-        ];
-        
-        const completedCriteria = [];
-        if (completedWorkouts >= progressionTracker.progressionCriteria.workouts) {
-          completedCriteria.push(`✓ Completed ${completedWorkouts} workouts`);
-        } else {
-          completedCriteria.push(`${completedWorkouts}/${progressionTracker.progressionCriteria.workouts} workouts completed`);
-        }
-        
-        if (currentStreak >= progressionTracker.progressionCriteria.streak) {
-          completedCriteria.push(`✓ ${currentStreak}-day streak achieved`);
-        } else {
-          completedCriteria.push(`${currentStreak}/${progressionTracker.progressionCriteria.streak} day streak`);
-        }
-        
-        if (totalPoints >= progressionTracker.progressionCriteria.points) {
-          completedCriteria.push(`✓ ${totalPoints} points earned`);
-        } else {
-          completedCriteria.push(`${totalPoints}/${progressionTracker.progressionCriteria.points} points earned`);
-        }
-        
-        if (daysSinceLastCheck >= progressionTracker.progressionCriteria.timeRequired) {
-          completedCriteria.push(`✓ ${daysSinceLastCheck} days at current level`);
-        } else {
-          completedCriteria.push(`${daysSinceLastCheck}/${progressionTracker.progressionCriteria.timeRequired} days at current level`);
-        }
-        
-        return {
-          ready: isReady,
-          nextLevel,
-          criteria,
-          completedCriteria
-        };
-      },
-
-      updateProgressionTracker: () => {
-        const { progressionTracker, getUserFitnessLevel } = get();
-        const workoutStore = useWorkoutStore.getState();
-        
-        const completedWorkouts = workoutStore.workoutLogs.filter(log => log.completed).length;
-        const currentStreak = get().streak.currentStreak;
-        const totalPoints = get().points;
-        const currentLevel = getUserFitnessLevel();
-        
-        // Update progression criteria based on current level
-        let newCriteria = progressionTracker.progressionCriteria;
-        
-        if (currentLevel === 'intermediate') {
-          newCriteria = {
-            workouts: 25, // More workouts needed to progress to advanced
-            streak: 7, // Longer streak required
-            points: 500, // More points needed
-            timeRequired: 21 // 3 weeks at intermediate level
-          };
-        }
-        
-        set({
-          progressionTracker: {
-            ...progressionTracker,
-            currentFitnessLevel: currentLevel,
-            workoutsCompleted: completedWorkouts,
-            streakRecord: Math.max(progressionTracker.streakRecord, currentStreak),
-            totalPoints,
-            progressionCriteria: newCriteria,
-            readyForProgression: get().checkProgressionEligibility()
-          }
-        });
-      },
-
-      acceptProgression: () => {
-        const { getUserFitnessLevel } = get();
-        const currentLevel = getUserFitnessLevel();
-        const nextLevel: FitnessLevel = currentLevel === 'beginner' ? 'intermediate' : 'advanced';
-        
-        // Update user profile fitness level
-        const macroStore = useMacroStore.getState();
-        macroStore.updateUserProfile({
-          ...macroStore.userProfile,
-          fitnessLevel: nextLevel
-        });
-        
-        // Reset progression tracker for new level
-        set({
-          progressionTracker: {
-            currentFitnessLevel: nextLevel,
-            workoutsCompleted: 0,
-            streakRecord: 0,
-            totalPoints: 0,
-            timeAtCurrentLevel: 0,
-            readyForProgression: false,
-            lastProgressionCheck: new Date().toISOString(),
-            progressionCriteria: nextLevel === 'intermediate' ? {
-              workouts: 25,
-              streak: 7,
-              points: 500,
-              timeRequired: 21
-            } : {
-              workouts: 50,
-              streak: 14,
-              points: 1000,
-              timeRequired: 30
-            }
-          }
-        });
-        
-        // Award bonus points for progression
-        get().addPoints(100);
-      },
-
-      generateBeginnerFriendlyQuests: () => {
-        const today = new Date().toISOString();
-        
-        const beginnerQuests: DailyQuest[] = [
-          {
-            id: `quest-beginner-workout-${Date.now()}`,
-            title: "First Steps",
-            description: "Complete a 15-minute beginner workout",
-            completed: false,
-            date: today,
-            points: 15,
-            category: "workout",
-            fitnessLevel: ['beginner']
-          },
-          {
-            id: `quest-beginner-steps-${Date.now()}`,
-            title: "Daily Walk",
-            description: "Take 5,000 steps today",
-            completed: false,
-            date: today,
-            points: 10,
-            category: "steps",
-            fitnessLevel: ['beginner']
-          },
-          {
-            id: `quest-beginner-water-${Date.now()}`,
-            title: "Stay Hydrated",
-            description: "Drink 6 glasses of water today",
-            completed: false,
-            date: today,
-            points: 8,
-            category: "nutrition",
-            fitnessLevel: ['beginner']
-          },
-          {
-            id: `quest-beginner-stretch-${Date.now()}`,
-            title: "Gentle Stretch",
-            description: "Do 5 minutes of stretching",
-            completed: false,
-            date: today,
-            points: 10,
-            category: "workout",
-            fitnessLevel: ['beginner']
-          }
-        ];
-        
-        return beginnerQuests;
       }
     }),
     {

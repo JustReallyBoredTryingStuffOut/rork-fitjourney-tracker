@@ -26,8 +26,8 @@ export const secureDeleteFile = async (uri: string, passes: number = 3): Promise
     }
     
     // Limit size for overwriting to prevent memory issues with very large files
-    // expo-random has a maximum limit of 1024 bytes
-    const maxOverwriteSize = Math.min(fileSize, 1024); // 1KB max (expo-random limit)
+    // For large files, we'll overwrite the first and last portions
+    const maxOverwriteSize = Math.min(fileSize, 1024 * 1024); // 1MB max
     
     for (let pass = 0; pass < passes; pass++) {
       // For each pass, use a different pattern
@@ -49,8 +49,21 @@ export const secureDeleteFile = async (uri: string, passes: number = 3): Promise
           : '\xAA'.repeat(maxOverwriteSize);
       }
       
-      // Overwrite the file (this will truncate to our overwrite size)
+      // Overwrite the file
       await FileSystem.writeAsStringAsync(uri, overwriteData);
+      
+      // If file is larger than our max overwrite size, also overwrite the end of the file
+      if (fileSize > maxOverwriteSize) {
+        try {
+          await FileSystem.writeAsStringAsync(uri, overwriteData, {
+            encoding: FileSystem.EncodingType.UTF8,
+            position: fileSize - maxOverwriteSize
+          });
+        } catch (positionError) {
+          // Some file systems may not support position parameter
+          console.warn('Could not overwrite end of file:', positionError);
+        }
+      }
     }
     
     // Finally delete the file
