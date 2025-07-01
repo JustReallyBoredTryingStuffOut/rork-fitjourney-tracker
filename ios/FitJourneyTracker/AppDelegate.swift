@@ -1,11 +1,11 @@
-import UIKit
+import Foundation
 import React
-import React_RCTAppDelegate
+import UIKit
 
 @UIApplicationMain
-class AppDelegate: RCTAppDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, RCTAppDelegate {
   
-  override func application(
+  func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
@@ -15,7 +15,7 @@ class AppDelegate: RCTAppDelegate {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
-  override func sourceURL(for bridge: RCTBridge) -> URL? {
+  func sourceURL(for bridge: RCTBridge) -> URL? {
 #if DEBUG
     return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
 #else
@@ -24,7 +24,7 @@ class AppDelegate: RCTAppDelegate {
   }
   
   // Linking API
-  override func application(
+  func application(
     _ app: UIApplication,
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
@@ -33,7 +33,7 @@ class AppDelegate: RCTAppDelegate {
   }
   
   // Universal Links
-  override func application(
+  func application(
     _ application: UIApplication,
     continue userActivity: NSUserActivity,
     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void

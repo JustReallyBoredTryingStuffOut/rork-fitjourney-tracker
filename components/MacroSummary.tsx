@@ -4,7 +4,7 @@ import { colors } from "@/constants/colors";
 import { MacroGoals } from "@/types";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { Trophy } from "lucide-react-native";
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 
 interface MacroSummaryProps {
@@ -19,7 +19,7 @@ interface MacroSummaryProps {
 
 export default function MacroSummary({ current, goals }: MacroSummaryProps) {
   const { gamificationEnabled, achievements } = useGamificationStore();
-  const navigation = useNavigation();
+  const router = useRouter();
   const { colors } = useTheme();
   
   // Check if goals are valid
@@ -40,7 +40,7 @@ export default function MacroSummary({ current, goals }: MacroSummaryProps) {
           </Text>
           <TouchableOpacity 
             style={[styles.setupGoalsButton, { backgroundColor: colors.primary }]}
-            onPress={() => navigation.navigate('health-goals' as never)}
+            onPress={() => router.push("/health-goals")}
           >
             <Text style={[styles.setupGoalsButtonText, { color: colors.white }]}>Set Up Nutrition Goals</Text>
           </TouchableOpacity>

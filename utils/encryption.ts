@@ -1,8 +1,8 @@
-import Keychain from 'react-native-keychain';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { randomBytes } from 'crypto';
-import { createHash } from 'crypto';
+import * as Random from 'expo-random';
+import * as Crypto from 'expo-crypto';
 
 // Enhanced encryption/decryption for sensitive data
 // Using industry-standard AES-GCM encryption with proper key derivation
@@ -20,8 +20,8 @@ const ENCRYPTION_VERSION = 2; // Current encryption version
 export const generateEncryptionKey = async (): Promise<string> => {
   try {
     // Generate a cryptographically secure random key
-    const randomBytesBuffer = randomBytes(32); // 256 bits
-    return bufferToBase64(randomBytesBuffer);
+    const randomBytes = await Random.getRandomBytesAsync(32); // 256 bits
+    return bufferToBase64(randomBytes);
   } catch (error) {
     console.error('Error generating encryption key:', error);
     // Fallback to a less secure but functional method
@@ -45,9 +45,10 @@ export const storeEncryptionKey = async (key: string): Promise<void> => {
     // For web, store in localStorage with additional protection
     // In a real production app, consider using a service like Auth0 or Firebase Auth
     // to handle key management more securely
-    const keyHash = createHash('sha256')
-      .update(key + navigator.userAgent)
-      .digest('hex');
+    const keyHash = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      key + navigator.userAgent
+    );
     await AsyncStorage.setItem('encryption-key-hash', keyHash);
     await AsyncStorage.setItem('encryption-key', key);
     await AsyncStorage.setItem('encryption-version', ENCRYPTION_VERSION.toString());
@@ -55,8 +56,8 @@ export const storeEncryptionKey = async (key: string): Promise<void> => {
   }
   
   // For native platforms, use SecureStore
-      await Keychain.setInternetCredentials('encryption-key', 'encryption-key', key);
-    await Keychain.setInternetCredentials('encryption-version', 'encryption-version', ENCRYPTION_VERSION.toString());
+  await SecureStore.setItemAsync('encryption-key', key);
+  await SecureStore.setItemAsync('encryption-version', ENCRYPTION_VERSION.toString());
 };
 
 // Retrieve the encryption key
@@ -67,9 +68,10 @@ export const getEncryptionKey = async (): Promise<string | null> => {
     
     if (key && storedHash) {
       // Verify the key hasn't been tampered with
-      const verifyHash = createHash('sha256')
-        .update(key + navigator.userAgent)
-        .digest('hex');
+      const verifyHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        key + navigator.userAgent
+      );
       
       if (verifyHash === storedHash) {
         return key;
@@ -82,8 +84,7 @@ export const getEncryptionKey = async (): Promise<string | null> => {
     return null;
   }
   
-  const credentials = await Keychain.getInternetCredentials('encryption-key');
-  return credentials && credentials.password ? credentials.password : null;
+  return SecureStore.getItemAsync('encryption-key');
 };
 
 // Get the current encryption version
@@ -93,8 +94,7 @@ export const getEncryptionVersion = async (): Promise<number> => {
     return version ? parseInt(version, 10) : 1;
   }
   
-  const credentials = await Keychain.getInternetCredentials('encryption-version');
-  const version = credentials && credentials.password ? credentials.password : null;
+  const version = await SecureStore.getItemAsync('encryption-version');
   return version ? parseInt(version, 10) : 1;
 };
 
@@ -135,7 +135,7 @@ const base64ToBuffer = (base64: string): Uint8Array => {
 // Generate a random salt
 const generateSalt = async (): Promise<Uint8Array> => {
   try {
-    return randomBytes(SALT_LENGTH);
+    return await Random.getRandomBytesAsync(SALT_LENGTH);
   } catch (error) {
     console.warn('Using fallback salt generation');
     
@@ -157,7 +157,7 @@ const generateSalt = async (): Promise<Uint8Array> => {
 // Generate a random initialization vector (IV)
 const generateIV = async (): Promise<Uint8Array> => {
   try {
-    return randomBytes(IV_LENGTH);
+    return await Random.getRandomBytesAsync(IV_LENGTH);
   } catch (error) {
     console.warn('Using fallback IV generation');
     
@@ -486,7 +486,7 @@ export const secureStore = {
       const encrypted = await encryptData(value);
       await AsyncStorage.setItem(key, encrypted);
     } else {
-      await Keychain.setInternetCredentials(key, key, value);
+      await SecureStore.setItemAsync(key, value);
     }
   },
   
@@ -496,8 +496,7 @@ export const secureStore = {
       if (!encrypted) return null;
       return decryptData(encrypted);
     } else {
-      const credentials = await Keychain.getInternetCredentials(key);
-      return credentials && credentials.password ? credentials.password : null;
+      return SecureStore.getItemAsync(key);
     }
   },
   
@@ -505,7 +504,7 @@ export const secureStore = {
     if (Platform.OS === 'web') {
       await AsyncStorage.removeItem(key);
     } else {
-      await Keychain.resetInternetCredentials(key);
+      await SecureStore.deleteItemAsync(key);
     }
   }
 };

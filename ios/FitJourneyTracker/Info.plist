@@ -31,7 +31,12 @@
           <string>app.rork.fitjourney-tracker</string>
         </array>
       </dict>
-
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+fitjourney-tracker</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
@@ -55,9 +60,9 @@
     <key>NSCameraUsageDescription</key>
     <string>Allow FitJourney Tracker to access your camera to scan nutrition labels and take progress photos.</string>
     <key>NSHealthShareUsageDescription</key>
-    <string>This app needs access to your health data to track your fitness progress, workouts, heart rate, sleep patterns, and provide personalized insights.</string>
+    <string>This app needs access to your health data to track your fitness progress, workouts, and provide personalized insights.</string>
     <key>NSHealthUpdateUsageDescription</key>
-    <string>This app needs permission to update your health data to record workouts, fitness activities, heart rate, and sleep data.</string>
+    <string>This app needs permission to update your health data to record workouts and fitness activities.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationAlwaysUsageDescription</key>
@@ -72,7 +77,10 @@
     <string>Allow FitJourney Tracker to save photos to your library.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Allow FitJourney Tracker to access your photos to save and view progress photos.</string>
-
+    <key>NSUserActivityTypes</key>
+    <array>
+      <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

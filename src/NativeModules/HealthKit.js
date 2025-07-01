@@ -48,16 +48,12 @@ class HealthKit {
           HealthKitPermissions.DateOfBirth,
           HealthKitPermissions.BiologicalSex,
           HealthKitPermissions.Workout,
-          HealthKitPermissions.SleepAnalysis,
-          HealthKitPermissions.RestingHeartRate,
-          HealthKitPermissions.WalkingHeartRateAverage,
         ],
         write: [
           HealthKitPermissions.Steps,
           HealthKitPermissions.ActiveEnergyBurned,
           HealthKitPermissions.Workout,
           HealthKitPermissions.Weight,
-          HealthKitPermissions.HeartRate,
         ]
       };
     } catch (error) {
@@ -154,13 +150,6 @@ class HealthKit {
             permissions.read.push(HealthKitPermissions.Workout);
             permissions.write.push(HealthKitPermissions.Workout);
             break;
-          case 'heartRate':
-            permissions.read.push(HealthKitPermissions.HeartRate);
-            permissions.write.push(HealthKitPermissions.HeartRate);
-            break;
-          case 'sleep':
-            permissions.read.push(HealthKitPermissions.SleepAnalysis);
-            break;
         }
       });
 
@@ -197,7 +186,7 @@ class HealthKit {
 
     try {
       // Initialize with basic permissions
-      const initResult = await this.requestAuthorization(['steps', 'distance', 'calories', 'activity', 'heartRate', 'sleep']);
+      const initResult = await this.requestAuthorization(['steps', 'distance', 'calories', 'activity']);
       if (initResult.authorized) {
         this.isInitialized = true;
         console.log('[HealthKit] Successfully initialized');

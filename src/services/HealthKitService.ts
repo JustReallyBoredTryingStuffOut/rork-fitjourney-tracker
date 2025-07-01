@@ -65,28 +65,21 @@ class HealthKitService {
   }
 
   /**
-   * Request authorization for all supported health data types
+   * Request all necessary authorizations for the app
    */
   async requestAllAuthorizations(): Promise<boolean> {
-    this.ensureInitialized();
-
-    const allDataTypes: HealthDataType[] = [
-      'steps',
-      'distance',
-      'calories',
-      'activity',
-      'heartRate',
-      'sleep'
+    const requiredDataTypes: HealthDataType[] = [
+      HEALTH_DATA_TYPES.STEP_COUNT,
+      HEALTH_DATA_TYPES.DISTANCE_WALKING_RUNNING,
+      HEALTH_DATA_TYPES.ACTIVE_ENERGY_BURNED,
+      HEALTH_DATA_TYPES.HEART_RATE,
+      HEALTH_DATA_TYPES.BODY_MASS,
+      HEALTH_DATA_TYPES.HEIGHT,
+      HEALTH_DATA_TYPES.WORKOUT,
+      HEALTH_DATA_TYPES.SLEEP_ANALYSIS
     ];
 
-    try {
-      const result = await this.requestAuthorization(allDataTypes);
-      console.log('[HealthKitService] All authorizations result:', result);
-      return result;
-    } catch (error) {
-      console.error('[HealthKitService] Failed to request all authorizations:', error);
-      throw error;
-    }
+    return this.requestAuthorization(requiredDataTypes);
   }
 
   /**

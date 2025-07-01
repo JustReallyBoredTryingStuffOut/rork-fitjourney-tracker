@@ -186,14 +186,10 @@ export default function HealthKitTest() {
             'DistanceWalkingRunning',
             'ActiveEnergyBurned',
             'HeartRate',
-            'SleepAnalysis',
-            'RestingHeartRate',
-            'WalkingHeartRateAverage',
           ],
           write: [
             'Steps',
             'ActiveEnergyBurned',
-            'HeartRate',
           ],
         },
       };

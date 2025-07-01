@@ -1,20 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Platform, Alert } from "react-native";
+import { Pedometer } from "expo-sensors";
 import { useHealthStore } from "@/store/healthStore";
-import DeviceInfo from 'react-native-device-info';
-
-// Simple Pedometer replacement - using HealthKit integration
-const Pedometer = {
-  isAvailableAsync: () => Promise.resolve(Platform.OS === 'ios'),
-  getStepCountAsync: (start: Date, end: Date) => Promise.resolve({ steps: Math.floor(Math.random() * 5000) + 3000 }),
-  requestPermissionsAsync: () => Promise.resolve({ granted: true, status: 'granted' }),
-  watchStepCount: (callback: (result: any) => void) => {
-    const interval = setInterval(() => {
-      callback({ steps: Math.floor(Math.random() * 100) + 50 });
-    }, 5000);
-    return { remove: () => clearInterval(interval) };
-  }
-};
+import * as ExpoDevice from "expo-device";
 
 // Import the CoreBluetooth module with correct path
 import CoreBluetooth from "@/src/NativeModules/CoreBluetooth";
@@ -141,10 +129,9 @@ export default function useStepCounter() {
         try {
           // Check if HealthKit methods are available (dev build compatibility)
           if (!HealthKit.isHealthDataAvailable) {
-            Alert.alert('Debug', 'HealthKit methods not available - using mock data fallback');
-            console.warn('[useStepCounter] HealthKit methods not available in current build, using mock data fallback');
-            setUseMockData(true);
-            setupMockDataTracking();
+            Alert.alert('Debug', 'HealthKit methods not available - using pedometer fallback');
+            console.warn('[useStepCounter] HealthKit methods not available in current build, using pedometer fallback');
+            checkPedometerAvailability();
             return;
           }
           
@@ -164,9 +151,7 @@ export default function useStepCounter() {
               'steps', 
               'distance', 
               'calories',
-              'activity',
-              'heartRate',
-              'sleep'
+              'activity'
             ]);
             
             setHealthKitAuthorized(authResult.authorized);
@@ -262,7 +247,7 @@ export default function useStepCounter() {
         console.log('[useStepCounter] Pedometer available:', isAvailable);
         
         if (isAvailable) {
-          console.log('[useStepCounter] ✅ Using REAL device step data from HealthKit');
+          console.log('[useStepCounter] ✅ Using REAL device step data from expo-sensors Pedometer');
           setIsPedometerAvailable(true);
           setDataSource("pedometer");
           setUseMockData(false);
@@ -550,9 +535,7 @@ export default function useStepCounter() {
         'steps', 
         'distance', 
         'calories',
-        'activity',
-        'heartRate',
-        'sleep'
+        'activity'
       ]);
       
       setHealthKitAuthorized(authResult.authorized);
@@ -788,9 +771,7 @@ export default function useStepCounter() {
             'steps', 
             'distance', 
             'calories',
-            'activity',
-            'heartRate',
-            'sleep'
+            'activity'
           ]);
           
           if (authResult.authorized) {
@@ -1099,9 +1080,7 @@ export default function useStepCounter() {
             'steps', 
             'distance', 
             'calories',
-            'activity',
-            'heartRate',
-            'sleep'
+            'activity'
           ]);
           
           Alert.alert('RESULT', `Authorization result: ${JSON.stringify(authResult)}`);

@@ -670,8 +670,6 @@ export const useHealthStore = create<HealthState>()(
           
           // Initialize HealthKit if not already done
           await HealthKitService.initialize();
-          
-          // Request authorization for all health data types
           const healthPermissions = await HealthKitService.requestAllAuthorizations();
           if (!healthPermissions) {
             console.error("[HealthStore] HealthKit permissions not granted");
