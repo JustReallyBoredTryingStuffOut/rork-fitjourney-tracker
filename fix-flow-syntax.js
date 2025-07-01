@@ -4,58 +4,120 @@ const fs = require('fs');
 const path = require('path');
 const glob = require('glob');
 
-console.log('🔧 Fixing React Native 0.79+ Flow syntax issues...\n');
-
-// Pattern to find all problematic Flow component syntax
-const componentPattern = /const\s+(\w+)\s*:\s*component\s*\(\s*([^)]+)\s*\)\s*=\s*React\.forwardRef/g;
-
-// Replacement pattern
-const replacementPattern = 'const $1: React.ComponentType<$1Props> = React.forwardRef';
-
-// Files to scan and patch
-const patterns = [
-  'node_modules/react-native/Libraries/**/*.js',
-  'node_modules/react-native/Libraries/**/*.jsx',
-  'node_modules/react-native/Libraries/**/*.ts',
-  'node_modules/react-native/Libraries/**/*.tsx'
+// Enhanced Flow syntax patterns that need to be removed
+const flowPatterns = [
+  // Remove type annotations from const declarations
+  {
+    pattern: /const\s+(\w+)\s*:\s*[^=]+=\s*/g,
+    replacement: 'const $1 = '
+  },
+  // Remove type annotations from function parameters
+  {
+    pattern: /:\s*[^,)]+(?=[,)])/g,
+    replacement: ''
+  },
+  // Remove type assertions at the end of objects
+  {
+    pattern: /\}\s+as\s+[^;]+;/g,
+    replacement: '};'
+  },
+  // Remove type declarations
+  {
+    pattern: /type\s+\w+\s*=\s*[^;]+;/g,
+    replacement: ''
+  },
+  // Remove interface declarations
+  {
+    pattern: /interface\s+\w+\s*\{[^}]*\}/g,
+    replacement: ''
+  },
+  // Remove generic type parameters
+  {
+    pattern: /<[^>]+>/g,
+    replacement: ''
+  },
+  // Remove optional parameter markers
+  {
+    pattern: /\?/g,
+    replacement: ''
+  },
+  // Remove Flow pragma comments
+  {
+    pattern: /\/\*\s*@flow\s*\*\/\s*/g,
+    replacement: ''
+  },
+  // Remove Flow ignore comments
+  {
+    pattern: /\/\*\s*\$FlowFixMe[^*]*\*\/\s*/g,
+    replacement: ''
+  },
+  // Remove Flow type imports
+  {
+    pattern: /import\s+type\s+[^;]+;/g,
+    replacement: ''
+  },
+  // Remove Flow type exports
+  {
+    pattern: /export\s+type\s+[^;]+;/g,
+    replacement: ''
+  }
 ];
 
-let totalFiles = 0;
-let patchedFiles = 0;
+function fixFlowSyntax(filePath) {
+  try {
+    let content = fs.readFileSync(filePath, 'utf8');
+    let originalContent = content;
+    let modified = false;
 
-patterns.forEach(pattern => {
-  const files = glob.sync(pattern, { ignore: ['**/node_modules/**/node_modules/**'] });
-  
-  files.forEach(file => {
-    totalFiles++;
-    try {
-      const content = fs.readFileSync(file, 'utf8');
-      
-      if (componentPattern.test(content)) {
-        console.log(`📝 Patching: ${file}`);
-        
-        // Apply the replacement
-        const newContent = content.replace(componentPattern, replacementPattern);
-        
-        // Write the patched content back
-        fs.writeFileSync(file, newContent, 'utf8');
-        patchedFiles++;
+    // Apply each pattern
+    flowPatterns.forEach(({ pattern, replacement }) => {
+      const newContent = content.replace(pattern, replacement);
+      if (newContent !== content) {
+        content = newContent;
+        modified = true;
       }
-    } catch (error) {
-      console.log(`⚠️  Error processing ${file}: ${error.message}`);
+    });
+
+    // Write back if modified
+    if (modified) {
+      fs.writeFileSync(filePath, content, 'utf8');
+      console.log(`✅ Fixed: ${filePath}`);
+      return true;
     }
-  });
-});
 
-console.log(`\n✅ Patching complete!`);
-console.log(`📊 Files scanned: ${totalFiles}`);
-console.log(`🔧 Files patched: ${patchedFiles}`);
-
-if (patchedFiles > 0) {
-  console.log(`\n🎉 Successfully patched ${patchedFiles} files!`);
-  console.log(`💡 You can now run your Xcode build without Flow syntax errors.`);
-} else {
-  console.log(`\nℹ️  No files needed patching.`);
+    return false;
+  } catch (error) {
+    console.error(`❌ Error processing ${filePath}:`, error.message);
+    return false;
+  }
 }
 
-console.log(`\n💡 To re-run this fix after npm install, just run: node fix-flow-syntax.js`); 
+function findAndFixReactNativeFiles() {
+  const reactNativePath = path.join(__dirname, 'node_modules', 'react-native');
+  
+  if (!fs.existsSync(reactNativePath)) {
+    console.log('❌ React Native not found in node_modules');
+    return;
+  }
+
+  // Find ALL .js files in react-native (not just Libraries)
+  const files = glob.sync('node_modules/react-native/**/*.js', {
+    ignore: ['**/node_modules/**/node_modules/**']
+  });
+
+  console.log(`🔍 Found ${files.length} JavaScript files in React Native...`);
+
+  let fixedCount = 0;
+  files.forEach(file => {
+    if (fixFlowSyntax(file)) {
+      fixedCount++;
+    }
+  });
+
+  console.log(`\n🎉 Fixed ${fixedCount} files with Flow syntax issues!`);
+}
+
+// Run the fix
+console.log('🔧 Starting comprehensive Flow syntax fix for React Native files...\n');
+findAndFixReactNativeFiles();
+console.log('\n✨ Flow syntax fix complete!'); 

@@ -4,10 +4,15 @@ module.exports = function (api) {
     presets: [
       ['module:metro-react-native-babel-preset', {
         unstable_transformProfile: 'hermes-stable',
-      }]
+      }],
+      '@babel/preset-typescript'
     ],
     plugins: [
-      '@babel/plugin-transform-flow-strip-types',
+      ['@babel/plugin-transform-flow-strip-types', { 
+        allowDeclareFields: true,
+        allowDeclareClassFields: true,
+        allowDeclareClassMethods: true
+      }],
       '@babel/plugin-transform-export-namespace-from',
       '@babel/plugin-proposal-export-default-from',
       ['@babel/plugin-proposal-decorators', { legacy: true }],
@@ -21,7 +26,6 @@ module.exports = function (api) {
       '@babel/plugin-proposal-record-and-tuple',
       '@babel/plugin-proposal-throw-expressions',
       '@babel/plugin-transform-runtime',
-      '@babel/preset-typescript',
       'transform-remove-console'
     ],
     env: {
@@ -36,7 +40,15 @@ module.exports = function (api) {
           ['@babel/plugin-transform-flow-strip-types', { 
             allowDeclareFields: true,
             allowDeclareClassFields: true,
-            allowDeclareClassMethods: true
+            allowDeclareClassMethods: true,
+            all: true
+          }]
+        ],
+        presets: [
+          ['@babel/preset-env', {
+            targets: {
+              node: 'current'
+            }
           }]
         ]
       }
